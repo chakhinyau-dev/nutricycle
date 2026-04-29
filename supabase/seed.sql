@@ -1,0 +1,296 @@
+insert into public.recipes (
+  id,
+  title,
+  category,
+  phase_key,
+  phase_label,
+  calories,
+  time_minutes,
+  nutritional_insight,
+  image_url,
+  ingredients,
+  instructions
+)
+values
+  (
+    1,
+    'Bowl de Quinoa y Espinaca',
+    'Fase Menstrual',
+    'menstrual',
+    'Menstrual',
+    420,
+    25,
+    'Iron-rich spinach and quinoa help support energy during the menstrual phase.',
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
+    '["1 taza de quinoa cocida","2 tazas de espinaca baby","1/2 aguacate en rebanadas","1/4 taza de garbanzos","Semillas de sesamo","Aderezo de limon y tahini"]'::jsonb,
+    '["Lava y cocina la quinoa.","Coloca una base de espinacas en un bowl.","Agrega quinoa, aguacate y garbanzos.","Espolvorea semillas de sesamo.","Termina con el aderezo y sirve."]'::jsonb
+  ),
+  (
+    2,
+    'Ensalada de Pollo con Quinoa Tostada',
+    'Fase Folicular',
+    'follicular',
+    'Folicular',
+    320,
+    15,
+    'Lean protein and quinoa support steady energy in the follicular phase.',
+    'https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=800',
+    '["1 pechuga de pollo asada en trozos","1/2 taza de quinoa tostada","2 tazas de espinaca fresca o kale","1/2 aguacate rebanado","Tomates cherry al gusto","Aderezo ligero de limon y aceite de oliva"]'::jsonb,
+    '["Tuesta la quinoa a fuego medio.","Mezcla espinaca, pollo, tomate y aguacate.","Agrega la quinoa tostada.","Termina con el aderezo antes de servir."]'::jsonb
+  ),
+  (
+    3,
+    'Salmon con Esparragos y Limon',
+    'Fase Ovulacion',
+    'ovulation',
+    'Ovulacion',
+    540,
+    30,
+    'Omega-3 and zinc make this a strong ovulation-phase meal.',
+    'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800',
+    '["200g de filete de salmon fresco","1 manojo de esparragos tiernos","2 cucharadas de aceite de oliva","Rodajas de limon amarillo","Sal de mar y pimienta negra"]'::jsonb,
+    '["Precalienta el horno a 200C.","Coloca el salmon y los esparragos en una bandeja.","Rocia aceite de oliva y sazona.","Agrega rodajas de limon.","Hornea de 12 a 15 minutos."]'::jsonb
+  ),
+  (
+    4,
+    'Poke Bowl de Arroz con Atun, Mango y Aguacate',
+    'Fase Lutea',
+    'luteal',
+    'Lutea',
+    450,
+    20,
+    'Healthy fats and satisfying carbs help support the luteal phase.',
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
+    '["1 taza de arroz de sushi o integral","150g de atun fresco en cubos","1/2 mango maduro en cubos","1/2 aguacate en rebanadas","Edamames al gusto","Salsa ponzu o soya baja en sodio","Semillas de sesamo para decorar"]'::jsonb,
+    '["Cocina el arroz y usalo como base.","Acomoda atun, mango, aguacate y edamames encima.","Vierte la salsa elegida.","Decora con semillas de sesamo y sirve frio."]'::jsonb
+  ),
+  (
+    5,
+    'Avena cremosa con cacao y nuez',
+    'Fase Menstrual',
+    'menstrual',
+    'Menstrual',
+    380,
+    12,
+    'Warm oats, cacao, and walnuts support iron intake and comfort during the menstrual phase.',
+    'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=800',
+    '["1 taza de avena","2 tazas de leche o bebida vegetal","1 cucharada de cacao puro","1 cucharada de nuez picada","Canela al gusto","1 cucharadita de miel opcional"]'::jsonb,
+    '["Calienta la leche en una olla pequena.","Agrega la avena, el cacao y la canela.","Cocina a fuego bajo hasta que espese.","Sirve con nuez picada y miel si deseas."]'::jsonb
+  ),
+  (
+    6,
+    'Crema de calabaza con jengibre y lentejas',
+    'Fase Menstrual',
+    'menstrual',
+    'Menstrual',
+    360,
+    28,
+    'This soup brings iron, fiber, and gentle warmth for low-energy days.',
+    'https://images.unsplash.com/photo-1547592180-85f173990554?w=800',
+    '["2 tazas de calabaza en cubos","1 taza de lentejas cocidas","1 trozo pequeno de jengibre","1 cebolla pequena","1 cucharada de aceite de oliva","Caldo de verduras","Sal y pimienta"]'::jsonb,
+    '["Sofrie la cebolla y el jengibre.","Agrega la calabaza y el caldo.","Cocina hasta que la calabaza ablande.","Anade las lentejas y licua hasta obtener una crema suave."]'::jsonb
+  ),
+  (
+    7,
+    'Tacos de pavo con col morada y pico de gallo',
+    'Fase Folicular',
+    'follicular',
+    'Folicular',
+    410,
+    20,
+    'Lean protein and crisp vegetables support the rising energy of the follicular phase.',
+    'https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?w=800',
+    '["250g de pavo molido","6 tortillas de maiz","1 taza de col morada rallada","1 tomate picado","1/4 de cebolla morada","Cilantro","Limon","Sal y comino"]'::jsonb,
+    '["Cocina el pavo con sal y comino.","Prepara el pico de gallo con tomate, cebolla y cilantro.","Calienta las tortillas.","Arma los tacos con col morada y termina con limon."]'::jsonb
+  ),
+  (
+    8,
+    'Yogur griego con frutos rojos y semillas',
+    'Fase Folicular',
+    'follicular',
+    'Folicular',
+    290,
+    8,
+    'Protein-rich yogurt and berries make this an easy follicular-phase breakfast or snack.',
+    'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800',
+    '["1 taza de yogur griego natural","1/2 taza de frutos rojos","1 cucharada de semillas de chía","1 cucharada de granola","Miel opcional"]'::jsonb,
+    '["Sirve el yogur en un bowl.","Anade frutos rojos y semillas.","Corona con granola y un hilo de miel si lo deseas."]'::jsonb
+  ),
+  (
+    9,
+    'Tostadas de hummus con huevo y rucula',
+    'Fase Ovulacion',
+    'ovulation',
+    'Ovulacion',
+    430,
+    15,
+    'Eggs, greens, and chickpeas offer a balanced ovulation-phase meal with protein and antioxidants.',
+    'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=800',
+    '["2 rebanadas de pan integral","1/2 taza de hummus","2 huevos","1 taza de rucula","Aceite de oliva","Sal, pimienta y paprika"]'::jsonb,
+    '["Tuesta el pan hasta que quede crujiente.","Unta una capa generosa de hummus.","Coloca el huevo cocido o a la plancha encima.","Agrega rucula y termina con aceite de oliva."]'::jsonb
+  ),
+  (
+    10,
+    'Ensalada de camote, naranja y pepitas',
+    'Fase Ovulacion',
+    'ovulation',
+    'Ovulacion',
+    390,
+    18,
+    'Vitamin C from orange and minerals from pepitas make this a colorful ovulation bowl.',
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
+    '["1 camote mediano asado","1 naranja en gajos","2 tazas de espinaca","2 cucharadas de pepitas","Queso feta opcional","Aderezo de aceite de oliva y limon"]'::jsonb,
+    '["Asa el camote hasta que quede tierno.","Mezcla espinaca, naranja y camote.","Agrega pepitas y queso feta si deseas.","Aliña con aceite de oliva y limon."]'::jsonb
+  ),
+  (
+    11,
+    'Curry suave de garbanzos y coco',
+    'Fase Lutea',
+    'luteal',
+    'Lutea',
+    470,
+    30,
+    'Comforting carbs and magnesium-rich chickpeas can help with luteal-phase cravings.',
+    'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800',
+    '["1 taza de garbanzos cocidos","1 taza de leche de coco","1 cebolla pequena","1 diente de ajo","1 cucharadita de curry suave","1 taza de arroz integral cocido","Cilantro"]'::jsonb,
+    '["Sofrie la cebolla y el ajo.","Anade el curry y los garbanzos.","Vierte la leche de coco y cocina 10 minutos.","Sirve sobre arroz integral y decora con cilantro."]'::jsonb
+  ),
+  (
+    12,
+    'Pasta integral con sardinas y espinacas',
+    'Fase Lutea',
+    'luteal',
+    'Lutea',
+    520,
+    22,
+    'Omega-3, fiber, and satisfying pasta help support luteal-phase hunger and energy.',
+    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800',
+    '["200g de pasta integral","1 lata de sardinas en aceite de oliva","2 tazas de espinaca","1 diente de ajo","Limon","Pimienta negra"]'::jsonb,
+    '["Cocina la pasta al dente.","Saltea el ajo con la espinaca.","Agrega las sardinas y un poco de limon.","Mezcla con la pasta y termina con pimienta."]'::jsonb
+  )
+on conflict (id) do update
+set
+  title = excluded.title,
+  category = excluded.category,
+  phase_key = excluded.phase_key,
+  phase_label = excluded.phase_label,
+  calories = excluded.calories,
+  time_minutes = excluded.time_minutes,
+  nutritional_insight = excluded.nutritional_insight,
+  image_url = excluded.image_url,
+  ingredients = excluded.ingredients,
+  instructions = excluded.instructions;
+
+select setval(
+  pg_get_serial_sequence('public.recipes', 'id'),
+  coalesce((select max(id) from public.recipes), 1),
+  true
+);
+
+insert into public.articles (
+  id,
+  title,
+  excerpt,
+  image_url,
+  read_time,
+  tag
+)
+values
+  (
+    1,
+    'Nutricion en la Fase Menstrual',
+    'Consigue el alivio que necesitas con alimentos ricos en hierro y magnesio...',
+    'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800',
+    '5 min lectura',
+    'NUTRICION'
+  ),
+  (
+    2,
+    'Yoga para el Alivio de Calambres',
+    'Posturas suaves disenadas para reducir la inflamacion y el dolor...',
+    'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800',
+    '8 min lectura',
+    'BIENESTAR'
+  ),
+  (
+    3,
+    'Bio-Sincronizacion Avanzada',
+    'Como optimizar tu productividad semanal segun tus niveles hormonales...',
+    'https://images.unsplash.com/photo-1555244162-803834f70033?w=800',
+    '10 min lectura',
+    'ESTILO DE VIDA'
+  )
+on conflict (id) do update
+set
+  title = excluded.title,
+  excerpt = excluded.excerpt,
+  image_url = excluded.image_url,
+  read_time = excluded.read_time,
+  tag = excluded.tag;
+
+select setval(
+  pg_get_serial_sequence('public.articles', 'id'),
+  coalesce((select max(id) from public.articles), 1),
+  true
+);
+
+insert into public.videos (
+  id,
+  phase_key,
+  category,
+  title,
+  description,
+  youtube_url,
+  duration,
+  thumbnail
+)
+values
+  (
+    'video-follicular-1',
+    'follicular',
+    'Fase folicular',
+    'Receta corta para fase folicular',
+    'Una idea rapida para acompanar la etapa de energia ascendente con ingredientes frescos y saciantes.',
+    'https://youtube.com/shorts/GdTEDblpPxY?feature=share',
+    '0:56',
+    'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800'
+  ),
+  (
+    'video-cycle-1',
+    'luteal',
+    'Ciclo y nutricion',
+    'Como conectar tu fase con tus comidas',
+    'Explica de forma simple por que las recomendaciones cambian segun el momento de tu ciclo.',
+    'https://youtube.com/shorts/Shg1SZKzZzw?feature=share',
+    '1:12',
+    'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800'
+  ),
+  (
+    'video-menstrual-1',
+    'menstrual',
+    'Bienestar menstrual',
+    'Pausa suave para dias menstruales',
+    'Una propuesta de respiracion y descanso para acompanar la menstruacion con mas calma y confort.',
+    'https://www.youtube.com/watch?v=B4kNiCwtl7M',
+    '3:45',
+    'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800'
+  ),
+  (
+    'video-ovulation-1',
+    'ovulation',
+    'Fertilidad y energia',
+    'Movimiento consciente para ovulacion',
+    'Contenido pensado para los dias de mayor vitalidad, con foco en energia, ligereza y equilibrio.',
+    'https://www.youtube.com/watch?v=inpok4MKVLM',
+    '5:04',
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800'
+  )
+on conflict (id) do update
+set
+  phase_key = excluded.phase_key,
+  category = excluded.category,
+  title = excluded.title,
+  description = excluded.description,
+  youtube_url = excluded.youtube_url,
+  duration = excluded.duration,
+  thumbnail = excluded.thumbnail;
