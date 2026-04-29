@@ -255,7 +255,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
             placeholder={t('dailylog.notes_placeholder')}
             multiline
             numberOfLines={4}
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.placeholder}
             value={notes}
             onChangeText={setNotes}
           />

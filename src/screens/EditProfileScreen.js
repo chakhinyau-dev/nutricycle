@@ -106,7 +106,7 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
                 value={lastPeriodStart}
                 onChangeText={setLastPeriodStart}
                 placeholder="2026-04-01"
-                placeholderTextColor={colors.on_surface_variant}
+                placeholderTextColor={colors.placeholder}
                 autoCapitalize="none"
               />
             </View>

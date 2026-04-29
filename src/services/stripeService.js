@@ -18,22 +18,29 @@ const normalizePlanKey = (planKey) => {
 };
 
 const callStripeFunction = async (payload) => {
-  const response = await fetch(STRIPE_FUNCTION_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${env.supabaseAnonKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(STRIPE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.supabaseAnonKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
-  if (!response.ok || data.error) {
-    throw new Error(data.error || `Stripe request failed (${response.status})`);
+    if (!response.ok || data.error) {
+      const errorMsg = data.error || `Status ${response.status}`;
+      console.error(`[Stripe Service Error] ${errorMsg}`, data);
+      throw new Error(errorMsg);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('[Stripe Network Error]:', error);
+    throw error;
   }
-
-  return data;
 };
 
 export const fetchSubscriptionPricing = async (locale = 'auto') => {

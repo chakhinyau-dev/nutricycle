@@ -28,6 +28,7 @@ export const colors = {
   // Text: Charcoal Suave
   on_surface: "#433D4F", 
   on_surface_variant: "#7B7682", 
+  placeholder: "rgba(67, 61, 79, 0.5)",
   outline: "#D1D5DB", 
   outline_variant: "#F3F4F6",
   

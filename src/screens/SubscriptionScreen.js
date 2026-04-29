@@ -241,8 +241,11 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
         }
       }
     } catch (e) {
-      console.error(e);
-      Alert.alert(t('settings.error'), t('subscription.payment_session_error'));
+      console.error('[Stripe Checkout Error]:', e);
+      Alert.alert(
+        t('settings.error'), 
+        `${t('subscription.payment_session_error')}\n\nDetail: ${e.message || 'Unknown error'}`
+      );
     } finally {
       setIsProcessing(false);
     }

@@ -145,7 +145,7 @@ export const AIChatScreen = ({ onBack, cycleInfo, isPremium }) => {
           <TextInput
             style={styles.input}
             placeholder="Escribe tu duda nutricional..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.placeholder}
             value={inputText}
             onChangeText={setInputText}
             multiline

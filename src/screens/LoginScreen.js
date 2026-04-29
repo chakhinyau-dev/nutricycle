@@ -229,7 +229,7 @@ export const LoginScreen = () => {
                   value={name}
                   onChangeText={setName}
                   placeholder="Elena Rodriguez"
-                  placeholderTextColor="rgba(74,68,83,0.3)"
+                  placeholderTextColor={colors.placeholder}
                 />
                 <View style={styles.inputBorder} />
               </View>
@@ -246,7 +246,7 @@ export const LoginScreen = () => {
                   value={email}
                   onChangeText={setEmail}
                   placeholder="you@example.com"
-                  placeholderTextColor="rgba(74,68,83,0.3)"
+                  placeholderTextColor={colors.placeholder}
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
@@ -266,14 +266,14 @@ export const LoginScreen = () => {
                     value={password}
                     onChangeText={setPassword}
                     placeholder="********"
-                    placeholderTextColor="rgba(74,68,83,0.3)"
+                    placeholderTextColor={colors.placeholder}
                     secureTextEntry={!showPass}
                   />
                   <Pressable onPress={() => setShowPass((current) => !current)}>
                     {showPass ? (
                       <Eye size={20} color={colors.primary} />
                     ) : (
-                      <EyeOff size={20} color="rgba(74,68,83,0.3)" />
+                      <EyeOff size={20} color={colors.placeholder} />
                     )}
                   </Pressable>
                 </View>
@@ -290,7 +290,7 @@ export const LoginScreen = () => {
                   value={verificationCode}
                   onChangeText={setVerificationCode}
                   placeholder="123456"
-                  placeholderTextColor="rgba(74,68,83,0.3)"
+                  placeholderTextColor={colors.placeholder}
                   keyboardType="number-pad"
                   autoFocus={true}
                 />

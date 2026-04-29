@@ -60,8 +60,14 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
 
   const pickImage = async () => {
     try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('settings.error'), 'Permission to access gallery is required.');
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,
@@ -72,7 +78,6 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
         setIsUploading(true);
         const asset = result.assets[0];
         
-        // Prepare base64 for Clerk
         const base64 = asset.base64.startsWith('data:') 
           ? asset.base64 
           : `data:image/jpeg;base64,${asset.base64}`;
@@ -81,8 +86,11 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
         Alert.alert(t('common.success'), t('settings.profile_image_updated'));
       }
     } catch (error) {
-      console.error('Error updating profile image:', error);
-      Alert.alert(t('settings.error'), t('settings.profile_image_error'));
+      console.error('[Settings] Image Upload Error:', error);
+      Alert.alert(
+        t('settings.error'), 
+        `${t('settings.profile_image_error')}\n\nDetail: ${error.message || 'Unknown error'}`
+      );
     } finally {
       setIsUploading(false);
     }

@@ -105,7 +105,7 @@ export const RecipesScreen = ({
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor={colors.on_surface_variant}
+            placeholderTextColor={colors.placeholder}
           />
         </View>
       </View>

@@ -111,7 +111,7 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                   onChangeText={setDisplayDate}
                   style={styles.input}
                   placeholder="24/04/2026"
-                  placeholderTextColor={colors.on_surface_variant}
+                  placeholderTextColor={colors.placeholder}
                   autoCapitalize="none"
                   keyboardType="number-pad"
                 />
@@ -130,7 +130,7 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                     style={styles.input}
                     keyboardType="number-pad"
                     placeholder="28"
-                    placeholderTextColor={colors.on_surface_variant}
+                    placeholderTextColor={colors.placeholder}
                   />
                 </View>
 
@@ -142,7 +142,7 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                     style={styles.input}
                     keyboardType="number-pad"
                     placeholder="5"
-                    placeholderTextColor={colors.on_surface_variant}
+                    placeholderTextColor={colors.placeholder}
                   />
                 </View>
               </View>
