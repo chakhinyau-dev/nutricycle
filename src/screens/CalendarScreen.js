@@ -20,10 +20,11 @@ const { width } = Dimensions.get('window');
 
 // Premium Color Palette
 const THEME = {
-  sage: '#85C7B7',       // Mint Green for Fertile
-  softPurple: '#E99695', // Coral Pink for Period
+  sage: '#A3B3A5',
+  softPink: '#F4B6C2',
+  softPurple: '#CDB4DB',
   text: '#1A1A1A',
-  textSecondary: '#94A3B8', // Grey for Today/Secondary
+  textSecondary: '#94A3B8',
   bg: '#FAF9F6'
 };
 
@@ -67,8 +68,8 @@ export const CalendarScreen = ({ onBack, cycleProfile, dailyLogs = [], onDeleteL
           onPress={() => setSelectedDate(day)}
           style={[
              styles.dayPill,
-             isPeriod && { backgroundColor: THEME.softPurple + '26' },
-             isFertile && !isPeriod && { backgroundColor: THEME.sage + '20' },
+             isPeriod && { backgroundColor: THEME.softPink + '30' },
+             isFertile && !isPeriod && { backgroundColor: THEME.softPurple + '26' },
           ]}
         >
           {isToday ? (
@@ -79,7 +80,7 @@ export const CalendarScreen = ({ onBack, cycleProfile, dailyLogs = [], onDeleteL
           <View style={[
              styles.selectionRing, 
              isSelected && { backgroundColor: THEME.sage },
-             isToday && !isSelected && { borderWidth: 2.5, borderColor: THEME.textSecondary }
+             isToday && !isSelected && { borderWidth: 2.5, borderColor: THEME.sage }
           ]}>
             <Text
               style={[
@@ -155,15 +156,15 @@ export const CalendarScreen = ({ onBack, cycleProfile, dailyLogs = [], onDeleteL
 
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: THEME.softPurple }]} />
+              <View style={[styles.legendDot, { backgroundColor: THEME.softPink }]} />
           <Text style={styles.legendLabel}>{t('calendar.menstruation').toUpperCase()}</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: THEME.sage }]} />
+              <View style={[styles.legendDot, { backgroundColor: THEME.softPurple }]} />
           <Text style={styles.legendLabel}>{t('calendar.ovulation').toUpperCase()}</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: THEME.textSecondary }]} />
+              <View style={[styles.legendDot, { backgroundColor: THEME.sage }]} />
           <Text style={styles.legendLabel}>{isSpanish ? 'HOY' : 'TODAY'}</Text>
         </View>
       </View>
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: THEME.textSecondary,
+    backgroundColor: THEME.sage,
     zIndex: 10,
   },
   todayBadgeText: {

@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Pressable, ImageBackground, Dimensions, Image } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ImageBackground } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-import { ChevronRight, Flower2 } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 
 const ONBOARDING_STEPS = [
   {
-    title: 'Sincroniza con tu ritmo',
-    subtitle: 'Bienvenida a una nueva forma de entender tu cuerpo y nutrición.',
-    image: { uri: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800' }
+    titleKey: 'onboarding.step1_title',
+    subtitleKey: 'onboarding.step1_subtitle',
+    image: require('../../assets/first.png'),
   },
   {
-    title: 'Nutrición Consciente',
-    subtitle: 'Recibe recomendaciones de alimentos específicos para cada fase de tu ciclo.',
-    image: { uri: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800' }
+    titleKey: 'onboarding.step2_title',
+    subtitleKey: 'onboarding.step2_subtitle',
+    image: require('../../assets/second.png'),
   },
   {
-    title: 'Tú eres la Curadora',
-    subtitle: 'Toma el control de tu bienestar con datos y sabiduría ancestral.',
-    image: { uri: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=800' }
-  }
+    titleKey: 'onboarding.step3_title',
+    subtitleKey: 'onboarding.step3_subtitle',
+    image: require('../../assets/third.png'),
+  },
 ];
 
 export const OnboardingScreen = ({ onFinish }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
 
   const handleNext = () => {
@@ -41,9 +43,11 @@ export const OnboardingScreen = ({ onFinish }) => {
         
         <View style={styles.content}>
           <View style={styles.textGroup}>
-            <Text style={styles.stepIndicator}>HISTORIA {step + 1} / {ONBOARDING_STEPS.length}</Text>
-            <Text style={styles.title}>{current.title}</Text>
-            <Text style={styles.subtitle}>{current.subtitle}</Text>
+            <Text style={styles.stepIndicator}>
+              {t('onboarding.story_indicator', { current: step + 1, total: ONBOARDING_STEPS.length })}
+            </Text>
+            <Text style={styles.title}>{t(current.titleKey)}</Text>
+            <Text style={styles.subtitle}>{t(current.subtitleKey)}</Text>
           </View>
 
           <View style={styles.footer}>
@@ -53,7 +57,9 @@ export const OnboardingScreen = ({ onFinish }) => {
               ))}
             </View>
             <Pressable style={styles.nextButton} onPress={handleNext}>
-              <Text style={styles.nextText}>{step === 2 ? 'COMENZAR' : 'SIGUIENTE'}</Text>
+              <Text style={styles.nextText}>
+                {step === ONBOARDING_STEPS.length - 1 ? t('onboarding.start') : t('onboarding.next')}
+              </Text>
               <ChevronRight size={20} color={colors.on_primary} />
             </Pressable>
           </View>

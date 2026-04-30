@@ -425,7 +425,6 @@
     "youtube_url": "URL de YouTube",
     "youtube_placeholder": "https://youtube.com/watch?v=...",
     "phase": "Fase",
-    "duration": "Duracion",
     "video_category": "Categoria del video",
     "my_phase": "Mi Fase",
     "recipe_title": "Titulo",
@@ -489,6 +488,17 @@
   "loading": {
     "sys_init": "Iniciando Sistema de Bienestar",
     "harmony_ia": "Armonizando tu ciclo hormonal con IA"
+  },
+  "onboarding": {
+    "story_indicator": "HISTORIA {{current}} / {{total}}",
+    "next": "SIGUIENTE",
+    "start": "COMENZAR",
+    "step1_title": "Sana desde la raíz",
+    "step1_subtitle": "Recupera el equilibrio de tus hormonas y despídete del acné y los periodos irregulares con el poder de la nutrición funcional.",
+    "step2_title": "Tu ciclo es tu guía",
+    "step2_subtitle": "Descubre exactamente qué comer en cada fase de tu ciclo para reducir la inflamación y optimizar tu energía natural.",
+    "step3_title": "Toma el control hoy",
+    "step3_subtitle": "Transforma tu cocina en tu farmacia natural con planes personalizados basados en ciencia y bienestar hormonal."
   },
   "wizard": {
     "step1_title": "Cuéntanos sobre tu ciclo",

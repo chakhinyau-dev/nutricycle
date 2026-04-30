@@ -208,15 +208,6 @@
     "ovulation": "Ovulation",
     "empty_state": "No health data recorded for this day yet.",
     "phase_menstrual_card": "Your body is resting.\nFocus on iron, hydration and calm.",
-    "weekdays": {
-      "sun": "Sun",
-      "mon": "Mon",
-      "tue": "Tue",
-      "wed": "Wed",
-      "thu": "Thu",
-      "fri": "Fri",
-      "sat": "Sat"
-    },
     "cycle_day": "CYCLE DAY",
     "cycle_day_val": "Day {{day}}",
     "next_period_label": "NEXT PERIOD",
@@ -443,7 +434,6 @@
     "placeholder_title": "Video Title",
     "placeholder_desc": "Description",
     "placeholder_url": "URL (YouTube or Hosted)",
-    "duration": "Duration",
     "video_source": "Video Source",
     "file_ready": "File Ready",
     "upload_file": "Upload File",
@@ -525,6 +515,17 @@
   "loading": {
     "sys_init": "Starting Wellness System",
     "harmony_ia": "Harmonizing your hormonal cycle with AI"
+  },
+  "onboarding": {
+    "story_indicator": "STORY {{current}} / {{total}}",
+    "next": "NEXT",
+    "start": "START",
+    "step1_title": "Heal from the root",
+    "step1_subtitle": "Restore your hormone balance and say goodbye to acne and irregular periods through the power of functional nutrition.",
+    "step2_title": "Your cycle is your guide",
+    "step2_subtitle": "Discover exactly what to eat in each phase of your cycle to reduce inflammation and optimize your natural energy.",
+    "step3_title": "Take control today",
+    "step3_subtitle": "Transform your kitchen into your natural pharmacy with personalized plans grounded in science and hormonal wellness."
   },
   "wizard": {
     "step1_title": "Tell us about your cycle",

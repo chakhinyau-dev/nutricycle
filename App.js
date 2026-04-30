@@ -44,7 +44,16 @@ import { ARTICLE_LIBRARY } from './src/utils/articleData';
 import { VIDEO_LIBRARY } from './src/utils/videoData';
 import { DEFAULT_CYCLE_PROFILE, getCycleInsights, normalizeCycleProfile } from './src/utils/cycle';
 import { env, getMissingRecommendedEnv, getMissingRequiredEnv } from './src/lib/env';
-import { getLocalProfile, getOnboardingComplete, setLocalProfile, setOnboardingComplete, getAIPrediction, setAIPrediction } from './src/services/appStorage';
+import {
+  getLocalProfile,
+  getOnboardingComplete,
+  setLocalProfile,
+  setOnboardingComplete,
+  getAIPrediction,
+  setAIPrediction,
+  getCycleWizardSeen,
+  setCycleWizardSeen,
+} from './src/services/appStorage';
 import { loadUserProfile, saveUserProfile } from './src/services/profileService';
 import { loadDailyLogs, deleteDailyLog } from './src/services/dailyLogService';
 import { getCyclePredictionAI } from './src/services/aiService';
@@ -191,12 +200,19 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
       setProfileLoading(true);
 
-      const localProfile = await getLocalProfile(user.id);
+      const [localProfile, hasSeenCycleWizard] = await Promise.all([
+        getLocalProfile(user.id),
+        getCycleWizardSeen(user.id),
+      ]);
       const normalizedLocalProfile = normalizeCycleProfile(localProfile || {});
 
       if (isMounted && localProfile) {
-        setWizardComplete(Boolean(localProfile.wizardComplete));
+        const localWizardComplete = Boolean(localProfile.wizardComplete);
+        setWizardComplete(localWizardComplete || hasSeenCycleWizard);
         setCycleProfile(normalizedLocalProfile);
+        if (localWizardComplete && !hasSeenCycleWizard) {
+          await setCycleWizardSeen(user.id, true);
+        }
       }
 
       const [profileResult, recipeResult, savedIdsResult, subResult] = await Promise.all([
@@ -221,7 +237,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
       if (profileResult?.current_phase) {
         const normalizedRemoteProfile = normalizeCycleProfile(profileResult);
         setCycleProfile(normalizedRemoteProfile);
-        setWizardComplete(true);
+        setWizardComplete(hasSeenCycleWizard);
 
         const logs = await loadDailyLogs(getToken, user.id);
         setDailyLogs(logs || []);
@@ -444,6 +460,9 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
   const handleFinishWizard = async (profileInput) => {
     await persistProfile(profileInput);
+    if (user?.id) {
+      await setCycleWizardSeen(user.id, true);
+    }
   };
 
   const handleProfileSave = async (profileInput) => {

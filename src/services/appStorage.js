@@ -5,6 +5,7 @@ const ONBOARDING_KEY = 'nutricycle_onboarding_complete';
 
 const profileKey = (userId) => `nutricycle_profile_${userId}`;
 const dailyLogsKey = (userId) => `nutricycle_daily_logs_${userId}`;
+const cycleWizardKey = (userId) => `nutricycle_cycle_wizard_seen_${userId}`;
 
 const isWeb = Platform.OS === 'web';
 
@@ -58,6 +59,23 @@ export const setLocalProfile = async (userId, profile) => {
   }
 
   await setItem(profileKey(userId), JSON.stringify(profile));
+};
+
+export const getCycleWizardSeen = async (userId) => {
+  if (!userId) {
+    return false;
+  }
+
+  const value = await getItem(cycleWizardKey(userId));
+  return value === 'true';
+};
+
+export const setCycleWizardSeen = async (userId, value) => {
+  if (!userId) {
+    return;
+  }
+
+  await setItem(cycleWizardKey(userId), value ? 'true' : 'false');
 };
 
 export const getLocalDailyLogs = async (userId) => {

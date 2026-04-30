@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import morningImg from '../../assets/greeting_morning.jpg';
-import afternoonImg from '../../assets/greeting_afternoon.jpg';
-import nightImg from '../../assets/greeting_night.jpg';
+import morningImg from '../../assets/greeting_morning.png';
+import afternoonImg from '../../assets/greeting_afternoon.png';
+import nightImg from '../../assets/greeting_night.png';
 import { colors } from '../theme/colors';
 
 
@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
   cycleInfoTextSecondary: {
     fontFamily: 'Outfit_500Medium',
     fontSize: 16,
-    color: colors.on_surface_variant,
-    opacity: 0.7,
+    color: colors.primary,
+    opacity: 1,
   },
   mainActionButton: {
     backgroundColor: colors.primary,
