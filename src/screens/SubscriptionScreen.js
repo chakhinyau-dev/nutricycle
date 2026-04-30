@@ -375,13 +375,19 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
               <ActivityIndicator color="#6366F1" />
             ) : (
               <>
-                <Text style={[
-                  styles.ctaText, 
-                  (isPremium && activePlan === selectedPlanType) && { color: '#64748B' }
-                ]}>
+                <Text 
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  style={[
+                    styles.ctaText, 
+                    (isPremium && activePlan === selectedPlanType) && { color: '#64748B' }
+                  ]}
+                >
                   {isPremium 
                     ? (activePlan === selectedPlanType ? t('subscription.active_plan') || 'Active Plan' : (selectedPlanType === 'yearly' ? t('subscription.upgrade_annual') || 'Upgrade to Annual' : t('subscription.switch_monthly') || 'Switch to Monthly'))
-                    : `${t('subscription.restore_activate') || 'Activate'} ${selectedPlanLabel.toUpperCase()}`}
+                    : selectedPlan === 'annual' 
+                        ? (t('subscription.pay_annual') || 'PAY ANNUAL').toUpperCase() 
+                        : (t('subscription.pay_monthly') || 'PAY MONTHLY').toUpperCase()}
                 </Text>
                 <Crown size={20} color={(isPremium && activePlan === selectedPlanType) ? '#94A3B8' : '#FFF'} />
               </>
@@ -628,8 +634,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_700Bold',
     fontSize: 13,
     color: '#FFF',
-    letterSpacing: 2,
+    letterSpacing: 1,
     marginRight: 12,
+    flexShrink: 1,
+    textAlign: 'center',
   },
   footerLegal: {
     fontFamily: 'Outfit_500Medium',

@@ -109,10 +109,7 @@
     "main_action": "Registrar cómo te sientes",
     "cycle_day": "Día {{day}} de tu ciclo",
     "next_period": "Próxima menstruación en {{days}} días",
-    "phase_menstrual_msg": "Tu cuerpo está descansando.\nHoy prioriza alimentos ricos en hierro y momentos de calma",
-    "phase_follicular_msg": "Tu energía está subiendo.\nEs un buen momento para nuevos proyectos y movimiento suave.",
-    "phase_ovulation_msg": "Estás en tu punto más alto.\nBrilla, conecta y disfruta de tu vitalidad natural",
-    "phase_luteal_msg": "El cuerpo pide bajar el ritmo.\nPrioriza el autocuidado y alimentos reconfortantes",
+
     "nutrition_by_phase": "Nutrición por fase",
     "in_phase": "Estás en la fase {{phase}}",
     "body_responds": "hoy tu cuerpo responde mejor a",
@@ -151,6 +148,10 @@
       "luteal": "Fase lútea"
     }
   },
+  "phase_menstrual_msg": "Tu cuerpo está descansando.\nHoy prioriza alimentos ricos en hierro y momentos de calma",
+  "phase_follicular_msg": "Tu energía está subiendo.\nEs un buen momento para nuevos proyectos y movimiento suave.",
+  "phase_ovulation_msg": "Estás en tu punto más alto.\nBrilla, conecta y disfruta de tu vitalidad natural",
+  "phase_luteal_msg": "El cuerpo pide bajar el ritmo.\nPrioriza el autocuidado y alimentos reconfortantes",
   "dailylog": {
     "title": "Registro de\nsíntomas",
     "mood_title": "Estado de Ánimo",
@@ -361,6 +362,8 @@
     "already_pro": "ERES PRO",
     "pay_with_stripe": "PAGAR CON STRIPE",
     "restore_activate": "RESTAURAR Y ACTIVAR",
+    "pay_monthly": "PAGAR MENSUAL",
+    "pay_annual": "PAGAR ANUAL",
     "active_plan": "TU PLAN ACTIVO",
     "switch_monthly": "CAMBIAR A MENSUAL",
     "switch_annual": "CAMBIAR A ANUAL",

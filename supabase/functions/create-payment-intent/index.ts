@@ -79,33 +79,38 @@ const resolvePrice = async (stripe: Stripe, planKey: PlanKey) => {
     if (price) {
       return price
     }
-  } catch (err) {
-    console.warn(`[Stripe Edge] Lookup failed for ${planKey}:`, err.message)
-  }
 
-  console.log(`[Stripe Edge] Using fallback/virtual price for ${planKey} as no price was found on Stripe Dashboard.`)
-  
-  // Return a synthetic price object that we can use with price_data
-  const isMonthly = planKey === 'monthly'
-  return {
-    id: isMonthly ? 'price_virtual_monthly' : 'price_virtual_annual',
-    unit_amount: isMonthly ? 999 : 7999, // $9.99 or $79.99
-    currency: 'usd',
-    recurring: {
-      interval: isMonthly ? 'month' : 'year',
-      interval_count: 1,
-    },
-    product: {
-      id: isMonthly ? 'prod_virtual_monthly' : 'prod_virtual_annual',
-      name: `Nutri Balance ${isMonthly ? 'Monthly' : 'Annual'}`,
-      description: `Full access to premium nutrition plans and cycle tracking (${isMonthly ? 'Monthly' : 'Annual'})`,
-    },
-    lookup_key: isMonthly ? 'balance_monthly' : 'balance_annual',
-    metadata: {
-      virtual: 'true',
-      planKey
+    console.log(`[Stripe Edge] Price with lookup_key '${lookupKey}' not found. Creating it automatically...`)
+    const isMonthly = planKey === 'monthly'
+    
+    // Check if a product already exists
+    const products = await stripe.products.list({ active: true, limit: 100 })
+    let product = products.data.find(p => p.name === `Nutri Balance ${isMonthly ? 'Monthly' : 'Annual'}`)
+    
+    if (!product) {
+      product = await stripe.products.create({
+        name: `Nutri Balance ${isMonthly ? 'Monthly' : 'Annual'}`,
+        description: `Full access to premium nutrition plans and cycle tracking (${isMonthly ? 'Monthly' : 'Annual'})`,
+      })
     }
-  } as unknown as Stripe.Price
+
+    const newPrice = await stripe.prices.create({
+      product: product.id,
+      unit_amount: isMonthly ? 999 : 7999, // $9.99 or $79.99
+      currency: 'usd',
+      recurring: {
+        interval: isMonthly ? 'month' : 'year',
+        interval_count: 1,
+      },
+      lookup_key: lookupKey,
+      transfer_lookup_key: true,
+    })
+
+    return await stripe.prices.retrieve(newPrice.id, { expand: ['product'] })
+  } catch (err) {
+    console.warn(`[Stripe Edge] Lookup/Creation failed for ${planKey}:`, err.message)
+    throw new Error(`Could not resolve or create Stripe price for plan: ${planKey}. Details: ${err.message}`)
+  }
 }
 
 const buildPricingResponse = async (stripe: Stripe) => {
@@ -205,20 +210,7 @@ serve(async (req) => {
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         line_items: [
-          price.id.startsWith('price_virtual_') ? {
-            price_data: {
-              currency: price.currency,
-              unit_amount: price.unit_amount!,
-              recurring: {
-                interval: price.recurring?.interval as 'month' | 'year' || 'month',
-              },
-              product_data: {
-                name: (price.product as any)?.name || 'Nutri Subscription',
-                description: (price.product as any)?.description || '',
-              }
-            },
-            quantity: 1,
-          } : {
+          {
             price: price.id,
             quantity: 1,
           },
@@ -276,19 +268,7 @@ serve(async (req) => {
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [
-        price.id.startsWith('price_virtual_') ? {
-          price_data: {
-            currency: price.currency,
-            unit_amount: price.unit_amount!,
-            recurring: {
-              interval: price.recurring?.interval as 'month' | 'year' || 'month',
-            },
-            product_data: {
-              name: (price.product as any)?.name || 'Nutri Subscription',
-              description: (price.product as any)?.description || '',
-            }
-          },
-        } : {
+        {
           price: price.id,
         }
       ],
