@@ -162,7 +162,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                   String(activeVideo?.videoUrl || activeVideo?.video_url || '').includes('youtu')) ? (
               <YoutubePlayer
                 key={activeVideo?.youtubeId || extractYouTubeId(activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl)}
-                height={width * 0.5625}
+                height={width * 1.3}
                 width={width}
                 play={true}
                 videoId={activeVideo?.youtubeId || extractYouTubeId(activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl)}
