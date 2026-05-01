@@ -15,10 +15,10 @@ const languageDetector = {
       if (savedLanguage) {
         return callback(savedLanguage);
       }
-      callback('en');
+      callback('es');
     } catch (error) {
       console.log('Error fetching language', error);
-      callback('en');
+      callback('es');
     }
   },
   init: () => {},
@@ -40,7 +40,7 @@ i18n
       en: { translation: en },
       es: { translation: es },
     },
-    fallbackLng: 'en',
+    fallbackLng: 'es',
     interpolation: {
       escapeValue: false,
     },

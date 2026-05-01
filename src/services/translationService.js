@@ -7,7 +7,7 @@ const translationCache = new Map();
 const pendingTranslations = new Map();
 
 const normalizeLanguage = (language) => {
-  const normalized = (language || 'en').toLowerCase();
+  const normalized = (language || 'es').toLowerCase();
   return normalized.startsWith('es') ? 'es' : 'en';
 };
 
