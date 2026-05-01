@@ -15,6 +15,42 @@ export const DEFAULT_CYCLE_PROFILE = {
   isPremium: false,
 };
 
+/** ISO yyyy-MM-dd → DD/MM/YYYY (day-first, used in Spanish UI) */
+export const formatLastPeriodForDisplay = (isoDateStr) => {
+  if (!isoDateStr || typeof isoDateStr !== 'string') {
+    return '';
+  }
+  if (!isoDateStr.includes('-')) {
+    return isoDateStr;
+  }
+  const parts = isoDateStr.split('-');
+  if (parts.length !== 3) {
+    return isoDateStr;
+  }
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
+};
+
+/** DD/MM/YYYY (or D/M/Y) → ISO yyyy-MM-dd for storage and cycle math */
+export const parseDisplayLastPeriodToISO = (displayStr) => {
+  if (!displayStr || typeof displayStr !== 'string') {
+    return '';
+  }
+  const trimmed = displayStr.trim();
+  if (!trimmed.includes('/')) {
+    return trimmed;
+  }
+  const segments = trimmed.split('/').map((s) => s.trim());
+  if (segments.length !== 3) {
+    return trimmed;
+  }
+  const [d, m, y] = segments;
+  if (!y || !m || !d) {
+    return trimmed;
+  }
+  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+};
+
 export const PHASE_LABELS = {
   menstrual: 'Menstrual',
   follicular: 'Folicular',

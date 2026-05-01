@@ -1,9 +1,25 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, Alert } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Pressable,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { ChevronLeft, User, Mail, Calendar, TimerReset, Droplets } from 'lucide-react-native';
-import { getCycleInsights, normalizeCycleProfile, PHASE_LABELS } from '../utils/cycle';
+import {
+  getCycleInsights,
+  normalizeCycleProfile,
+  PHASE_LABELS,
+  formatLastPeriodForDisplay,
+  parseDisplayLastPeriodToISO,
+} from '../utils/cycle';
 
 export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
   const { t } = useTranslation();
@@ -12,9 +28,16 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
   const [email, setEmail] = useState(
     user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || ''
   );
-  const [lastPeriodStart, setLastPeriodStart] = useState(defaults.lastPeriodStart);
+  const [displayLastPeriod, setDisplayLastPeriod] = useState(
+    formatLastPeriodForDisplay(defaults.lastPeriodStart)
+  );
   const [cycleLength, setCycleLength] = useState(String(defaults.cycleLength));
   const [periodLength, setPeriodLength] = useState(String(defaults.periodLength));
+
+  const lastPeriodStart = useMemo(
+    () => parseDisplayLastPeriodToISO(displayLastPeriod),
+    [displayLastPeriod]
+  );
 
   const preview = useMemo(
     () => getCycleInsights({ lastPeriodStart, cycleLength, periodLength }),
@@ -64,7 +87,15 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         <View style={styles.heroCard}>
           <Text style={styles.heroLabel}>{t('edit_profile.current_summary')}</Text>
           <Text style={styles.heroTitle}>{PHASE_LABELS[preview.currentPhaseKey]}</Text>
@@ -103,11 +134,12 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
               <Calendar size={20} color={colors.on_surface_variant} />
               <TextInput
                 style={styles.input}
-                value={lastPeriodStart}
-                onChangeText={setLastPeriodStart}
-                placeholder="2026-04-01"
+                value={displayLastPeriod}
+                onChangeText={setDisplayLastPeriod}
+                placeholder={t('edit_profile.last_period_placeholder')}
                 placeholderTextColor={colors.placeholder}
                 autoCapitalize="none"
+                keyboardType="numbers-and-punctuation"
               />
             </View>
           </View>
@@ -147,6 +179,7 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -155,6 +188,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

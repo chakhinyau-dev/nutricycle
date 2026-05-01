@@ -1,3 +1,7 @@
+import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
+
 import { createClerkSupabaseClient } from '../lib/supabase';
 
 const FALLBACK_RECIPE_IMAGE =
@@ -160,37 +164,77 @@ export const uploadRecipeImage = async (getToken, fileInput, fileName) => {
 
   try {
     const fileUri = typeof fileInput === 'string' ? fileInput : fileInput?.uri;
-    const base64 = typeof fileInput === 'object' ? fileInput?.base64 : null;
-    const mimeType = typeof fileInput === 'object' ? fileInput?.mimeType || 'image/jpeg' : 'image/jpeg';
+    const pickerBase64 = typeof fileInput === 'object' ? fileInput?.base64 : null;
+    const mimeType =
+      typeof fileInput === 'object' && fileInput?.mimeType
+        ? fileInput.mimeType
+        : 'image/jpeg';
 
-    let blob = null;
-    let lastError = null;
+    /**
+     * React Native often cannot `fetch(file://…)` / `fetch(content://…)` for a Blob.
+     * Prefer ImagePicker base64, then expo-file-system, then fetch (web / last resort).
+     */
+    let uploadBody = null;
 
-    if (fileUri) {
+    const base64ToArrayBuffer = (raw) => {
+      const trimmed = String(raw || '').trim();
+      if (!trimmed) return null;
+      const dataPart = trimmed.includes(',') ? trimmed.split(',')[1] : trimmed;
       try {
-        const response = await fetch(fileUri);
-        blob = await response.blob();
-      } catch (error) {
-        lastError = error;
+        return decode(dataPart);
+      } catch (e) {
+        console.warn('[RecipeImage] base64 decode failed:', e?.message);
+        return null;
+      }
+    };
+
+    if (pickerBase64) {
+      uploadBody = base64ToArrayBuffer(pickerBase64);
+    }
+
+    if (!uploadBody && fileUri && Platform.OS !== 'web') {
+      try {
+        const diskB64 = await FileSystem.readAsStringAsync(fileUri, {
+          encoding: 'base64',
+        });
+        uploadBody = base64ToArrayBuffer(diskB64);
+      } catch (e) {
+        console.warn('[RecipeImage] FileSystem.readAsStringAsync failed:', e?.message);
       }
     }
 
-    if (!blob && base64) {
-      const dataUrl = base64.startsWith('data:')
-        ? base64
-        : `data:${mimeType};base64,${base64}`;
-      const response = await fetch(dataUrl);
-      blob = await response.blob();
+    if (!uploadBody && fileUri) {
+      try {
+        const response = await fetch(fileUri);
+        uploadBody = await response.blob();
+      } catch (e) {
+        console.warn('[RecipeImage] fetch(uri) failed:', e?.message);
+      }
     }
 
-    if (!blob) {
-      throw lastError || new Error('Unable to read the selected image.');
+    if (!uploadBody && pickerBase64) {
+      const dataUrl = pickerBase64.startsWith('data:')
+        ? pickerBase64
+        : `data:${mimeType};base64,${pickerBase64}`;
+      try {
+        const response = await fetch(dataUrl);
+        uploadBody = await response.blob();
+      } catch (e) {
+        console.warn('[RecipeImage] fetch(dataUrl) failed:', e?.message);
+      }
     }
 
-    const fileExt = fileName.split('.').pop();
+    if (!uploadBody) {
+      throw new Error('Unable to read the selected image.');
+    }
+
+    const fileExt = (fileName && fileName.includes('.') && fileName.split('.').pop()) || 'jpg';
     const path = `recipes/${Date.now()}.${fileExt}`;
 
-    const { data, error } = await supabase.storage.from('recipe-images').upload(path, blob);
+    const { data, error } = await supabase.storage.from('recipe-images').upload(path, uploadBody, {
+      contentType: mimeType,
+      upsert: false,
+    });
     if (error) {
       console.error('[Supabase] Recipe Image Upload Error:', error.message);
       throw error;

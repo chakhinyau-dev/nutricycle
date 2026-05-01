@@ -20,7 +20,9 @@ import { translateContent } from '../services/translationService';
 
 const { width } = Dimensions.get('window');
 /** Player area: width : height = 1 : 1.2 */
-const VIDEO_AREA_HEIGHT = width * 1.3;
+const VIDEO_AREA_HEIGHT = width * 1.2;
+/** Space below scroll content so tab bar / home indicator doesn’t cover title/description */
+const PLAYER_SCROLL_BOTTOM_PADDING = 140;
 
 const getFilters = (t) => [
   { id: 'all', label: t('common.all') },
@@ -135,39 +137,63 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
 
     return (
       <View style={styles.playerContainer}>
-        <View style={styles.playerHeader}>
-          <Pressable
-            onPress={() => {
-              setSelectedVideo(null);
-              setIsPlayerReady(false);
-            }}
-            style={styles.backCircle}
-          >
-            <ChevronLeft size={24} color={colors.on_surface} />
-          </Pressable>
-          <Text style={styles.playerNavTitle} numberOfLines={1}>
-            {activeVideo?.title || selectedVideo.title}
-          </Text>
-        </View>
-        <View style={styles.playerWrapper}>
+        <ScrollView
+          style={styles.playerScroll}
+          contentContainerStyle={[
+            styles.playerScrollContent,
+            { paddingBottom: PLAYER_SCROLL_BOTTOM_PADDING },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+        >
+          <View style={styles.playerHeader}>
+            <Pressable
+              onPress={() => {
+                setSelectedVideo(null);
+                setIsPlayerReady(false);
+              }}
+              style={styles.backCircle}
+            >
+              <ChevronLeft size={24} color={colors.on_surface} />
+            </Pressable>
+            <Text style={styles.playerNavTitle} numberOfLines={2}>
+              {activeVideo?.title || selectedVideo.title}
+            </Text>
+          </View>
+
           <View style={styles.videoArea}>
             {isAudioOnly ? (
               <View style={styles.audioView}>
-                <Image 
-                  source={{ uri: activeVideo?.thumbnail || 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800' }} 
+                <Image
+                  source={{
+                    uri:
+                      activeVideo?.thumbnail ||
+                      'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800',
+                  }}
                   style={styles.audioThumb}
                   resizeMode="cover"
                 />
                 <Text style={styles.audioSessionText}>{t('videos.audio_session')}</Text>
               </View>
-            ) : (activeVideo?.isYoutube || 
-                  String(activeVideo?.videoUrl || activeVideo?.video_url || '').includes('youtu')) ? (
+            ) : activeVideo?.isYoutube ||
+              String(activeVideo?.videoUrl || activeVideo?.video_url || '').includes('youtu') ? (
               <YoutubePlayer
-                key={activeVideo?.youtubeId || extractYouTubeId(activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl)}
+                key={
+                  activeVideo?.youtubeId ||
+                  extractYouTubeId(
+                    activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl
+                  )
+                }
                 height={VIDEO_AREA_HEIGHT}
                 width={width}
                 play={true}
-                videoId={activeVideo?.youtubeId || extractYouTubeId(activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl)}
+                videoId={
+                  activeVideo?.youtubeId ||
+                  extractYouTubeId(
+                    activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl
+                  )
+                }
                 onReady={() => setIsPlayerReady(true)}
               />
             ) : (
@@ -178,14 +204,14 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
               />
             )}
           </View>
-          
-          <ScrollView style={styles.detailsArea}>
+
+          <View style={styles.detailsSection}>
             <View style={styles.tagRow}>
               <View style={styles.phaseTag}>
                 <Text style={styles.tagText}>
-                  {t('videos.category_prefix', { 
+                  {t('videos.category_prefix', {
                     phase: t(`phases.${activeVideo?.phaseKey || 'all'}`),
-                    meal: getMealLabel(activeVideo?.mealType || 'snack')
+                    meal: getMealLabel(activeVideo?.mealType || 'snack'),
                   })}
                 </Text>
               </View>
@@ -193,8 +219,8 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
             </View>
             <Text style={styles.detailTitle}>{activeVideo?.title}</Text>
             <Text style={styles.detailDesc}>{activeVideo?.description}</Text>
-          </ScrollView>
-        </View>
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -319,12 +345,21 @@ const styles = StyleSheet.create({
   videoCategory: { fontSize: 10, fontFamily: 'Outfit_700Bold', color: '#A3B3A5', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   videoTitle: { fontSize: 14, fontFamily: 'Outfit_600SemiBold', color: colors.on_surface, lineHeight: 20 },
   playerContainer: { flex: 1, backgroundColor: '#FAF9F6' },
-  playerHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 28, paddingTop: 60, paddingBottom: 20 },
+  playerScroll: { flex: 1 },
+  playerScrollContent: {
+    flexGrow: 1,
+  },
+  playerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
   backCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginRight: 16, borderWidth: 1, borderColor: '#F1F1E8' },
   playerNavTitle: { flex: 1, fontSize: 16, fontFamily: 'InstrumentSerif_400Regular', color: colors.on_surface },
-  playerWrapper: { flex: 1 },
   videoArea: { width: '100%', height: VIDEO_AREA_HEIGHT, backgroundColor: '#000' },
-  detailsArea: { flex: 1, padding: 28 },
+  detailsSection: { paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 },
   tagRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   phaseTag: { backgroundColor: '#A3B3A520', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 12 },
   tagText: { color: '#A3B3A5', fontSize: 11, fontFamily: 'Outfit_700Bold', textTransform: 'uppercase' },

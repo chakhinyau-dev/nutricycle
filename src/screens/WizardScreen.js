@@ -1,12 +1,25 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, Pressable, Dimensions, TextInput } from 'react-native';
-import { ChevronRight, Calendar, Droplets, MoonStar, HeartPulse } from 'lucide-react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
+import { ChevronRight, Calendar, Droplets, MoonStar } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '../theme/colors';
-import { getCycleInsights, normalizeCycleProfile, PHASE_LABELS } from '../utils/cycle';
-
-const { width } = Dimensions.get('window');
+import {
+  getCycleInsights,
+  normalizeCycleProfile,
+  formatLastPeriodForDisplay,
+  parseDisplayLastPeriodToISO,
+} from '../utils/cycle';
 
 const getWizardSteps = (t) => [
   {
@@ -28,28 +41,16 @@ const getWizardSteps = (t) => [
 
 export const WizardScreen = ({ onFinish, cycleProfile }) => {
   const { t } = useTranslation();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const WIZARD_STEPS = useMemo(() => getWizardSteps(t), [t]);
   const defaults = normalizeCycleProfile(cycleProfile);
-  const formatDateToDisplay = (dateStr) => {
-    if (!dateStr || !dateStr.includes('-')) return dateStr;
-    const [y, m, d] = dateStr.split('-');
-    return `${d}/${m}/${y}`;
-  };
-
-  const formatDateToStore = (displayStr) => {
-    if (!displayStr || !displayStr.includes('/')) return displayStr;
-    const parts = displayStr.split('/');
-    if (parts.length !== 3) return displayStr;
-    const [d, m, y] = parts;
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-  };
 
   const [step, setStep] = useState(0);
-  const [displayDate, setDisplayDate] = useState(formatDateToDisplay(defaults.lastPeriodStart));
+  const [displayDate, setDisplayDate] = useState(formatLastPeriodForDisplay(defaults.lastPeriodStart));
   const [cycleLength, setCycleLength] = useState(String(defaults.cycleLength));
   const [periodLength, setPeriodLength] = useState(String(defaults.periodLength));
 
-  const lastPeriodStart = useMemo(() => formatDateToStore(displayDate), [displayDate]);
+  const lastPeriodStart = useMemo(() => parseDisplayLastPeriodToISO(displayDate), [displayDate]);
 
   const preview = useMemo(
     () =>
@@ -78,113 +79,144 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
   const current = WIZARD_STEPS[step];
   const Icon = current.icon;
 
+  const progressSegmentWidth =
+    WIZARD_STEPS.length > 0 ? (windowWidth - 64) / WIZARD_STEPS.length - 8 : 0;
+
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.progressHeader}>
-          {WIZARD_STEPS.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.progressBar,
-                { width: (width - 64) / WIZARD_STEPS.length - 8 },
-                step >= index && { backgroundColor: colors.primary },
-              ]}
-            />
-          ))}
-        </View>
-
-        <View style={styles.main}>
-          <View style={styles.iconCircle}>
-            <Icon size={40} color={colors.primary} />
-          </View>
-
-          <Text style={styles.title}>{current.title}</Text>
-          <Text style={styles.subtitle}>{current.subtitle}</Text>
-
-          {step === 0 && (
-            <View style={styles.formCard}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t('wizard.last_period_label')}</Text>
-                <TextInput
-                  value={displayDate}
-                  onChangeText={setDisplayDate}
-                  style={styles.input}
-                  placeholder="24/04/2026"
-                  placeholderTextColor={colors.placeholder}
-                  autoCapitalize="none"
-                  keyboardType="number-pad"
-                />
-              </View>
-            </View>
-          )}
-
-          {step === 1 && (
-            <View style={styles.formCard}>
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, styles.halfInput]}>
-                  <Text style={styles.label}>{t('wizard.cycle_length_label')}</Text>
-                  <TextInput
-                    value={cycleLength}
-                    onChangeText={setCycleLength}
-                    style={styles.input}
-                    keyboardType="number-pad"
-                    placeholder="28"
-                    placeholderTextColor={colors.placeholder}
+    <View style={styles.outer}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 48 : 0}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { minHeight: Math.max(windowHeight - 48, 520) },
+          ]}
+        >
+          <View style={styles.scrollInner}>
+            <View>
+              <View style={styles.progressHeader}>
+                {WIZARD_STEPS.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.progressBar,
+                      { width: progressSegmentWidth },
+                      step >= index && { backgroundColor: colors.primary },
+                    ]}
                   />
+                ))}
+              </View>
+
+              <View style={styles.main}>
+                <View style={styles.iconCircle}>
+                  <Icon size={40} color={colors.primary} />
                 </View>
 
-                <View style={[styles.inputGroup, styles.halfInput]}>
-                  <Text style={styles.label}>{t('wizard.period_days_label')}</Text>
-                  <TextInput
-                    value={periodLength}
-                    onChangeText={setPeriodLength}
-                    style={styles.input}
-                    keyboardType="number-pad"
-                    placeholder="5"
-                    placeholderTextColor={colors.placeholder}
-                  />
-                </View>
+                <Text style={styles.title}>{current.title}</Text>
+                <Text style={styles.subtitle}>{current.subtitle}</Text>
+
+                {step === 0 && (
+                  <View style={styles.formCard}>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>{t('wizard.last_period_label')}</Text>
+                      <TextInput
+                        value={displayDate}
+                        onChangeText={setDisplayDate}
+                        style={styles.input}
+                        placeholder="24/04/2026"
+                        placeholderTextColor={colors.placeholder}
+                        autoCapitalize="none"
+                        keyboardType="numbers-and-punctuation"
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {step === 1 && (
+                  <View style={styles.formCard}>
+                    <View style={styles.row}>
+                      <View style={[styles.inputGroup, styles.halfInput]}>
+                        <Text style={styles.label}>{t('wizard.cycle_length_label')}</Text>
+                        <TextInput
+                          value={cycleLength}
+                          onChangeText={setCycleLength}
+                          style={styles.input}
+                          keyboardType="number-pad"
+                          placeholder="28"
+                          placeholderTextColor={colors.placeholder}
+                        />
+                      </View>
+
+                      <View style={[styles.inputGroup, styles.halfInput]}>
+                        <Text style={styles.label}>{t('wizard.period_days_label')}</Text>
+                        <TextInput
+                          value={periodLength}
+                          onChangeText={setPeriodLength}
+                          style={styles.input}
+                          keyboardType="number-pad"
+                          placeholder="5"
+                          placeholderTextColor={colors.placeholder}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                {step === 2 && (
+                  <View style={styles.previewCard}>
+                    <View style={styles.previewBadge}>
+                      <MoonStar size={16} color={colors.secondary} />
+                      <Text style={styles.previewBadgeText}>{t('wizard.current_phase_label')}</Text>
+                    </View>
+                    <Text style={styles.previewPhase}>{t(`phases.${preview.currentPhaseKey}`)}</Text>
+                    <Text style={styles.previewText}>
+                      {t('wizard.cycle_day_preview', { day: preview.cycleDay })}
+                    </Text>
+                    <Text style={styles.previewSubtext}>
+                      {t('wizard.next_period_preview', {
+                        days: preview.daysUntilNextPeriod,
+                        label: preview.fertileWindowLabel,
+                      })}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
-          )}
 
-          {step === 2 && (
-            <View style={styles.previewCard}>
-              <View style={styles.previewBadge}>
-                <MoonStar size={16} color={colors.secondary} />
-                <Text style={styles.previewBadgeText}>{t('wizard.current_phase_label')}</Text>
-              </View>
-              <Text style={styles.previewPhase}>{t(`phases.${preview.currentPhaseKey}`)}</Text>
-              <Text style={styles.previewText}>{t('wizard.cycle_day_preview', { day: preview.cycleDay })}</Text>
-              <Text style={styles.previewSubtext}>
-                {t('wizard.next_period_preview', { days: preview.daysUntilNextPeriod, label: preview.fertileWindowLabel })}
+            <Pressable style={styles.button} onPress={handleNext}>
+              <Text style={styles.buttonText}>
+                {step === WIZARD_STEPS.length - 1 ? t('wizard.btn_finish') : t('wizard.btn_continue')}
               </Text>
-            </View>
-          )}
-        </View>
-
-        <Pressable style={styles.button} onPress={handleNext}>
-          <Text style={styles.buttonText}>
-            {step === WIZARD_STEPS.length - 1 ? t('wizard.btn_finish') : t('wizard.btn_continue')}
-          </Text>
-          <ChevronRight size={20} color={colors.on_primary} />
-        </Pressable>
-      </View>
+              <ChevronRight size={20} color={colors.on_primary} />
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  outer: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 32,
     paddingTop: 80,
-    paddingBottom: 60,
+    paddingBottom: 24,
   },
-  content: {
-    flex: 1,
+  scrollInner: {
+    flexGrow: 1,
     justifyContent: 'space-between',
   },
   progressHeader: {
