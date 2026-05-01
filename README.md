@@ -3,7 +3,7 @@
 A personalized wellness and menstrual cycle tracking application built with React Native and Expo. 
 
 > [!NOTE]
-> This build includes the latest backend configuration for Clerk and Supabase.
+> This build includes the latest backend configuration for Clerk, Supabase, and Stripe integration (Updated 2026-05-01).
 
 ## Features
 - **Cycle Tracking**: Visualize and track menstrual cycle phases.
