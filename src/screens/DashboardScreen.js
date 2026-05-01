@@ -76,7 +76,7 @@ export const DashboardScreen = ({
 
       {/* 2. Main Emotional Card */}
       <View style={styles.mainCard}>
-        <Image source={getTimeBasedImage()} style={styles.mainCardImage} resizeMode="contain" />
+        <Image source={getTimeBasedImage()} style={styles.mainCardImage} resizeMode="cover" />
         <View style={styles.mainCardOverlay}>
           <Text style={styles.mainCardPhase}>{currentContent.title}</Text>
           <Text style={styles.mainCardMessage}>{currentContent.msg}</Text>

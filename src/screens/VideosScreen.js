@@ -19,6 +19,8 @@ import { PHASE_LABELS } from '../utils/cycle';
 import { translateContent } from '../services/translationService';
 
 const { width } = Dimensions.get('window');
+/** Player area: width : height = 1 : 1.2 */
+const VIDEO_AREA_HEIGHT = width * 1.3;
 
 const getFilters = (t) => [
   { id: 'all', label: t('common.all') },
@@ -162,7 +164,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                   String(activeVideo?.videoUrl || activeVideo?.video_url || '').includes('youtu')) ? (
               <YoutubePlayer
                 key={activeVideo?.youtubeId || extractYouTubeId(activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl)}
-                height={width * 1.3}
+                height={VIDEO_AREA_HEIGHT}
                 width={width}
                 play={true}
                 videoId={activeVideo?.youtubeId || extractYouTubeId(activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl)}
@@ -321,7 +323,7 @@ const styles = StyleSheet.create({
   backCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginRight: 16, borderWidth: 1, borderColor: '#F1F1E8' },
   playerNavTitle: { flex: 1, fontSize: 16, fontFamily: 'InstrumentSerif_400Regular', color: colors.on_surface },
   playerWrapper: { flex: 1 },
-  videoArea: { width: '100%', height: width * 0.5625, backgroundColor: '#000' },
+  videoArea: { width: '100%', height: VIDEO_AREA_HEIGHT, backgroundColor: '#000' },
   detailsArea: { flex: 1, padding: 28 },
   tagRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   phaseTag: { backgroundColor: '#A3B3A520', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 12 },
