@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
@@ -87,6 +88,16 @@ jobs:
           APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           echo "Found APK at $APK_PATH"
           echo "path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Delete old artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARTIFACTS=$(gh api repos/${{ github.repository }}/actions/artifacts --paginate -q '.artifacts[].id')
+          for id in $ARTIFACTS; do
+            echo "Deleting artifact $id"
+            gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id || true
+          done
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

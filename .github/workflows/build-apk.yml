@@ -4,6 +4,10 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -51,6 +55,16 @@ jobs:
           EXPO_PUBLIC_STRIPE_MONTHLY_PRICE_LOOKUP_KEY: ${{ secrets.EXPO_PUBLIC_STRIPE_MONTHLY_PRICE_LOOKUP_KEY }}
           EXPO_PUBLIC_STRIPE_ANNUAL_PRICE_LOOKUP_KEY: ${{ secrets.EXPO_PUBLIC_STRIPE_ANNUAL_PRICE_LOOKUP_KEY }}
           EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.EXPO_PUBLIC_GEMINI_API_KEY }}
+
+      - name: 🗑️ Delete old artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARTIFACTS=$(gh api repos/${{ github.repository }}/actions/artifacts --paginate -q '.artifacts[].id')
+          for id in $ARTIFACTS; do
+            echo "Deleting artifact $id"
+            gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id || true
+          done
 
       - name: 📤 Upload Artifact
         uses: actions/upload-artifact@v4
