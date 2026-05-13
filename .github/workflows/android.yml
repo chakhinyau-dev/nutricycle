@@ -1,0 +1,60 @@
+name: Build Android APK
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Create .env file
+        run: |
+          echo "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_c3VpdGVkLWJlZGJ1Zy01OC5jbGVyay5hY2NvdW50cy5kZXYk" >> .env
+          echo "EXPO_PUBLIC_SUPABASE_URL=https://oeylybzkyujzcbkmvenj.supabase.co" >> .env
+          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9leWx5YnpreXVqemNia212ZW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4ODE5OTIsImV4cCI6MjA5MzQ1Nzk5Mn0.HQa6fvmEC2s3WdgCZME8U9U-SppLUDS60b7JfnXLjiE" >> .env
+          echo "EXPO_PUBLIC_CLERK_SUPABASE_JWT_TEMPLATE=supabase" >> .env
+          echo "EXPO_PUBLIC_APP_SCHEME=nutricycle" >> .env
+          echo "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51TNvmNFJsb6B90ZWGqKbtFGe2Dwua1C2SLjN74zllnHjS5qpkVpFxTDXpVWvmu7VtMu63GdTj70TfW8wvmrbnaKI00Vs8wZ5NT" >> .env
+          echo "EXPO_PUBLIC_STRIPE_MONTHLY_PRICE_LOOKUP_KEY=balance_monthly" >> .env
+          echo "EXPO_PUBLIC_STRIPE_ANNUAL_PRICE_LOOKUP_KEY=balance_annual" >> .env
+          echo "EXPO_NO_DEPENDENCY_VALIDATION=1" >> .env
+
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+        env:
+          # Inject secrets into the build process if needed directly
+          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NutriCycle-Release-APK
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 1
