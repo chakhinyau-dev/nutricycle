@@ -234,8 +234,16 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
       setVideos(videosResult || VIDEO_LIBRARY);
       setSubscription(subResult);
 
-      if (profileResult?.current_phase) {
-        const normalizedRemoteProfile = normalizeCycleProfile(profileResult);
+      // If subscription is expired, override is_premium to false so access is revoked
+      const effectiveIsPremium =
+        profileResult?.is_premium &&
+        (subResult === null || subResult?.is_active !== false);
+      const adjustedProfile = profileResult
+        ? { ...profileResult, is_premium: effectiveIsPremium }
+        : profileResult;
+
+      if (adjustedProfile?.current_phase) {
+        const normalizedRemoteProfile = normalizeCycleProfile(adjustedProfile);
         setCycleProfile(normalizedRemoteProfile);
         setWizardComplete(hasSeenCycleWizard);
 
@@ -513,6 +521,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
     [recipes, savedRecipeIds]
   );
 
+  const canAccessPremium = isAdmin || (
+    cycleProfile.isPremium &&
+    (subscription === null || subscription?.is_active !== false)
+  );
+
   const renderMainContent = () => {
     if (screenStack.length > 0) {
       const topScreen = screenStack[screenStack.length - 1];
@@ -554,7 +567,9 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
             />
           );
         case 'videos':
-          return <VideosScreen onBack={goBack} currentPhaseKey={cycleInfo.currentPhaseKey} videos={videos} />;
+          return canAccessPremium
+            ? <VideosScreen onBack={goBack} currentPhaseKey={cycleInfo.currentPhaseKey} videos={videos} />
+            : <SubscriptionScreen onBack={goBack} onUpgrade={handleUpgrade} isPremium={false} user={user} onStripePublishableKeyChange={onStripePublishableKeyChange} />;
         case 'admin':
           return (
             <AdminScreen 
@@ -595,9 +610,13 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
       case 'calendar':
         return <CalendarScreen onBack={() => setActiveTab('home')} cycleProfile={cycleProfile} dailyLogs={dailyLogs} onDeleteLog={handleDeleteLog} />;
       case 'recipes':
-        return <RecipesScreen onBack={() => setActiveTab('home')} onNavigate={navigateTo} {...sharedScreenProps} />;
+        return canAccessPremium
+          ? <RecipesScreen onBack={() => setActiveTab('home')} onNavigate={navigateTo} {...sharedScreenProps} />
+          : <SubscriptionScreen onBack={() => setActiveTab('home')} onUpgrade={handleUpgrade} isPremium={false} user={user} onStripePublishableKeyChange={onStripePublishableKeyChange} />;
       case 'videos':
-        return <VideosScreen onBack={() => setActiveTab('home')} currentPhaseKey={cycleInfo.currentPhaseKey} videos={videos} />;
+        return canAccessPremium
+          ? <VideosScreen onBack={() => setActiveTab('home')} currentPhaseKey={cycleInfo.currentPhaseKey} videos={videos} />
+          : <SubscriptionScreen onBack={() => setActiveTab('home')} onUpgrade={handleUpgrade} isPremium={false} user={user} onStripePublishableKeyChange={onStripePublishableKeyChange} />;
       case 'profile':
         return <SettingsScreen onBack={() => setActiveTab('home')} onNavigate={navigateTo} onLogout={handleLogout} {...sharedScreenProps} />;
       default:

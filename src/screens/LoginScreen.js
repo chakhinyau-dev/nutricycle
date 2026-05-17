@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -51,6 +51,21 @@ export const LoginScreen = () => {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const scrollViewRef = useRef(null);
+  const nameFieldRef = useRef(null);
+  const emailFieldRef = useRef(null);
+  const passwordFieldRef = useRef(null);
+  const codeFieldRef = useRef(null);
+
+  const scrollToField = (fieldRef) => {
+    if (!fieldRef?.current || !scrollViewRef?.current) return;
+    fieldRef.current.measureLayout(
+      scrollViewRef.current,
+      (_x, y) => scrollViewRef.current.scrollTo({ y: Math.max(0, y - 120), animated: true }),
+      () => {}
+    );
+  };
 
   const { signIn, setActive: setSignInActive, isLoaded: signInLoaded } = useSignIn();
   const { signUp, setActive: setSignUpActive, isLoaded: signUpLoaded } = useSignUp();
@@ -193,17 +208,22 @@ export const LoginScreen = () => {
       : t('auth.sign_up_btn');
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       <StatusBar barStyle="dark-content" />
 
       <View style={styles.bgDecorLarge} />
       <View style={styles.bgDecorSmall} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
           <View style={styles.titleContainer}>
             <Text style={styles.title}>
               {isLogin ? t('auth.welcome') : needsVerification ? t('auth.verify_email') : t('auth.create_account')}
@@ -219,7 +239,7 @@ export const LoginScreen = () => {
 
           <View style={styles.formCard}>
             {!isLogin && !needsVerification && (
-              <View style={styles.inputField}>
+              <View ref={nameFieldRef} style={styles.inputField}>
                 <View style={styles.inputIconGroup}>
                    <User size={18} color={colors.primary} />
                    <Text style={styles.inputPlaceholder}>{t('auth.full_name')}</Text>
@@ -230,13 +250,14 @@ export const LoginScreen = () => {
                   onChangeText={setName}
                   placeholder="Elena Rodriguez"
                   placeholderTextColor={colors.placeholder}
+                  onFocus={() => scrollToField(nameFieldRef)}
                 />
                 <View style={styles.inputBorder} />
               </View>
             )}
 
             {!needsVerification && (
-              <View style={[styles.inputField, !isLogin && { marginTop: 32 }]}>
+              <View ref={emailFieldRef} style={[styles.inputField, !isLogin && { marginTop: 32 }]}>
                 <View style={styles.inputIconGroup}>
                   <Mail size={18} color={colors.primary} />
                   <Text style={styles.inputPlaceholder}>{t('auth.email')}</Text>
@@ -249,13 +270,14 @@ export const LoginScreen = () => {
                   placeholderTextColor={colors.placeholder}
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  onFocus={() => scrollToField(emailFieldRef)}
                 />
                 <View style={styles.inputBorder} />
               </View>
             )}
 
             {!needsVerification ? (
-              <View style={styles.inputField}>
+              <View ref={passwordFieldRef} style={styles.inputField}>
                 <View style={styles.inputIconGroup}>
                   <Lock size={18} color={colors.primary} />
                   <Text style={styles.inputPlaceholder}>{t('auth.password')}</Text>
@@ -268,6 +290,7 @@ export const LoginScreen = () => {
                     placeholder="********"
                     placeholderTextColor={colors.placeholder}
                     secureTextEntry={!showPass}
+                    onFocus={() => scrollToField(passwordFieldRef)}
                   />
                   <Pressable onPress={() => setShowPass((current) => !current)}>
                     {showPass ? (
@@ -280,7 +303,7 @@ export const LoginScreen = () => {
                 <View style={styles.inputBorder} />
               </View>
             ) : (
-              <View style={styles.inputField}>
+              <View ref={codeFieldRef} style={styles.inputField}>
                 <View style={styles.inputIconGroup}>
                   <Lock size={18} color={colors.primary} />
                   <Text style={styles.inputPlaceholder}>{t('auth.verification_code')}</Text>
@@ -294,6 +317,7 @@ export const LoginScreen = () => {
                     placeholderTextColor={colors.placeholder}
                     keyboardType="number-pad"
                     autoFocus={true}
+                    onFocus={() => scrollToField(codeFieldRef)}
                   />
                 </View>
                 <View style={styles.inputBorder} />
@@ -354,9 +378,8 @@ export const LoginScreen = () => {
               <Text style={styles.footerLink}>{isLogin ? t('auth.switch_signup') : t('auth.switch_signin')}</Text>
             </Pressable>
           </View>
-        </KeyboardAvoidingView>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
