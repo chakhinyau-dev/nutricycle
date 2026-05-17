@@ -18,8 +18,10 @@ import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
 import { PHASE_LABELS } from '../utils/cycle';
 import { translateContent } from '../services/translationService';
 
-const { width } = Dimensions.get('window');
-/** Player area: width : height = 1 : 1.2 */
+const { width } = Dimensions.get(‘window’);
+/** Standard 16:9 for YouTube videos */
+const YOUTUBE_HEIGHT = Math.round(width * (9 / 16));
+/** Taller area for direct/uploaded video files */
 const VIDEO_AREA_HEIGHT = width * 1.2;
 /** Space below scroll content so tab bar / home indicator doesn’t cover title/description */
 const PLAYER_SCROLL_BOTTOM_PADDING = 140;
@@ -135,6 +137,12 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
       activeVideo?.category?.toLowerCase().includes('meditación') ||
       activeVideo?.category?.toLowerCase().includes('sonidos');
 
+    const isYoutube =
+      activeVideo?.isYoutube ||
+      String(activeVideo?.videoUrl || activeVideo?.video_url || '').includes('youtu');
+
+    const playerHeight = isYoutube ? YOUTUBE_HEIGHT : VIDEO_AREA_HEIGHT;
+
     return (
       <View style={styles.playerContainer}>
         <ScrollView
@@ -162,7 +170,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
             </Text>
           </View>
 
-          <View style={styles.videoArea}>
+          <View style={[styles.videoArea, { height: playerHeight }]}>
             {isAudioOnly ? (
               <View style={styles.audioView}>
                 <Image
@@ -176,8 +184,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                 />
                 <Text style={styles.audioSessionText}>{t('videos.audio_session')}</Text>
               </View>
-            ) : activeVideo?.isYoutube ||
-              String(activeVideo?.videoUrl || activeVideo?.video_url || '').includes('youtu') ? (
+            ) : isYoutube ? (
               <YoutubePlayer
                 key={
                   activeVideo?.youtubeId ||
@@ -185,7 +192,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                     activeVideo?.youtubeUrl || activeVideo?.video_url || activeVideo?.videoUrl
                   )
                 }
-                height={VIDEO_AREA_HEIGHT}
+                height={YOUTUBE_HEIGHT}
                 width={width}
                 play={true}
                 videoId={

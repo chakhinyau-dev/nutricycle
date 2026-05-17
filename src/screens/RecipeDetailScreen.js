@@ -110,7 +110,9 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
 
           <View style={styles.heroContent}>
             <View style={styles.phaseBadge}>
-              <Text style={styles.phaseBadgeText}>{data.category}</Text>
+              <Text style={styles.phaseBadgeText}>
+                {data.phaseKey ? t(`phases.${data.phaseKey}`) : data.category}
+              </Text>
             </View>
             <Text style={styles.recipeTitle}>{data.title}</Text>
           </View>

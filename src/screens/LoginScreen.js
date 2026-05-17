@@ -285,15 +285,17 @@ export const LoginScreen = () => {
                   <Lock size={18} color={colors.primary} />
                   <Text style={styles.inputPlaceholder}>{t('auth.verification_code')}</Text>
                 </View>
-                <TextInput
-                  style={styles.input}
-                  value={verificationCode}
-                  onChangeText={setVerificationCode}
-                  placeholder="123456"
-                  placeholderTextColor={colors.placeholder}
-                  keyboardType="number-pad"
-                  autoFocus={true}
-                />
+                <View style={styles.passRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={verificationCode}
+                    onChangeText={setVerificationCode}
+                    placeholder="123456"
+                    placeholderTextColor={colors.placeholder}
+                    keyboardType="number-pad"
+                    autoFocus={true}
+                  />
+                </View>
                 <View style={styles.inputBorder} />
                 <View style={styles.verificationActions}>
                   <Pressable onPress={handleResendCode} disabled={isSubmitting}>
