@@ -310,7 +310,25 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
       </View>
       <View style={{ height: 160 }} />
     </ScrollView>
-  );
+
+    {isLocked && (
+      <View style={styles.lockedOverlay}>
+        <View style={styles.lockCard}>
+          <View style={styles.lockIconCircle}>
+            <Crown size={32} color="#FFF" fill="#FFD700" />
+          </View>
+          <Text style={styles.lockTitle}>{t('subscription.unlock_premium_videos')}</Text>
+          <Text style={styles.lockSubtitle}>
+            {t('subscription.unlock_videos_desc')}
+          </Text>
+          <Pressable style={styles.subscribeBtn} onPress={onSubscribe}>
+            <Text style={styles.subscribeBtnText}>{(t('subscription.subscribe_now')).toUpperCase()}</Text>
+          </Pressable>
+        </View>
+      </View>
+    )}
+  </View>
+);
 };
 
 const styles = StyleSheet.create({
