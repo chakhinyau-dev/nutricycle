@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../lib/env';
 
@@ -5,6 +6,54 @@ const genAI = new GoogleGenerativeAI(env.geminiApiKey);
 
 const translationCache = new Map();
 const pendingTranslations = new Map();
+
+// Track if persistent cache has been loaded from storage
+let isCacheLoaded = false;
+let loadCachePromise = null;
+
+const loadCacheFromStorage = async () => {
+  if (isCacheLoaded) return;
+  if (loadCachePromise) return loadCachePromise;
+
+  loadCachePromise = (async () => {
+    try {
+      const stored = await AsyncStorage.getItem('nutricycle_translations');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        for (const [key, value] of Object.entries(parsed)) {
+          translationCache.set(key, value);
+        }
+      }
+    } catch (e) {
+      console.warn('[Translation] Failed to load cache from storage:', e);
+    } finally {
+      isCacheLoaded = true;
+    }
+  })();
+
+  return loadCachePromise;
+};
+
+// Start loading the cache immediately
+loadCacheFromStorage();
+
+let saveTimeout = null;
+const saveCacheToStorage = () => {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    try {
+      const obj = {};
+      translationCache.forEach((value, key) => {
+        if (typeof value === 'string' || (value && typeof value === 'object')) {
+          obj[key] = value;
+        }
+      });
+      await AsyncStorage.setItem('nutricycle_translations', JSON.stringify(obj));
+    } catch (e) {
+      console.warn('[Translation] Failed to save cache to storage:', e);
+    }
+  }, 500);
+};
 
 const normalizeLanguage = (language) => {
   const normalized = (language || 'es').toLowerCase();
@@ -156,6 +205,8 @@ const translateWithAI = async (text, targetLanguage) => {
 
   const normalizedLanguage = normalizeLanguage(targetLanguage);
   const cacheKey = `ai:${normalizedLanguage}:${text}`;
+  
+  await loadCacheFromStorage();
   if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
   if (pendingTranslations.has(cacheKey)) return pendingTranslations.get(cacheKey);
 
@@ -185,6 +236,7 @@ const translateWithAI = async (text, targetLanguage) => {
   try {
     const value = await task;
     translationCache.set(cacheKey, value);
+    saveCacheToStorage();
     return value;
   } finally {
     pendingTranslations.delete(cacheKey);
@@ -195,6 +247,8 @@ const translateString = async (text, targetLanguage) => {
   if (isSkippableString(text)) return text;
   const normalizedLanguage = normalizeLanguage(targetLanguage);
   const cacheKey = `string:${normalizedLanguage}:${text}`;
+  
+  await loadCacheFromStorage();
   if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
   if (pendingTranslations.has(cacheKey)) return pendingTranslations.get(cacheKey);
 
@@ -202,17 +256,20 @@ const translateString = async (text, targetLanguage) => {
     const local = translateLocally(text, normalizedLanguage);
     if (local && local !== text) {
       translationCache.set(cacheKey, local);
+      saveCacheToStorage();
       return local;
     }
 
     const ai = await translateWithAI(text, normalizedLanguage);
     if (ai && ai !== text) {
       translationCache.set(cacheKey, ai);
+      saveCacheToStorage();
       return ai;
     }
 
     const fallback = translateLocally(text, normalizedLanguage);
     translationCache.set(cacheKey, fallback);
+    saveCacheToStorage();
     return fallback;
   })();
 
@@ -220,6 +277,7 @@ const translateString = async (text, targetLanguage) => {
   try {
     const value = await task;
     translationCache.set(cacheKey, value);
+    saveCacheToStorage();
     return value;
   } finally {
     pendingTranslations.delete(cacheKey);
@@ -234,6 +292,8 @@ const translateArray = async (items, targetLanguage) => {
 const translateAdminObject = async (data, targetLanguage) => {
   const normalizedLanguage = normalizeLanguage(targetLanguage);
   const cacheKey = `obj:${normalizedLanguage}:${JSON.stringify(data)}`;
+  
+  await loadCacheFromStorage();
   if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
   if (pendingTranslations.has(cacheKey)) return pendingTranslations.get(cacheKey);
 
@@ -281,6 +341,7 @@ const translateAdminObject = async (data, targetLanguage) => {
     }
 
     translationCache.set(cacheKey, translated);
+    saveCacheToStorage();
     return translated;
   })();
 
@@ -288,6 +349,7 @@ const translateAdminObject = async (data, targetLanguage) => {
   try {
     const value = await task;
     translationCache.set(cacheKey, value);
+    saveCacheToStorage();
     return value;
   } finally {
     pendingTranslations.delete(cacheKey);
