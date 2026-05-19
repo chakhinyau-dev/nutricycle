@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View, ScrollView, TextInput, Pressable, Image } from 'react-native';
-import { Search, TrendingDown, Layout, Bookmark, LayoutGrid, Coffee, Utensils, Apple, Moon, ChevronLeft } from 'lucide-react-native';
+import { Search, TrendingDown, Layout, Bookmark, LayoutGrid, Coffee, Utensils, Apple, Moon, ChevronLeft, Crown } from 'lucide-react-native';
 
 import { colors } from '../theme/colors';
 import { RecipeCard } from '../components/RecipeCard';
@@ -30,6 +30,8 @@ export const RecipesScreen = ({
   user,
   recipes = MOCK_RECIPES,
   currentPhaseKey = 'follicular',
+  isLocked = false,
+  onSubscribe,
 }) => {
   const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('all');
@@ -80,11 +82,13 @@ export const RecipesScreen = ({
   }, [activeTab, activeMealType, displayRecipes, searchQuery]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.contentContainer}
-    >
+    <View style={{ flex: 1, backgroundColor: '#FAF9F6' }}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+        scrollEnabled={!isLocked}
+      >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Pressable onPress={onBack} style={styles.backButton}>
@@ -162,6 +166,24 @@ export const RecipesScreen = ({
 
         <View style={{ height: 160 }} />
       </ScrollView>
+
+      {isLocked && (
+        <View style={styles.lockedOverlay}>
+          <View style={styles.lockCard}>
+            <View style={styles.lockIconCircle}>
+              <Crown size={32} color="#FFF" fill="#FFD700" />
+            </View>
+            <Text style={styles.lockTitle}>{t('subscription.unlock_premium_recipes')}</Text>
+            <Text style={styles.lockSubtitle}>
+              {t('subscription.unlock_recipes_desc')}
+            </Text>
+            <Pressable style={styles.subscribeBtn} onPress={onSubscribe}>
+              <Text style={styles.subscribeBtnText}>{(t('subscription.subscribe_now')).toUpperCase()}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+    </View>
   );
 };
 
@@ -190,4 +212,70 @@ const styles = StyleSheet.create({
   recipesList: { width: '100%' },
   emptyState: { padding: 40, alignItems: 'center' },
   emptyText: { fontFamily: 'Outfit_500Medium', fontSize: 16, color: colors.on_surface_variant, opacity: 0.5 },
+  lockedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(238, 242, 255, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 999,
+  },
+  lockCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 36,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+  },
+  lockIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  lockTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 28,
+    color: colors.on_surface,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  lockSubtitle: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 14,
+    color: colors.on_surface_variant,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 28,
+    opacity: 0.8,
+  },
+  subscribeBtn: {
+    width: '100%',
+    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  subscribeBtnText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 14,
+    color: '#FFFFFF',
+    letterSpacing: 1.5,
+  },
 });

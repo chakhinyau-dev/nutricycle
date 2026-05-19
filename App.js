@@ -563,9 +563,15 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
             />
           );
         case 'videos':
-          return canAccessPremium
-            ? <VideosScreen onBack={goBack} currentPhaseKey={cycleInfo.currentPhaseKey} videos={videos} />
-            : <SubscriptionScreen onBack={goBack} onUpgrade={handleUpgrade} isPremium={false} user={user} onStripePublishableKeyChange={onStripePublishableKeyChange} />;
+          return (
+            <VideosScreen 
+              onBack={goBack} 
+              currentPhaseKey={cycleInfo.currentPhaseKey} 
+              videos={videos} 
+              isLocked={!canAccessPremium}
+              onSubscribe={() => navigateTo('subscription')}
+            />
+          );
         case 'admin':
           return (
             <AdminScreen 
@@ -606,13 +612,25 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
       case 'calendar':
         return <CalendarScreen onBack={() => setActiveTab('home')} cycleProfile={cycleProfile} dailyLogs={dailyLogs} onDeleteLog={handleDeleteLog} />;
       case 'recipes':
-        return canAccessPremium
-          ? <RecipesScreen onBack={() => setActiveTab('home')} onNavigate={navigateTo} {...sharedScreenProps} />
-          : <SubscriptionScreen onBack={() => setActiveTab('home')} onUpgrade={handleUpgrade} isPremium={false} user={user} onStripePublishableKeyChange={onStripePublishableKeyChange} />;
+        return (
+          <RecipesScreen 
+            onBack={() => setActiveTab('home')} 
+            onNavigate={navigateTo} 
+            isLocked={!canAccessPremium} 
+            onSubscribe={() => navigateTo('subscription')}
+            {...sharedScreenProps} 
+          />
+        );
       case 'videos':
-        return canAccessPremium
-          ? <VideosScreen onBack={() => setActiveTab('home')} currentPhaseKey={cycleInfo.currentPhaseKey} videos={videos} />
-          : <SubscriptionScreen onBack={() => setActiveTab('home')} onUpgrade={handleUpgrade} isPremium={false} user={user} onStripePublishableKeyChange={onStripePublishableKeyChange} />;
+        return (
+          <VideosScreen 
+            onBack={() => setActiveTab('home')} 
+            currentPhaseKey={cycleInfo.currentPhaseKey} 
+            videos={videos} 
+            isLocked={!canAccessPremium}
+            onSubscribe={() => navigateTo('subscription')}
+          />
+        );
       case 'profile':
         return <SettingsScreen onBack={() => setActiveTab('home')} onNavigate={navigateTo} onLogout={handleLogout} {...sharedScreenProps} />;
       default:

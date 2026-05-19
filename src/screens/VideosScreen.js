@@ -13,7 +13,7 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-import { Play, ChevronLeft, Clock, Sparkles, LayoutGrid, Coffee, Utensils, Apple, Moon } from 'lucide-react-native';
+import { Play, ChevronLeft, Clock, Sparkles, LayoutGrid, Coffee, Utensils, Apple, Moon, Crown } from 'lucide-react-native';
 import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
 import { PHASE_LABELS } from '../utils/cycle';
 import { translateContent } from '../services/translationService';
@@ -43,7 +43,7 @@ const getMealTypes = (t) => [
 ];
 
 
-export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY }) => {
+export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, isLocked = false, onSubscribe }) => {
   const { t, i18n } = useTranslation();
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [displayVideo, setDisplayVideo] = useState(null);
@@ -233,7 +233,8 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: '#FAF9F6' }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} scrollEnabled={!isLocked}>
       <View style={styles.header}>
         <Pressable onPress={onBack} style={styles.backButton}>
           <ChevronLeft size={24} color={colors.on_surface} />
@@ -278,7 +279,17 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
 
       <View style={styles.videoGrid}>
         {visibleVideos.map((video) => (
-          <Pressable key={video.id} style={styles.videoCard} onPress={() => setSelectedVideo(video)}>
+          <Pressable 
+            key={video.id} 
+            style={styles.videoCard} 
+            onPress={() => {
+              if (isLocked) {
+                if (typeof onSubscribe === 'function') onSubscribe();
+                return;
+              }
+              setSelectedVideo(video);
+            }}
+          >
             <View style={styles.thumbnailWrapper}>
               <Image source={{ uri: video.thumbnail || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400' }} style={styles.thumbnail} resizeMode="cover" />
               <View style={styles.playIconOverlay}>
@@ -376,6 +387,72 @@ const styles = StyleSheet.create({
   audioView: { flex: 1, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center' },
   audioThumb: { width: 160, height: 160, borderRadius: 80, marginBottom: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   audioSessionText: { fontFamily: 'Outfit_600SemiBold', color: 'rgba(255,255,255,0.4)', letterSpacing: 2, fontSize: 11, textTransform: 'uppercase' },
+  lockedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(238, 242, 255, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 999,
+  },
+  lockCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 36,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+  },
+  lockIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  lockTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 28,
+    color: colors.on_surface,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  lockSubtitle: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 14,
+    color: colors.on_surface_variant,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 28,
+    opacity: 0.8,
+  },
+  subscribeBtn: {
+    width: '100%',
+    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  subscribeBtnText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 14,
+    color: '#FFFFFF',
+    letterSpacing: 1.5,
+  },
 });
 
 

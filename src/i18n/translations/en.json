@@ -385,7 +385,12 @@
     "finish_payment": "Finish Secure Payment",
     "success_title": "Balance Subscription Activated!",
     "success_msg": "You now have full access to NutriCycle and your personalized recommendations",
-    "payment_session_error": "Could not initialize payment session"
+    "payment_session_error": "Could not initialize payment session",
+    "unlock_premium_recipes": "Unlock Premium Recipes",
+    "unlock_recipes_desc": "Gain full access to customized meal plans and phase-specific recipes designed to balance your hormones.",
+    "unlock_premium_videos": "Unlock Premium Videos",
+    "unlock_videos_desc": "Gain full access to yoga sessions, hormone workouts, and phase-specific routines designed to keep you aligned.",
+    "subscribe_now": "Subscribe Now"
   },
   "admin": {
     "access_denied": "Access denied",
