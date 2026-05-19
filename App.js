@@ -488,14 +488,9 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
   const isAdmin = useMemo(() => {
     if (!user) return false;
     const role = user.publicMetadata?.role;
-    const email =
-      user.primaryEmailAddress?.emailAddress ||
-      user.emailAddresses?.[0]?.emailAddress ||
-      '';
     return (
       role === 'owner' ||
-      role === 'admin' ||
-      email === 'salat.mahenoor7.8.6@gmail.com'
+      role === 'admin'
     );
   }, [user]);
 
