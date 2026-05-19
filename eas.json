@@ -15,7 +15,15 @@
       },
       "env": {
         "NODE_VERSION": "20.18.0",
-        "EAS_SKIP_AUTO_FINGERPRINT": "true"
+        "EAS_SKIP_AUTO_FINGERPRINT": "true",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c3VpdGVkLWJlZGJ1Zy01OC5jbGVyay5hY2NvdW50cy5kZXYk",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oeylybzkyujzcbkmvenj.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9leWx5YnpreXVqemNia212ZW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4ODE5OTIsImV4cCI6MjA5MzQ1Nzk5Mn0.HQa6fvmEC2s3WdgCZME8U9U-SppLUDS60b7JfnXLjiE",
+        "EXPO_PUBLIC_CLERK_SUPABASE_JWT_TEMPLATE": "supabase",
+        "EXPO_PUBLIC_APP_SCHEME": "nutricycle",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_live_51TNvmNFJsb6B90ZWGqKbtFGe2Dwua1C2SLjN74zllnHjS5qpkVpFxTDXpVWvmu7VtMu63GdTj70TfW8wvmrbnaKI00Vs8wZ5NT",
+        "EXPO_PUBLIC_STRIPE_MONTHLY_PRICE_LOOKUP_KEY": "balance_monthly",
+        "EXPO_PUBLIC_STRIPE_ANNUAL_PRICE_LOOKUP_KEY": "balance_annual"
       }
     },
     "production": {}
