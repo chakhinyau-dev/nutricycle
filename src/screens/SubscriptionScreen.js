@@ -25,8 +25,8 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('annual'); // 'annual' or 'monthly'
   const defaultPricing = {
-    annual: { unitAmount: 5999, currency: 'usd' },
-    monthly: { unitAmount: 999, currency: 'usd' },
+    annual: { unitAmount: 8499, currency: 'usd' },
+    monthly: { unitAmount: 1499, currency: 'usd' },
   };
   const [pricing, setPricing] = useState(defaultPricing);
   const [pricingLoading, setPricingLoading] = useState(true);
@@ -63,11 +63,17 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
     }
 
     try {
-      return new Intl.NumberFormat(i18n.language?.startsWith('es') ? 'es-ES' : 'en-US', {
-        style: 'currency',
-        currency: String(price.currency).toUpperCase(),
-        minimumFractionDigits: 2,
-      }).format(price.unitAmount / 100);
+      const amount = (price.unitAmount / 100).toFixed(2);
+      const currency = String(price.currency).toUpperCase();
+      if (currency === 'USD') {
+        return `$${amount}`;
+      } else if (currency === 'EUR') {
+        return `€${amount}`;
+      } else if (currency === 'INR') {
+        return `₹${amount}`;
+      } else {
+        return `${amount} ${currency}`;
+      }
     } catch {
       return fallback;
     }
@@ -77,8 +83,12 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
     ? t('subscription.balance_annual')
     : t('subscription.balance_monthly');
   const selectedPlanType = selectedPlan === 'annual' ? 'yearly' : 'monthly';
-  const annualPriceText = formatCurrency(pricing.annual || defaultPricing.annual, '$59.99');
-  const monthlyPriceText = formatCurrency(pricing.monthly || defaultPricing.monthly, '$9.99');
+  
+  const annualPrice = pricing.annual || defaultPricing.annual;
+  const monthlyPrice = pricing.monthly || defaultPricing.monthly;
+
+  const annualPriceText = formatCurrency(annualPrice, '$84.99');
+  const monthlyPriceText = formatCurrency(monthlyPrice, '$14.99');
 
   const runNativeCheckout = async ({ planKey, userEmail, userName, clerkUserId, locale }) => {
     const {
@@ -596,6 +606,13 @@ const styles = StyleSheet.create({
      marginTop: 8,
      textAlign: 'center',
    },
+  billedAnnuallyText: {
+     fontFamily: 'Outfit_500Medium',
+     fontSize: 11,
+     color: colors.on_surface_variant,
+     marginTop: 4,
+     textAlign: 'center',
+  },
   badge: {
      position: 'absolute',
      top: -12,

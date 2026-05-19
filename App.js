@@ -523,7 +523,8 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
   const canAccessPremium = isAdmin || (
     cycleProfile.isPremium &&
-    (subscription === null || subscription?.is_active !== false)
+    subscription !== null &&
+    (subscription?.is_active === true || subscription?.status === 'active' || subscription?.status === 'premium')
   );
 
   const renderMainContent = () => {

@@ -366,6 +366,7 @@
     "save_40": "Save 40%",
     "recommended": "RECOMMENDED",
     "no_commitment": "No commitment",
+    "billed_annually": "Billed annually at {{price}}",
     "already_pro": "YOU ARE PRO",
     "pay_with_stripe": "PAY WITH STRIPE",
     "restore_activate": "RESTORE & ACTIVATE",

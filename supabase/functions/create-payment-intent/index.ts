@@ -14,10 +14,8 @@ type PlanKey = 'monthly' | 'annual'
 type Action = 'pricing' | 'checkout' | 'finalize'
 
 const normalizeLocale = (locale?: string) => {
-  const value = (locale || '').toLowerCase()
-  if (value.startsWith('es')) return 'es'
-  if (value.startsWith('en')) return 'en'
-  return 'auto'
+  // Force 'en' to guarantee dot decimal separators instead of commas in Stripe web sessions
+  return 'en'
 }
 
 const normalizePlanKey = (planKey?: string): PlanKey => {
@@ -96,7 +94,7 @@ const resolvePrice = async (stripe: Stripe, planKey: PlanKey) => {
 
     const newPrice = await stripe.prices.create({
       product: product.id,
-      unit_amount: isMonthly ? 999 : 7999, // $9.99 or $79.99
+      unit_amount: isMonthly ? 1499 : 8499, // $14.99 or $84.99
       currency: 'usd',
       recurring: {
         interval: isMonthly ? 'month' : 'year',

@@ -18,7 +18,7 @@ import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
 import { PHASE_LABELS } from '../utils/cycle';
 import { translateContent } from '../services/translationService';
 
-const { width } = Dimensions.get(‘window’);
+const { width } = Dimensions.get('window');
 /** Standard 16:9 for YouTube videos */
 const YOUTUBE_HEIGHT = Math.round(width * (9 / 16));
 /** Taller area for direct/uploaded video files */

@@ -360,6 +360,7 @@
     "save_40": "Ahorra 40%",
     "recommended": "RECOMENDADO",
     "no_commitment": "Sin compromiso",
+    "billed_annually": "Facturado anualmente a {{price}}",
     "already_pro": "ERES PRO",
     "pay_with_stripe": "PAGAR CON STRIPE",
     "restore_activate": "RESTAURAR Y ACTIVAR",

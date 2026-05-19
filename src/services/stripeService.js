@@ -4,10 +4,8 @@ import { env } from '../lib/env';
 const STRIPE_FUNCTION_URL = `${env.supabaseUrl}/functions/v1/create-payment-intent`;
 
 export const normalizeStripeLocale = (locale) => {
-  const value = (locale || '').toLowerCase();
-  if (value.startsWith('es')) return 'es';
-  if (value.startsWith('en')) return 'en';
-  return 'auto';
+  // Always return 'en' to guarantee dot decimal separator instead of commas in Stripe sheets
+  return 'en';
 };
 
 const normalizePlanKey = (planKey) => {
