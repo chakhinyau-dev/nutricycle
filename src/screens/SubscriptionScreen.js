@@ -87,7 +87,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
   const annualPrice = pricing.annual || defaultPricing.annual;
   const monthlyPrice = pricing.monthly || defaultPricing.monthly;
 
-  const annualPriceText = formatCurrency(annualPrice, '$84.99');
+  const annualPriceText = formatCurrency(annualPrice, '$89.99');
   const monthlyPriceText = formatCurrency(monthlyPrice, '$14.99');
 
   const runNativeCheckout = async ({ planKey, userEmail, userName, clerkUserId, locale }) => {
@@ -328,7 +328,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
                   {selectedPlan === 'annual' && <Check size={14} color="#FFF" strokeWidth={3} />}
                 </View>
                 <Text style={[styles.planName, selectedPlan === 'annual' ? { color: colors.primary } : { color: colors.on_surface_variant }]}>
-                  {t('subscription.balance_annual') || 'Balance Annual Plan'}
+                  {t('subscription.balance_annual') || 'Annual Hormonal Plan'}
                 </Text>
                 <Text style={styles.price}>
                   {annualPriceText}
