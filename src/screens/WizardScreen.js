@@ -10,7 +10,18 @@ import {
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
-import { ChevronRight, Calendar, Droplets, MoonStar } from 'lucide-react-native';
+import {
+  ChevronRight,
+  Calendar,
+  Droplets,
+  MoonStar,
+  Sparkles,
+  Activity,
+  AlertCircle,
+  Apple,
+  Zap,
+  Heart
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '../theme/colors';
@@ -33,9 +44,14 @@ const getWizardSteps = (t) => [
     subtitle: t('wizard.step2_sub'),
   },
   {
-    icon: MoonStar,
+    icon: Heart,
     title: t('wizard.step3_title'),
     subtitle: t('wizard.step3_sub'),
+  },
+  {
+    icon: MoonStar,
+    title: t('wizard.step4_title'),
+    subtitle: t('wizard.step4_sub'),
   },
 ];
 
@@ -49,6 +65,7 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
   const [displayDate, setDisplayDate] = useState(formatLastPeriodForDisplay(defaults.lastPeriodStart));
   const [cycleLength, setCycleLength] = useState(String(defaults.cycleLength));
   const [periodLength, setPeriodLength] = useState(String(defaults.periodLength));
+  const [goal, setGoal] = useState(defaults.goal || 'balance');
 
   const lastPeriodStart = useMemo(() => parseDisplayLastPeriodToISO(displayDate), [displayDate]);
 
@@ -58,8 +75,9 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
         lastPeriodStart,
         cycleLength,
         periodLength,
+        goal,
       }),
-    [cycleLength, lastPeriodStart, periodLength]
+    [cycleLength, lastPeriodStart, periodLength, goal]
   );
 
   const handleNext = () => {
@@ -73,6 +91,7 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
       cycleLength,
       periodLength,
       currentPhase: preview.currentPhaseKey,
+      goal,
     });
   };
 
@@ -168,6 +187,41 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                 )}
 
                 {step === 2 && (
+                  <View style={styles.goalSection}>
+                    <View style={styles.goalsGrid}>
+                      {[
+                        { id: 'acne', label: t('wizard.goals.acne'), icon: Sparkles },
+                        { id: 'pcos', label: t('wizard.goals.pcos'), icon: Activity },
+                        { id: 'periods', label: t('wizard.goals.periods'), icon: AlertCircle },
+                        { id: 'digestion', label: t('wizard.goals.digestion'), icon: Apple },
+                        { id: 'energy', label: t('wizard.goals.energy'), icon: Zap },
+                        { id: 'balance', label: t('wizard.goals.balance'), icon: Heart }
+                      ].map((item) => {
+                        const ItemIcon = item.icon;
+                        const isSelected = goal === item.id;
+                        return (
+                          <Pressable
+                            key={item.id}
+                            style={[
+                              styles.goalCard,
+                              isSelected && styles.goalCardActive
+                            ]}
+                            onPress={() => setGoal(item.id)}
+                          >
+                            <View style={[styles.goalIconCircle, isSelected && styles.goalIconActive]}>
+                              <ItemIcon size={20} color={isSelected ? '#FFFFFF' : colors.primary} />
+                            </View>
+                            <Text style={[styles.goalCardText, isSelected && styles.goalTextActive]}>
+                              {item.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+
+                {step === 3 && (
                   <View style={styles.previewCard}>
                     <View style={styles.previewBadge}>
                       <MoonStar size={16} color={colors.secondary} />
@@ -295,6 +349,53 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.on_surface,
   },
+  goalSection: {
+    marginTop: 28,
+    width: '100%',
+  },
+  goalsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  goalCard: {
+    width: '48%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    height: 125,
+  },
+  goalCardActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  goalIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary_container,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  goalIconActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  goalCardText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 11,
+    color: colors.on_surface,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  goalTextActive: {
+    color: '#FFFFFF',
+  },
   previewCard: {
     marginTop: 36,
     width: '100%',
@@ -352,6 +453,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 25,
     elevation: 8,
+    marginTop: 20,
   },
   buttonText: {
     fontFamily: 'Outfit_700Bold',

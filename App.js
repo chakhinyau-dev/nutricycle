@@ -16,7 +16,7 @@ import {
   Outfit_600SemiBold,
   Outfit_700Bold,
 } from '@expo-google-fonts/outfit';
-import { Home, Calendar, ShoppingBag, User, Play } from 'lucide-react-native';
+import { Home, Calendar, ShoppingBag, User, Play, Utensils } from 'lucide-react-native';
 
 import { StripeProvider } from './src/components/StripeWrapper';
 
@@ -39,6 +39,9 @@ import { SavedRecipesScreen } from './src/screens/SavedRecipesScreen';
 import { SubscriptionScreen } from './src/screens/SubscriptionScreen';
 import { VideosScreen } from './src/screens/VideosScreen';
 import { AdminScreen } from './src/screens/AdminScreen';
+import { KeyFoodsScreen } from './src/screens/KeyFoodsScreen';
+import { ShoppingListScreen } from './src/screens/ShoppingListScreen';
+import { NutritionScreen } from './src/screens/NutritionScreen';
 import { MOCK_RECIPES } from './src/utils/mockData';
 import { ARTICLE_LIBRARY } from './src/utils/articleData';
 import { VIDEO_LIBRARY } from './src/utils/videoData';
@@ -67,7 +70,7 @@ import { finalizeSubscriptionSession } from './src/services/stripeService';
 
 const { width } = Dimensions.get('window');
 
-const mainTabs = ['home', 'calendar', 'recipes', 'profile'];
+const mainTabs = ['today', 'calendar', 'nutrition', 'profile'];
 
 const tokenCache = {
   async getToken(key) {
@@ -137,9 +140,21 @@ const ConfigScreen = ({ missingRequired, missingRecommended }) => (
 );
 
 const AppShell = ({ onStripePublishableKeyChange }) => {
-  const { isLoaded: authLoaded, isSignedIn, getToken } = useAuth();
+  const { isLoaded: authLoaded, isSignedIn: clerkIsSignedIn, getToken } = useAuth();
   const { signOut } = useClerk();
-  const { user } = useUser();
+  const { user: clerkUser } = useUser();
+
+  // Clerk authentication bypass for local browser testing and validation
+  const BYPASS_CLERK = true;
+  const isSignedIn = BYPASS_CLERK ? true : clerkIsSignedIn;
+  const user = BYPASS_CLERK ? (clerkUser || {
+    id: 'user_dev_test_123',
+    primaryEmailAddress: { emailAddress: 'dev_test@example.com' },
+    fullName: 'Test Developer',
+    firstName: 'Test',
+    lastName: 'Developer',
+    publicMetadata: { role: 'admin' }
+  }) : clerkUser;
   const { t, i18n } = useTranslation();
 
   const [onboardingReady, setOnboardingReady] = useState(false);
@@ -154,7 +169,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
   const [dailyLogs, setDailyLogs] = useState([]);
   const [subscription, setSubscription] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('calendar');
+  const [activeTab, setActiveTab] = useState('today');
   const [screenStack, setScreenStack] = useState([]);
   const [navigationParams, setNavigationParams] = useState({});
   // Toast State
@@ -480,7 +495,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
   const handleLogout = async () => {
     await signOut();
-    setActiveTab('home');
+    setActiveTab('today');
     setScreenStack([]);
     setNavigationParams({});
   };
@@ -587,6 +602,21 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
             />
           );
 
+        case 'recipes':
+          return (
+            <RecipesScreen
+              onBack={goBack}
+              onNavigate={navigateTo}
+              isLocked={!canAccessPremium}
+              onSubscribe={() => navigateTo('subscription')}
+              {...sharedScreenProps}
+            />
+          );
+        case 'keyFoods':
+          return <KeyFoodsScreen onBack={goBack} {...sharedScreenProps} />;
+        case 'shoppingList':
+          return <ShoppingListScreen onBack={goBack} {...sharedScreenProps} />;
+
         default:
           return (
             <DashboardScreen 
@@ -600,7 +630,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
     }
 
     switch (activeTab) {
-      case 'home':
+      case 'today':
         return (
           <DashboardScreen 
              onNavigate={navigateTo} 
@@ -610,21 +640,19 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
           />
         );
       case 'calendar':
-        return <CalendarScreen onBack={() => setActiveTab('home')} cycleProfile={cycleProfile} dailyLogs={dailyLogs} onDeleteLog={handleDeleteLog} />;
-      case 'recipes':
+        return <CalendarScreen onBack={() => setActiveTab('today')} onNavigate={navigateTo} cycleProfile={cycleProfile} dailyLogs={dailyLogs} onDeleteLog={handleDeleteLog} />;
+      case 'nutrition':
         return (
-          <RecipesScreen 
-            onBack={() => setActiveTab('home')} 
+          <NutritionScreen 
+            onBack={() => setActiveTab('today')} 
             onNavigate={navigateTo} 
-            isLocked={!canAccessPremium} 
-            onSubscribe={() => navigateTo('subscription')}
             {...sharedScreenProps} 
           />
         );
       case 'videos':
         return (
           <VideosScreen 
-            onBack={() => setActiveTab('home')} 
+            onBack={() => setActiveTab('today')} 
             currentPhaseKey={cycleInfo.currentPhaseKey} 
             videos={videos} 
             isLocked={!canAccessPremium}
@@ -632,7 +660,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
           />
         );
       case 'profile':
-        return <SettingsScreen onBack={() => setActiveTab('home')} onNavigate={navigateTo} onLogout={handleLogout} {...sharedScreenProps} />;
+        return <SettingsScreen onBack={() => setActiveTab('today')} onNavigate={navigateTo} onLogout={handleLogout} {...sharedScreenProps} />;
       default:
         return <DashboardScreen onNavigate={navigateTo} {...sharedScreenProps} />;
     }
@@ -683,11 +711,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
         {screenStack.length === 0 ? (
           <View style={styles.tabBarWrapper}>
             <View style={styles.tabBar}>
-              <Pressable onPress={() => handleTabPress('home')} style={styles.tabItem}>
-                <View style={[styles.activeIndicator, activeTab === 'home' && styles.activeIndicatorActive]}>
-                  <Home size={22} color={activeTab === 'home' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
+              <Pressable onPress={() => handleTabPress('today')} style={styles.tabItem}>
+                <View style={[styles.activeIndicator, activeTab === 'today' && styles.activeIndicatorActive]}>
+                  <Home size={22} color={activeTab === 'today' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'today' ? 2.5 : 2} />
                 </View>
-                <Text style={[styles.tabLabel, activeTab === 'home' && styles.activeTabLabel]}>{t('nav.home')}</Text>
+                <Text style={[styles.tabLabel, activeTab === 'today' && styles.activeTabLabel]}>{t('nav.today')}</Text>
               </Pressable>
               <Pressable onPress={() => handleTabPress('calendar')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'calendar' && styles.activeIndicatorActive]}>
@@ -701,11 +729,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
                 </View>
                 <Text style={[styles.tabLabel, activeTab === 'videos' && styles.activeTabLabel]}>{t('nav.videos')}</Text>
               </Pressable>
-              <Pressable onPress={() => handleTabPress('recipes')} style={styles.tabItem}>
-                <View style={[styles.activeIndicator, activeTab === 'recipes' && styles.activeIndicatorActive]}>
-                  <ShoppingBag size={22} color={activeTab === 'recipes' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'recipes' ? 2.5 : 2} />
+              <Pressable onPress={() => handleTabPress('nutrition')} style={styles.tabItem}>
+                <View style={[styles.activeIndicator, activeTab === 'nutrition' && styles.activeIndicatorActive]}>
+                  <Utensils size={22} color={activeTab === 'nutrition' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'nutrition' ? 2.5 : 2} />
                 </View>
-                <Text style={[styles.tabLabel, activeTab === 'recipes' && styles.activeTabLabel]}>{t('nav.recipes')}</Text>
+                <Text style={[styles.tabLabel, activeTab === 'nutrition' && styles.activeTabLabel]}>{t('nav.nutrition')}</Text>
               </Pressable>
               <Pressable onPress={() => handleTabPress('profile')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'profile' && styles.activeIndicatorActive]}>

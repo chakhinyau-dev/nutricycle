@@ -27,9 +27,11 @@
   },
   "nav": {
     "home": "Inicio",
+    "today": "Hoy",
     "cycle": "Ciclo",
     "videos": "Videos",
     "recipes": "Recetas",
+    "nutrition": "Nutrición",
     "profile": "Perfil"
   },
   "phases": {
@@ -146,7 +148,15 @@
       "follicular": "Fase folicular",
       "ovulation": "Fase de ovulación",
       "luteal": "Fase lútea"
-    }
+    },
+    "hormone_tides": "Mareas Hormonales",
+    "estrogen": "Estrógeno",
+    "progesterone": "Progesterona",
+    "today_label": "Hoy",
+    "quick_access": "Accesos Rápidos",
+    "key_foods_title": "Comer Bien",
+    "log_action": "Registrar",
+    "suggested_recipe": "Receta Sugerida del Día"
   },
   "phase_menstrual_msg": "Tu cuerpo está descansando.\nHoy prioriza alimentos ricos en hierro y momentos de calma",
   "phase_follicular_msg": "Tu energía está subiendo.\nEs un buen momento para nuevos proyectos y movimiento suave.",
@@ -243,6 +253,12 @@
     }
   },
   "videos": {
+    "types": {
+      "recipe": "Receta",
+      "educational": "Educación Hormonal",
+      "wellness": "Consejos y Bienestar",
+      "fitness": "Movimiento y Ejercicio"
+    },
     "title": "Videos para\ntu fase",
     "overline": "BIBLIOTECA DE VIDEOS NUTRICYCLE",
     "featured": "DESTACADO PARA {{phase}}",
@@ -257,7 +273,13 @@
     "phase": "Fase",
     "category": "Categoría",
     "duration": "Duración (ej: 5:00)",
-    "submit": "Enviar Video"
+    "submit": "Enviar Video",
+    "types": {
+      "recipe": "Receta",
+      "educational": "Educación Hormonal",
+      "wellness": "Consejos de Bienestar",
+      "fitness": "Entrenamiento"
+    }
   },
   "recipes": {
     "overline": "RECETAS POR FASE",
@@ -512,8 +534,10 @@
     "step1_sub": "Para comenzar, indícanos cuándo inició tu último periodo.",
     "step2_title": "Ajustemos tu ritmo",
     "step2_sub": "Con esta información podremos personalizar tu experiencia.",
-    "step3_title": "Todo listo",
-    "step3_sub": "Hemos personalizado tu experiencia basándonos en tu biología única.",
+    "step3_title": "¿Cuál es tu objetivo principal?",
+    "step3_sub": "Personalizaremos tu orden de recetas y el enfoque de tu pantalla de inicio.",
+    "step4_title": "Todo listo",
+    "step4_sub": "Hemos personalizado tu experiencia basándonos en tu biología única.",
     "last_period_label": "FECHA ÚLTIMO PERIODO (DD/MM/AAAA)",
     "cycle_length_label": "DURACIÓN CICLO",
     "period_days_label": "DÍAS PERIODO",
@@ -521,12 +545,106 @@
     "cycle_day_preview": "Día {{day}} de tu ciclo",
     "next_period_preview": "Próximo periodo en {{days}} días · Ventana fértil {{label}}",
     "btn_continue": "CONTINUAR",
-    "btn_finish": "ENTRAR A NUTRICYCLE"
+    "btn_finish": "ENTRAR A NUTRICYCLE",
+    "goals": {
+      "acne": "Acné hormonal",
+      "pcos": "SOP o Síndrome de ovario poliquístico",
+      "periods": "Periodos irregulares o dolorosos",
+      "digestion": "Inflamación y digestión",
+      "energy": "Fatiga y baja energía",
+      "balance": "Balance hormonal general"
+    }
   },
   "saved_recipes": {
     "title": "Recetas Guardadas",
     "intro_title": "Tus Favoritos",
     "intro_sub": "Estas son tus recetas guardadas en Supabase. Se mantienen sincronizadas en todos tus dispositivos.",
     "empty": "Aún no has guardado nada."
+  },
+
+  "calendar": {
+    "navigate_days": "Navegar por Día de la Semana",
+    "cycle_day_label": "Día del ciclo {{day}}",
+    "mood_label": "Ánimo:",
+    "delete_log_title": "Eliminar Log",
+    "delete_log_confirm": "¿Estás seguro de que deseas eliminar este registro?",
+    "hormone_curves_day": "Curvas Hormonales del Día",
+    "estrogen_short": "Estrog.",
+    "progesterone_short": "Progest.",
+    "countdown_days": "Faltan {{days}} días para la fase {{phase}}",
+    "countdown_one_day": "Falta 1 día para la fase {{phase}}",
+    "log_btn": "Registrar Período / Síntomas"
+  },
+  "shopping": {
+    "title": "Lista de Compras",
+    "days_cook": "1. ¿Qué días cocinarás?",
+    "select_days_desc": "Selecciona los días para generar tus ingredientes:",
+    "clear_all": "Limpiar todo",
+    "regenerate": "Regenerar",
+    "consolidated_list": "2. Tu Lista Consolidada",
+    "empty_placeholder": "Selecciona al menos un día arriba para rellenar la lista de compras.",
+    "add_custom": "Añadir artículo extra",
+    "add_placeholder": "Ej: Servilletas, sal de mar...",
+    "clear_confirm_title": "Limpiar Lista",
+    "clear_confirm_desc": "¿Estás seguro de que deseas limpiar y regenerar la lista de compras?",
+    "categories": {
+      "proteins": "Proteínas",
+      "vegetables": "Vegetales / Verduras",
+      "fruits": "Frutas",
+      "dairy": "Lácteos y Bebidas",
+      "grains": "Granos y Cereales",
+      "pantry": "Despensa y Condimentos",
+      "other": "Otros / Personalizados"
+    },
+    "days": {
+      "mon": { "short": "L", "full": "Lunes" },
+      "tue": { "short": "M", "full": "Martes" },
+      "wed": { "short": "M", "full": "Miércoles" },
+      "thu": { "short": "J", "full": "Jueves" },
+      "fri": { "short": "V", "full": "Viernes" },
+      "sat": { "short": "S", "full": "Sábado" },
+      "sun": { "short": "D", "full": "Domingo" }
+    }
+  },
+  "key_foods": {
+    "title": "Alimentos Clave",
+    "select_phase": "Seleccionar Fase del Ciclo",
+    "categories": {
+      "proteins": "Proteínas",
+      "fats": "Grasas",
+      "carbs": "Carbohidratos",
+      "veg_fruits": "Vegetales y Frutas"
+    },
+    "items": {
+      "lentejas": { "name": "Lentejas", "benefit": "Ricas en hierro no hemo para compensar la pérdida de sangre y zinc para apoyar el sistema inmunitario." },
+      "salmon_salvaje": { "name": "Salmón Salvaje", "benefit": "Alto en ácidos grasos Omega-3 que disminuyen la producción de prostaglandinas inflamatorias, aliviando cólicos." },
+      "semillas_lino": { "name": "Semillas de Lino", "benefit": "Contienen lignanos que ayudan a equilibrar los niveles de estrógeno y fibra para evitar el estreñimiento." },
+      "nueces": { "name": "Nueces", "benefit": "Aportan grasas saludables y magnesio, que contribuye a la relajación uterina y reduce la tensión." },
+      "avena_integral": { "name": "Avena Integral", "benefit": "Libera glucosa lentamente, aportando energía constante y estimulando la serotonina para regular el humor." },
+      "quinoa": { "name": "Quinoa", "benefit": "Es una proteína completa y de bajo índice glucémico, ideal para el confort digestivo." },
+      "espinacas": { "name": "Espinacas", "benefit": "Gran fuente de hierro y folato. Las hojas verdes aportan fibra que facilita la digestión y depuración." },
+      "fresas_berries": { "name": "Fresas y Berries", "benefit": "La vitamina C favorece la absorción de hierro y aporta polifenoles antioxidantes para reducir la inflamación." },
+      "pollo_pastoreo": { "name": "Pollo de Pastoreo", "benefit": "Aporta aminoácidos esenciales para construir los folículos y sostener el aumento progresivo de energía." },
+      "garbanzos": { "name": "Garbanzos", "benefit": "Ricos en fitoestrógenos que apoyan suavemente el ascenso de estrógeno característico de esta fase." },
+      "semillas_calabaza": { "name": "Semillas de Calabaza", "benefit": "Altas en zinc, esencial para la correcta maduración folicular y la preparación para la ovulación." },
+      "almendras": { "name": "Almendras", "benefit": "Aportan vitamina E, un antioxidante potente que nutre las membranas de las células foliculares." },
+      "arroz_integral": { "name": "Arroz Integral o Salvaje", "benefit": "Contiene vitaminas del grupo B que ayudan a la metabolización hormonal adecuada en el hígado." },
+      "brocoli": { "name": "Brócoli", "benefit": "Contiene indol-3-carbinol, compuesto clave para regular el estrógeno sobrante y apoyar el detox hepático." },
+      "aguacate": { "name": "Aguacate / Palta", "benefit": "Grasas saludables monoinsaturadas que promueven la calidad ovocitaria y la lubricación cervical." },
+      "pescado_blanco": { "name": "Pescado Blanco Magro", "benefit": "Proteína ligera de alta calidad digestiva, ideal para mantener la ligereza física durante el pico de estrógenos." },
+      "huevos_organicos": { "name": "Huevos Orgánicos", "benefit": "Ricos en colina, vitamina D y B12, micronutrientes fundamentales para sostener la calidad ovocitaria." },
+      "semillas_sesamo": { "name": "Semillas de Sésamo", "benefit": "Contienen calcio y zinc, minerales que apoyan la liberación adecuada del óvulo maduro." },
+      "aceite_oliva": { "name": "Aceite de Oliva Extra Virgen", "benefit": "Reduce el estrés oxidativo corporal, protegiendo al óvulo durante su trayecto por las trompas." },
+      "quinoa_cocida": { "name": "Quinoa Cocida", "benefit": "Proteína completa con carbohidratos de bajo índice glucémico para evitar picos de insulina postprandial." },
+      "hojas_verdes": { "name": "Hojas Verdes (Rúcula/Kale)", "benefit": "Estimulan la producción de moco cervical fértil y aportan calcio biodisponible." },
+      "frambuesas": { "name": "Frambuesas Frescas", "benefit": "Su alto contenido en antioxidantes neutraliza radicales libres, protegiendo las células reproductivas." },
+      "pavo": { "name": "Pavo Magro", "benefit": "Alto en triptófano, precursor de la serotonina y melatonina, regulando el humor y el descanso premenstrual." },
+      "legumbres": { "name": "Legumbres (Lentejas/Alubias)", "benefit": "Aportan fibra soluble que previene el estreñimiento provocado por la progesterona elevada." },
+      "semillas_girasol": { "name": "Semillas de Girasol", "benefit": "Ricas en vitamina E y selenio, micronutrientes clave para nutrir y prolongar la vida del cuerpo lúteo." },
+      "mantequilla_almendras": { "name": "Mantequilla de Almendras", "benefit": "Grasas estables y magnesio para mitigar los antojos frecuentes de dulces antes de la menstruación." },
+      "camote": { "name": "Camote / Batata dulce", "benefit": "Aporta carbohidratos complejos y vitamina A, estabilizando los niveles de azúcar en sangre para modular la irritabilidad." },
+      "calabaza": { "name": "Calabaza / Zapallo", "benefit": "Rica en fibra y betacarotenos. Aporta confort estomacal dulce natural para evitar atracones." },
+      "platano": { "name": "Plátano / Banano", "benefit": "Rico en potasio y vitamina B6, ayudando a disminuir la retención de agua y la hinchazón premenstrual." }
+    }
   }
 }

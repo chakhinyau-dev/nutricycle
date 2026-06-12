@@ -8,17 +8,16 @@ import {
   Image, 
   Dimensions,
   Share,
-  Alert,
-  ActivityIndicator
 } from 'react-native';
+import YoutubePlayer from 'react-native-youtube-iframe';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors } from '../theme/colors';
 import { 
-  Clock, 
-  Flame, 
-  Zap, 
   ArrowLeft,
   Share2,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { translateContent } from '../services/translationService';
@@ -26,10 +25,17 @@ import { getRecipeImageSource } from '../services/recipeService';
 
 const { width } = Dimensions.get('window');
 
+const extractYouTubeId = (url) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
+
 export const RecipeDetailScreen = ({ recipe, onBack }) => {
   const { t, i18n } = useTranslation();
   const [displayRecipe, setDisplayRecipe] = useState(recipe);
-  const [isTranslating, setIsTranslating] = useState(false);
+  const [isIngredientsExpanded, setIsIngredientsExpanded] = useState(false);
   const translationRunId = useRef(0);
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
 
@@ -44,18 +50,12 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
     const handleTranslation = async () => {
       if (!recipe) return;
       
-      // Only translate if the current display is definitely the same as input
-      // This prevents loops or redundant calls
-      setIsTranslating(true);
       console.log('[RecipeDetail] Requesting translation for:', recipe.title, 'to:', currentLanguage);
       
       const translated = await translateContent(recipe, currentLanguage);
       
       if (translationRunId.current === runId && translated && translated.title !== recipe?.title) {
         setDisplayRecipe(translated);
-      }
-      if (translationRunId.current === runId) {
-        setIsTranslating(false);
       }
     };
 
@@ -81,20 +81,46 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
       await Share.share({
         message: `${t('common.check_this')}: ${data.title}!`,
       });
-      // Alert.alert(t('common.success'), t('common.shared_success')); // Optional feedback
     } catch (error) {
       console.log(error.message);
     }
   };
 
   const imageSource = getRecipeImageSource(data);
+  const videoUrl = data.videoUrl || data.video_url || data.youtubeUrl;
+  const isYoutube = videoUrl && String(videoUrl).includes('youtu');
+  const youtubeId = isYoutube ? extractYouTubeId(videoUrl) : null;
+
+  const player = useVideoPlayer(videoUrl && !isYoutube ? videoUrl : null, (player) => {
+     player.loop = true;
+     player.play();
+  });
+
+  const videoHeight = isYoutube ? Math.round(width * (9 / 16)) : 400;
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
         {/* Hero Section */}
-        <View style={styles.hero}>
-          <Image source={imageSource} style={styles.heroImage} />
+        <View style={[styles.hero, videoUrl && { height: videoHeight }]}>
+          {videoUrl ? (
+            isYoutube ? (
+              <YoutubePlayer
+                height={videoHeight}
+                width={width}
+                play={true}
+                videoId={youtubeId}
+              />
+            ) : (
+              <VideoView
+                player={player}
+                style={{ width: '100%', height: '100%' }}
+                allowsFullscreen
+              />
+            )
+          ) : (
+            <Image source={imageSource} style={styles.heroImage} />
+          )}
           <View style={styles.heroOverlay} />
           
           <View style={styles.header}>
@@ -108,20 +134,41 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
             </View>
           </View>
 
-          <View style={styles.heroContent}>
-            <View style={styles.phaseBadge}>
+          {!videoUrl && (
+            <View style={styles.heroContent}>
+              <View style={styles.phaseBadge}>
+                <Text style={styles.phaseBadgeText}>
+                  {data.phaseKey ? t(`phases.${data.phaseKey}`) : data.category}
+                </Text>
+              </View>
+              <Text style={styles.recipeTitle}>{data.title}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Video Info Overlay Fallback if playing video */}
+        {videoUrl && (
+          <View style={{ paddingHorizontal: 28, paddingTop: 20 }}>
+            <View style={[styles.phaseBadge, { marginBottom: 12 }]}>
               <Text style={styles.phaseBadgeText}>
                 {data.phaseKey ? t(`phases.${data.phaseKey}`) : data.category}
               </Text>
             </View>
-            <Text style={styles.recipeTitle}>{data.title}</Text>
+            <Text style={[styles.recipeTitle, { color: colors.on_surface, fontSize: 32 }]}>{data.title}</Text>
           </View>
-        </View>
+        )}
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
            <Text style={styles.statText}>
-              {data.time} {t('common.unit_min')} • {data.calories} {t('common.unit_kcal')} • {t('recipe_detail.high_protein')}
+              {data.time} {t('common.unit_min')} • {(() => {
+                 const prot = data.protein || Math.max(10, Math.round(Number(data.calories) * 0.08));
+                 const fat = data.fat || Math.max(5, Math.round(Number(data.calories) * 0.035));
+                 const carbs = data.carbs || Math.max(15, Math.round((Number(data.calories) - (prot * 4) - (fat * 9)) / 4));
+                 return currentLanguage.toLowerCase().startsWith('es')
+                   ? `${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g grasa`
+                   : `${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g fat`;
+               })()}
            </Text>
         </View>
 
@@ -155,6 +202,41 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
               </View>
             ))}
           </View>
+
+          {/* Key Ingredients Collapsible Section */}
+          <View style={[styles.section, { marginTop: 40, borderTopWidth: 1, borderTopColor: '#F1F1E8', paddingTop: 32 }]}>
+            <Pressable 
+              style={styles.collapsibleHeader} 
+              onPress={() => setIsIngredientsExpanded(!isIngredientsExpanded)}
+            >
+              <Text style={styles.sectionTitle}>Ingredientes Clave</Text>
+              {isIngredientsExpanded ? (
+                <ChevronUp size={24} color="#1A1A1A" />
+              ) : (
+                <ChevronDown size={24} color="#1A1A1A" />
+              )}
+            </Pressable>
+
+            {isIngredientsExpanded && (
+              <View style={styles.keyIngredientsContainer}>
+                {data.keyIngredients && data.keyIngredients.length > 0 ? (
+                  data.keyIngredients.slice(0, 3).map((item, idx) => (
+                    <View key={idx} style={styles.ingredientCard}>
+                      <Image source={{ uri: item.image }} style={styles.cardIngredientImage} />
+                      <View style={styles.cardTextContainer}>
+                        <Text style={styles.cardIngredientName}>{item.name}</Text>
+                        <Text style={styles.cardIngredientNote}>{item.note || item.benefit}</Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={[styles.ingredientText, { opacity: 0.5 }]}>
+                    No hay información nutricional clave para esta receta.
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={{ height: 120 }} />
@@ -164,7 +246,7 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAF9F6' },
+  container: { flex: 1, backgroundColor: '#F9F9F2' },
   hero: { height: 400, width: '100%' },
   heroImage: { ...StyleSheet.absoluteFillObject },
   heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.2)' },
@@ -175,13 +257,54 @@ const styles = StyleSheet.create({
   phaseBadge: { backgroundColor: '#A3B3A5', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 12 },
   phaseBadgeText: { fontFamily: 'Outfit_700Bold', fontSize: 10, color: '#FFF', letterSpacing: 1, textTransform: 'uppercase' },
   recipeTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 36, color: '#FFFFFF', lineHeight: 42 },
-  statsRow: { paddingHorizontal: 28, paddingVertical: 24, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F1F1E8' },
+  statsRow: { paddingHorizontal: 28, paddingVertical: 16, backgroundColor: '#F9F9F2' },
   statText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: '#64748B', opacity: 0.7, letterSpacing: 0.5 },
-  mainContent: { paddingHorizontal: 28, paddingTop: 48 },
+  mainContent: { paddingHorizontal: 28, paddingTop: 16 },
   sectionTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 28, color: '#1A1A1A' },
   instructionStep: { marginBottom: 32, flexDirection: 'row' },
   stepNumber: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 18, color: '#A3B3A5', marginRight: 16, width: 24 },
   stepText: { flex: 1, fontFamily: 'Outfit_500Medium', fontSize: 16, color: '#1A1A1A', lineHeight: 26, opacity: 0.8 },
   ingredientRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   ingredientText: { fontFamily: 'Outfit_500Medium', fontSize: 16, color: '#1A1A1A', marginLeft: 16, opacity: 0.8 },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  keyIngredientsContainer: {
+    marginTop: 20,
+    gap: 16,
+  },
+  ingredientCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9F9F2', // cream background
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+  },
+  cardIngredientImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FFFFFF',
+    marginRight: 16,
+  },
+  cardTextContainer: {
+    flex: 1,
+  },
+  cardIngredientName: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 16,
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  cardIngredientNote: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 13,
+    color: '#64748B',
+    lineHeight: 18,
+  },
 });

@@ -48,7 +48,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [displayVideo, setDisplayVideo] = useState(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
-  const [activeFilterId, setActiveFilterId] = useState('all');
+  const [activeFilterId, setActiveFilterId] = useState(currentPhaseKey || 'all');
   const [activeMealType, setActiveMealType] = useState('all');
   const [displayLibrary, setDisplayLibrary] = useState(videos);
   const translationRunId = useRef(0);
@@ -56,6 +56,12 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   const getMealLabel = (mealType) => {
     if (!mealType || mealType === 'none') return t('admin.my_phase');
     return t(`dailylog.meal_types.${mealType}`);
+  };
+
+  const getLocalizedVideoLabel = (v) => {
+    if (!v) return '';
+    const typeKey = v.contentType || 'recipe';
+    return t(`videos.types.${typeKey}`, { defaultValue: v.category });
   };
 
   // ... (Translation effect remains same)
@@ -145,6 +151,17 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
 
     return (
       <View style={styles.playerContainer}>
+        {/* Floating overlay back button */}
+        <Pressable
+          onPress={() => {
+            setSelectedVideo(null);
+            setIsPlayerReady(false);
+          }}
+          style={styles.floatingBackButton}
+        >
+          <ChevronLeft size={24} color="#FFF" />
+        </Pressable>
+
         <ScrollView
           style={styles.playerScroll}
           contentContainerStyle={[
@@ -155,21 +172,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
           keyboardShouldPersistTaps="handled"
           nestedScrollEnabled
         >
-          <View style={styles.playerHeader}>
-            <Pressable
-              onPress={() => {
-                setSelectedVideo(null);
-                setIsPlayerReady(false);
-              }}
-              style={styles.backCircle}
-            >
-              <ChevronLeft size={24} color={colors.on_surface} />
-            </Pressable>
-            <Text style={styles.playerNavTitle} numberOfLines={2}>
-              {activeVideo?.title || selectedVideo.title}
-            </Text>
-          </View>
-
+          {/* Video Player plays at absolute top */}
           <View style={[styles.videoArea, { height: playerHeight }]}>
             {isAudioOnly ? (
               <View style={styles.audioView}>
@@ -212,14 +215,12 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
             )}
           </View>
 
+          {/* Details flow seamlessly under the video */}
           <View style={styles.detailsSection}>
             <View style={styles.tagRow}>
               <View style={styles.phaseTag}>
                 <Text style={styles.tagText}>
-                  {t('videos.category_prefix', {
-                    phase: t(`phases.${activeVideo?.phaseKey || 'all'}`),
-                    meal: getMealLabel(activeVideo?.mealType || 'snack'),
-                  })}
+                  {getLocalizedVideoLabel(activeVideo)}
                 </Text>
               </View>
               <Text style={styles.durationDetail}>{activeVideo?.duration}</Text>
@@ -233,7 +234,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAF9F6' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} scrollEnabled={!isLocked}>
       <View style={styles.header}>
         <Pressable onPress={onBack} style={styles.backButton}>
@@ -298,10 +299,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
             </View>
             <View style={styles.videoInfo}>
               <Text style={styles.videoCategory}>
-                {t('videos.category_prefix', { 
-                   phase: t(`phases.${video.phaseKey}`).toLowerCase(),
-                   meal: getMealLabel(video.mealType || 'snack')
-                })}
+                {getLocalizedVideoLabel(video)}
               </Text>
               <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
             </View>
@@ -332,7 +330,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAF9F6' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: { paddingHorizontal: 28, paddingTop: 60, marginBottom: 32 },
   backButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginBottom: 24, borderWidth: 1, borderColor: '#F1F1E8' },
   title: { fontSize: 32, fontFamily: 'InstrumentSerif_400Regular', color: colors.on_surface },
@@ -380,7 +378,7 @@ const styles = StyleSheet.create({
   videoInfo: { marginTop: 12 },
   videoCategory: { fontSize: 10, fontFamily: 'Outfit_700Bold', color: '#A3B3A5', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   videoTitle: { fontSize: 14, fontFamily: 'Outfit_600SemiBold', color: colors.on_surface, lineHeight: 20 },
-  playerContainer: { flex: 1, backgroundColor: '#FAF9F6' },
+  playerContainer: { flex: 1, backgroundColor: colors.background },
   playerScroll: { flex: 1 },
   playerScrollContent: {
     flexGrow: 1,
@@ -470,6 +468,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
     letterSpacing: 1.5,
+  },
+  floatingBackButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -25,9 +25,11 @@
   },
   "nav": {
     "home": "Home",
+    "today": "Today",
     "cycle": "Cycle",
     "videos": "Videos",
     "recipes": "Recipes",
+    "nutrition": "Nutrition",
     "profile": "Profile"
   },
   "phases": {
@@ -143,7 +145,15 @@
       "follicular": "Follicular phase",
       "ovulation": "Ovulation phase",
       "luteal": "Luteal phase"
-    }
+    },
+    "hormone_tides": "Hormonal Tides",
+    "estrogen": "Estrogen",
+    "progesterone": "Progesterone",
+    "today_label": "Today",
+    "quick_access": "Quick Access",
+    "key_foods_title": "Eat Well",
+    "log_action": "Log Info",
+    "suggested_recipe": "Suggested Recipe of the Day"
   },
   "phase_menstrual_msg": "Your body is resting.\nToday focus on iron-rich foods and quiet moments.",
     "phase_follicular_msg": "Your energy is gently rising.\nThis is a good time for fresh ideas and light movement.",
@@ -242,6 +252,12 @@
     }
   },
   "videos": {
+    "types": {
+      "recipe": "Recipe",
+      "educational": "Hormonal Education",
+      "wellness": "Wellness & Tips",
+      "fitness": "Movement & Workout"
+    },
     "title": "Videos for\nyour phase",
     "overline": "NUTRICYCLE VIDEO LIBRARY",
     "audio_session": "Audio session",
@@ -258,7 +274,13 @@
     "phase": "Phase",
     "category": "Category",
     "duration": "Duration (e.g. 5:00)",
-    "submit": "Submit Video"
+    "submit": "Submit Video",
+    "types": {
+      "recipe": "Recipe",
+      "educational": "Hormonal Education",
+      "wellness": "Wellness Tips",
+      "fitness": "Fitness"
+    }
   },
   "recipes": {
     "overline": "RECIPES BY PHASE",
@@ -539,8 +561,10 @@
     "step1_sub": "To start, let us know when your last period began.",
     "step2_title": "Adjust your rhythm",
     "step2_sub": "With this information, we can personalize your experience.",
-    "step3_title": "All set",
-    "step3_sub": "We've personalized your experience based on your unique biology.",
+    "step3_title": "What is your main goal?",
+    "step3_sub": "We will personalize your recipe order and home screen welcome message.",
+    "step4_title": "All set",
+    "step4_sub": "We've personalized your experience based on your unique biology.",
     "last_period_label": "LAST PERIOD START (DD/MM/YYYY)",
     "cycle_length_label": "CYCLE DURATION",
     "period_days_label": "PERIOD DAYS",
@@ -548,6 +572,106 @@
     "cycle_day_preview": "Day {{day}} of your cycle",
     "next_period_preview": "Next period in {{days}} days · Fertile window {{label}}",
     "btn_continue": "CONTINUE",
-    "btn_finish": "ENTER NUTRICYCLE"
+    "btn_finish": "ENTER NUTRICYCLE",
+    "goals": {
+      "acne": "Hormonal acne",
+      "pcos": "PCOS or Polycystic ovary syndrome",
+      "periods": "Irregular or painful periods",
+      "digestion": "Inflammation and digestion",
+      "energy": "Fatigue and low energy",
+      "balance": "General hormonal balance"
+    }
+  },
+  "saved_recipes": {
+    "title": "Saved Recipes",
+    "intro_title": "Your Favorites",
+    "intro_sub": "These are your saved recipes in Supabase. They are kept synced across all your devices.",
+    "empty": "You have not saved anything yet."
+  },
+
+  "calendar": {
+    "navigate_days": "Navigate by Day of the Week",
+    "cycle_day_label": "Cycle Day {{day}}",
+    "mood_label": "Mood:",
+    "delete_log_title": "Delete Log",
+    "delete_log_confirm": "Are you sure you want to delete this log entry?",
+    "hormone_curves_day": "Hormone Curves of the Day",
+    "estrogen_short": "Estrog.",
+    "progesterone_short": "Progest.",
+    "countdown_days": "{{days}} days until {{phase}} phase",
+    "countdown_one_day": "1 day until {{phase}} phase",
+    "log_btn": "Log Period / Symptoms"
+  },
+  "shopping": {
+    "title": "Shopping List",
+    "days_cook": "1. Which days will you cook?",
+    "select_days_desc": "Select days to generate your shopping list:",
+    "clear_all": "Clear all",
+    "regenerate": "Regenerate",
+    "consolidated_list": "2. Your Consolidated List",
+    "empty_placeholder": "Select at least one day above to populate the shopping list.",
+    "add_custom": "Add extra item",
+    "add_placeholder": "E.g., Napkins, sea salt...",
+    "clear_confirm_title": "Clear List",
+    "clear_confirm_desc": "Are you sure you want to clear and regenerate the shopping list?",
+    "categories": {
+      "proteins": "Lean Proteins",
+      "vegetables": "Vegetables & Greens",
+      "fruits": "Fruits",
+      "dairy": "Dairy & Liquids",
+      "grains": "Grains & Cereals",
+      "pantry": "Pantry & Seasonings",
+      "other": "Others / Customized"
+    },
+    "days": {
+      "mon": { "short": "M", "full": "Monday" },
+      "tue": { "short": "T", "full": "Tuesday" },
+      "wed": { "short": "W", "full": "Wednesday" },
+      "thu": { "short": "T", "full": "Thursday" },
+      "fri": { "short": "F", "full": "Friday" },
+      "sat": { "short": "S", "full": "Saturday" },
+      "sun": { "short": "S", "full": "Sunday" }
+    }
+  },
+  "key_foods": {
+    "title": "Key Foods",
+    "select_phase": "Select Cycle Phase",
+    "categories": {
+      "proteins": "Proteins",
+      "fats": "Healthy Fats",
+      "carbs": "Complex Carbs",
+      "veg_fruits": "Vegetables & Fruits"
+    },
+    "items": {
+      "lentejas": { "name": "Lentils", "benefit": "Rich in non-heme iron to offset blood loss and zinc to support the immune system." },
+      "salmon_salvaje": { "name": "Wild Salmon", "benefit": "High in Omega-3 fatty acids that decrease the production of inflammatory prostaglandins, soothing cramps." },
+      "semillas_lino": { "name": "Flaxseeds", "benefit": "Contain lignanos that help balance estrogen levels and fiber to prevent constipation." },
+      "nueces": { "name": "Walnuts", "benefit": "Provide healthy fats and magnesium, which contributes to uterine relaxation and reduces tension." },
+      "avena_integral": { "name": "Whole Oatmeal", "benefit": "Slowly releases glucose, providing steady energy and stimulating serotonin to regulate mood." },
+      "quinoa": { "name": "Quinoa", "benefit": "It is a complete protein with a low glycemic index, ideal for digestive comfort." },
+      "espinacas": { "name": "Spinach", "benefit": "Great source of iron and folate. Green leaves provide fiber that aids digestion and cleansing." },
+      "fresas_berries": { "name": "Strawberries & Berries", "benefit": "Vitamin C promotes iron absorption and provides antioxidant polyphenols to reduce inflammation." },
+      "pollo_pastoreo": { "name": "Pasture Chicken", "benefit": "Provides essential amino acids to build follicles and sustain the progressive rise of energy." },
+      "garbanzos": { "name": "Chickpeas", "benefit": "Rich in phytoestrogens that gently support the estrogen rise characteristic of this phase." },
+      "semillas_calabaza": { "name": "Pumpkin Seeds", "benefit": "High in zinc, essential for correct follicular maturation and preparation for ovulation." },
+      "almendras": { "name": "Almonds", "benefit": "Provide vitamin E, a potent antioxidant that nourishes follicular cell membranes." },
+      "arroz_integral": { "name": "Brown or Wild Rice", "benefit": "Contains B-group vitamins that assist in proper hormonal metabolization in the liver." },
+      "brocoli": { "name": "Broccoli", "benefit": "Contains indole-3-carbinol, a key compound to regulate excess estrogen and support liver detox." },
+      "aguacate": { "name": "Avocado", "benefit": "Monounsaturated healthy fats that promote oocyte quality and cervical lubrication." },
+      "pescado_blanco": { "name": "Lean White Fish", "benefit": "Light, highly digestible protein, ideal to maintain physical lightness during the estrogen peak." },
+      "huevos_organicos": { "name": "Organic Eggs", "benefit": "Rich in choline, vitamin D and B12, essential micronutrients to sustain oocyte quality." },
+      "semillas_sesamo": { "name": "Sesame Seeds", "benefit": "Contain calcium and zinc, minerals that support the proper release of the mature egg." },
+      "aceite_oliva": { "name": "Extra Virgin Olive Oil", "benefit": "Reduces body oxidative stress, protecting the egg during its journey through the tubes." },
+      "quinoa_cocida": { "name": "Cooked Quinoa", "benefit": "Complete protein with low-glycemic carbs to prevent postprandial insulin spikes." },
+      "hojas_verdes": { "name": "Leafy Greens (Arugula/Kale)", "benefit": "Stimulate fertile cervical mucus production and provide bioavailable calcium." },
+      "frambuesas": { "name": "Fresh Raspberries", "benefit": "High antioxidant content neutralizes free radicals, protecting reproductive cells." },
+      "pavo": { "name": "Lean Turkey", "benefit": "High in tryptophan, a serotonin and melatonine precursor, regulating mood and premenstrual rest." },
+      "legumbres": { "name": "Legumes (Lentils/Beans)", "benefit": "Provide soluble fiber that prevents constipation caused by elevated progesterone." },
+      "semillas_girasol": { "name": "Sunflower Seeds", "benefit": "Rich in vitamin E and selenium, key micronutrients to nourish and extend the corpus luteum lifespan." },
+      "mantequilla_almendras": { "name": "Almond Butter", "benefit": "Stable fats and magnesium to curb frequent sweet cravings before your period." },
+      "camote": { "name": "Sweet Potato", "benefit": "Provides complex carbohydrates and vitamin A, stabilizing blood sugar levels to modulate irritability." },
+      "calabaza": { "name": "Pumpkin / Squash", "benefit": "Rich in fiber and beta-carotenes. Provides natural sweet comfort to avoid bingeing." },
+      "platano": { "name": "Banana", "benefit": "Rich in potassium and vitamin B6, helping to reduce water retention and premenstrual bloating." }
+    }
   }
 }

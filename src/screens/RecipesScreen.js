@@ -32,9 +32,10 @@ export const RecipesScreen = ({
   currentPhaseKey = 'follicular',
   isLocked = false,
   onSubscribe,
+  cycleProfile,
 }) => {
   const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(currentPhaseKey || 'all');
   const [activeMealType, setActiveMealType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [displayRecipes, setDisplayRecipes] = useState(recipes);
@@ -71,7 +72,7 @@ export const RecipesScreen = ({
 
   const filteredRecipes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return displayRecipes.filter((recipe) => {
+    const matches = displayRecipes.filter((recipe) => {
       const vidPhase = recipe.phaseKey || recipe.phase_key || '';
       const vidMeal = recipe.mealType || recipe.meal_type || '';
       const matchesSearch = !query || recipe.title.toLowerCase().includes(query);
@@ -79,10 +80,17 @@ export const RecipesScreen = ({
       const matchesMealType = activeMealType === 'all' || vidMeal === activeMealType;
       return matchesSearch && matchesCategory && matchesMealType;
     });
-  }, [activeTab, activeMealType, displayRecipes, searchQuery]);
+
+    const userGoal = cycleProfile?.goal || 'balance';
+    return [...matches].sort((a, b) => {
+      const aGoal = a.goals?.includes(userGoal) ? 1 : 0;
+      const bGoal = b.goals?.includes(userGoal) ? 1 : 0;
+      return bGoal - aGoal; // Priority to recipes matching user's main goal
+    });
+  }, [activeTab, activeMealType, displayRecipes, searchQuery, cycleProfile]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAF9F6' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
@@ -188,7 +196,7 @@ export const RecipesScreen = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAF9F6' },
+  container: { flex: 1, backgroundColor: colors.background },
   contentContainer: { paddingHorizontal: 28, paddingTop: 60 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },

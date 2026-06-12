@@ -13,6 +13,7 @@ export const DEFAULT_CYCLE_PROFILE = {
   periodLength: 5,
   lastPeriodStart: format(new Date(), 'yyyy-MM-dd'),
   isPremium: false,
+  goal: 'balance',
 };
 
 /** ISO yyyy-MM-dd → DD/MM/YYYY (day-first, used in Spanish UI) */
@@ -85,6 +86,7 @@ export const normalizeCycleProfile = (profile = {}) => ({
   lastPeriodStart:
     profile.lastPeriodStart || profile.last_period_start || DEFAULT_CYCLE_PROFILE.lastPeriodStart,
   isPremium: Boolean(profile.isPremium || profile.is_premium || false),
+  goal: profile.goal || profile.main_goal || profile.mainGoal || DEFAULT_CYCLE_PROFILE.goal,
 });
 
 export const isValidCycleDate = (value) => {

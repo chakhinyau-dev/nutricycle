@@ -202,38 +202,36 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerHero}>
-          <ImageBackground
-            source={{ uri: 'https://images.unsplash.com/photo-1545208393-596371BA9a3f?w=800&q=80' }} // Calm wellness/lifestyle
-            style={styles.heroBg}
-          >
-            <View style={styles.heroOverlay} />
-            <View style={styles.topNav}>
-              <Pressable onPress={onBack} style={styles.backCircle}>
-                <ChevronLeft size={24} color="#FFF" />
-              </Pressable>
-              <Pressable style={styles.navRight} onPress={() => onNavigate('subscription')}>
-                <View style={styles.premiumPill}>
-                  <Crown size={14} color="#FFD700" fill="#FFD700" />
-                  <Text style={styles.premiumText}>BALANCE</Text>
-                </View>
-              </Pressable>
-            </View>
-
-            <View style={styles.profileMaster}>
-              <View style={styles.avatarMaster}>
-                <Image source={{ uri: user?.imageUrl || fallbackAvatar }} style={styles.avatarMain} />
-                <Pressable
-                  style={[styles.editBadge, isUploading && { opacity: 0.5 }]}
-                  onPress={pickImage}
-                  disabled={isUploading}
-                >
-                  <Camera size={14} color="#FFF" />
-                </Pressable>
+          <View style={styles.topNav}>
+            <Pressable onPress={onBack} style={styles.backCircle}>
+              <ChevronLeft size={24} color={colors.on_surface} />
+            </Pressable>
+            <Pressable style={styles.navRight} onPress={() => onNavigate('subscription')}>
+              <View style={[styles.premiumPill, !isPremium && styles.basicPill]}>
+                <Crown size={14} color={isPremium ? "#FFD700" : colors.on_surface_variant} fill={isPremium ? "#FFD700" : "none"} />
+                <Text style={[styles.premiumText, !isPremium && styles.basicText]}>
+                  {isPremium 
+                    ? (isSpanish ? "PLAN BALANCE ACTIVO" : "BALANCE PLAN ACTIVE") 
+                    : (isSpanish ? "PLAN BÁSICO (MEJORAR)" : "BASIC PLAN (UPGRADE)")}
+                </Text>
               </View>
-              <Text style={styles.masterName}>{fullName}</Text>
-              <Text style={styles.masterEmail}>{email}</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.profileMaster}>
+            <View style={styles.avatarMaster}>
+              <Image source={{ uri: user?.imageUrl || fallbackAvatar }} style={styles.avatarMain} />
+              <Pressable
+                style={[styles.editBadge, isUploading && { opacity: 0.5 }]}
+                onPress={pickImage}
+                disabled={isUploading}
+              >
+                <Camera size={14} color="#FFF" />
+              </Pressable>
             </View>
-          </ImageBackground>
+            <Text style={styles.masterName}>{fullName}</Text>
+            <Text style={styles.masterEmail}>{email}</Text>
+          </View>
         </View>
 
         <View style={styles.mainGroup}>
@@ -348,21 +346,15 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     backgroundColor: colors.background,
   },
   headerHero: {
-    height: 380,
+    height: 340,
     width: '100%',
-  },
-  heroBg: {
-    flex: 1,
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(74,68,83,0.6)',
+    backgroundColor: colors.background,
   },
   topNav: {
     flexDirection: 'row',
@@ -374,7 +366,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EAEAE2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -384,12 +378,15 @@ const styles = StyleSheet.create({
   premiumPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     height: 38,
     borderRadius: 19,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.4)',
+    borderColor: '#FFD700',
+  },
+  basicPill: {
+    borderColor: '#EAEAE2',
   },
   goldPulse: {
     width: 6,
@@ -399,11 +396,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   premiumText: {
-    color: '#FFD700',
+    color: '#B8860B',
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
     marginLeft: 6,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
+  },
+  basicText: {
+    color: colors.on_surface_variant,
   },
   profileMaster: {
     alignItems: 'center',
@@ -414,8 +414,13 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: '#FFFFFF',
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   avatarMain: {
     width: '100%',
@@ -433,18 +438,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#4A4453',
+    borderColor: '#FFFFFF',
   },
   masterName: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 26,
-    color: '#FFFFFF',
+    fontSize: 28,
+    color: colors.on_surface,
     marginBottom: 4,
   },
   masterEmail: {
     fontFamily: 'Outfit_500Medium',
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
+    color: colors.on_surface_variant,
   },
   mainGroup: {
     marginTop: -40,
