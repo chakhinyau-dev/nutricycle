@@ -162,7 +162,7 @@ export const DashboardScreen = ({
         </View>
         <Pressable style={styles.trackerBtn} onPress={() => onNavigate('calendar')}>
           <Text style={styles.trackerBtnText}>{t('dashboard.view_full_tracker', { defaultValue: 'VIEW FULL TRACKER' })}</Text>
-          <ChevronRight size={14} color="#1A1A2E" />
+          <ChevronRight size={14} color="#FFFFFF" />
         </Pressable>
       </View>
 
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     borderColor: '#EFEDE4',
   },
   trackerCard: {
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#433D4F',
     borderRadius: 24,
     padding: 20,
   },
@@ -329,12 +329,12 @@ const styles = StyleSheet.create({
   trackerColumnCenter: {
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   trackerLabel: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.55)',
     letterSpacing: 1,
     marginBottom: 6,
   },
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   trackerBtn: {
-    backgroundColor: '#F6C94E',
+    backgroundColor: '#A3B3A5',
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   trackerBtnText: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 12,
-    color: '#1A1A2E',
+    color: '#FFFFFF',
     letterSpacing: 1,
   },
   chartCard: {
