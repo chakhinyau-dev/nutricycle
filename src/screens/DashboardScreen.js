@@ -2,12 +2,9 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
-import { Utensils, Apple, Calendar, Heart, ShieldAlert, Play } from 'lucide-react-native';
+import { Utensils, Apple, Calendar, Play, ChevronRight } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 
-import morningImg from '../../assets/greeting_morning.png';
-import afternoonImg from '../../assets/greeting_afternoon.png';
-import nightImg from '../../assets/greeting_night.png';
 
 const { width } = Dimensions.get('window');
 const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200';
@@ -26,11 +23,6 @@ export const DashboardScreen = ({
   // Obtain user's selected onboarding goal
   const userGoal = cycleProfile?.goal || 'balance';
 
-  // Get localized goal name
-  const getGoalLabel = () => {
-    return t(`wizard.goals.${userGoal}`, { defaultValue: 'Equilibrio hormonal' });
-  };
-
   const getTimeBasedGreeting = () => {
     const hours = new Date().getHours();
     const name = user?.firstName || t('common.user_fallback', { defaultValue: 'bonita' });
@@ -39,80 +31,53 @@ export const DashboardScreen = ({
     return t('dashboard.greeting_evening', { name });
   };
 
-  const getTimeBasedImage = () => {
-    const hours = new Date().getHours();
-    if (hours >= 5 && hours < 12) return morningImg;
-    if (hours >= 12 && hours < 19) return afternoonImg;
-    return nightImg;
-  };
-
-  const PHASE_CONTENT = {
-    menstrual: {
-      image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800',
-      title: t('dashboard.phase_titles.menstrual'),
-      msg: t('phase_menstrual_msg'),
-    },
-    follicular: {
-      image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800',
-      title: t('dashboard.phase_titles.follicular'),
-      msg: t('phase_follicular_msg'),
-    },
-    ovulation: {
-      image: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800',
-      title: t('dashboard.phase_titles.ovulation'),
-      msg: t('phase_ovulation_msg'),
-    },
-    luteal: {
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800',
-      title: t('dashboard.phase_titles.luteal'),
-      msg: t('phase_luteal_msg'),
-    },
-  };
-
-  const currentContent = PHASE_CONTENT[phaseKey] || PHASE_CONTENT.follicular;
-
   // --- SVG HORMONE CHART MATHEMATICS ---
   const cycleLength = cycleProfile?.cycleLength || 28;
   const cycleDay = cycleInfo?.cycleDay || 1;
   const chartWidth = width - 48; // Full width minus container padding
   const chartHeight = 110;
 
-  const { estrogenPath, progesteronePath, currentDayX, curEstrogenY, curProgesteroneY } = useMemo(() => {
+  const { estrogenPath, progesteronePath, testosteronePath, currentDayX, curEstrogenY, curProgesteroneY, curTestosteroneY } = useMemo(() => {
     let ePoints = [];
     let pPoints = [];
+    let tPoints = [];
     let curE_Y = chartHeight / 2;
     let curP_Y = chartHeight / 2;
+    let curT_Y = chartHeight / 2;
     let curX = 0;
 
     for (let i = 1; i <= cycleLength; i++) {
       const x = ((i - 1) / (cycleLength - 1)) * chartWidth;
-      const t = (i - 1) / (cycleLength - 1);
+      const ratio = (i - 1) / (cycleLength - 1);
 
-      // Estrogen curve approximation (peaks at ovulation day 13-14, with secondary peak in luteal phase)
-      const eVal = 0.15 + 0.65 * Math.exp(-Math.pow((t - 0.44) / 0.08, 2)) + 0.3 * Math.exp(-Math.pow((t - 0.76) / 0.12, 2));
-      // Progesterone curve approximation (flat until ovulation, peaks in mid-luteal phase around 21-22)
-      const pVal = 0.05 + 0.7 * Math.exp(-Math.pow((t - 0.76) / 0.12, 2));
+      const eVal = 0.15 + 0.65 * Math.exp(-Math.pow((ratio - 0.44) / 0.08, 2)) + 0.3 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
+      const pVal = 0.05 + 0.7 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
+      const tVal = 0.1 + 0.55 * Math.exp(-Math.pow((ratio - 0.42) / 0.13, 2));
 
-      // Map values to SVG Y coordinates (remember: Y starts at 0 at the top)
       const yE = chartHeight - 15 - eVal * (chartHeight - 30);
       const yP = chartHeight - 15 - pVal * (chartHeight - 30);
+      const yT = chartHeight - 15 - tVal * (chartHeight - 30);
 
       ePoints.push(`${x},${yE}`);
       pPoints.push(`${x},${yP}`);
+      tPoints.push(`${x},${yT}`);
 
       if (i === cycleDay) {
         curX = x;
         curE_Y = yE;
         curP_Y = yP;
+        curT_Y = yT;
       }
     }
 
     return {
       estrogenPath: `M ${ePoints.join(' L ')}`,
       progesteronePath: `M ${pPoints.join(' L ')}`,
+      testosteronePath: `M ${tPoints.join(' L ')}`,
       currentDayX: curX,
       curEstrogenY: curE_Y,
-      curProgesteroneY: curP_Y
+      curProgesteroneY: curP_Y,
+      curTestosteroneY: curT_Y,
     };
   }, [cycleLength, cycleDay, chartWidth, chartHeight]);
 
@@ -151,6 +116,16 @@ export const DashboardScreen = ({
     return sorted[0];
   }, [recipes, phaseKey, userGoal]);
 
+  const trackerData = useMemo(() => {
+    const data = {
+      menstrual: { energy: t('tracker.energy.low', { defaultValue: 'Low' }), mood: t('tracker.mood.reflective', { defaultValue: 'Reflective' }), drive: t('tracker.drive.resting', { defaultValue: 'Resting' }) },
+      follicular: { energy: t('tracker.energy.rising', { defaultValue: 'Rising' }), mood: t('tracker.mood.optimistic', { defaultValue: 'Optimistic' }), drive: t('tracker.drive.building', { defaultValue: 'Building' }) },
+      ovulation: { energy: t('tracker.energy.peak', { defaultValue: 'Peak' }), mood: t('tracker.mood.positive', { defaultValue: 'Positive' }), drive: t('tracker.drive.high', { defaultValue: 'High' }) },
+      luteal: { energy: t('tracker.energy.declining', { defaultValue: 'Declining' }), mood: t('tracker.mood.introspective', { defaultValue: 'Introspective' }), drive: t('tracker.drive.winding', { defaultValue: 'Winding Down' }) },
+    };
+    return data[phaseKey] || data.follicular;
+  }, [phaseKey, t]);
+
   return (
     <ScrollView
       style={styles.container}
@@ -161,41 +136,33 @@ export const DashboardScreen = ({
       <View style={styles.header}>
         <View>
           <Text style={styles.greetingText}>{getTimeBasedGreeting()}</Text>
-          <View style={styles.goalBadge}>
-            <Heart size={12} color={colors.secondary} fill={colors.secondary} />
-            <Text style={styles.goalText}>{getGoalLabel()}</Text>
-          </View>
         </View>
         <Pressable onPress={() => onNavigate('settings')}>
            <Image source={{ uri: user?.imageUrl || fallbackAvatar }} style={styles.avatar} />
         </Pressable>
       </View>
 
-      <View style={{ marginBottom: 28 }} />
+      <View style={{ marginBottom: 20 }} />
 
-      {/* 2. Main Emotional Card */}
-      <View style={styles.mainCard}>
-        <Image source={getTimeBasedImage()} style={styles.mainCardImage} resizeMode="cover" />
-        <View style={styles.mainCardOverlay}>
-          <Text style={styles.mainCardPhase}>{currentContent.title}</Text>
-          <Text style={styles.mainCardMessage}>{currentContent.msg}</Text>
+      {/* 3. Hormone Tracker Widget */}
+      <View style={styles.trackerCard}>
+        <View style={styles.trackerColumns}>
+          <View style={styles.trackerColumn}>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'ENERGY' })}</Text>
+            <Text style={styles.trackerValue}>{trackerData.energy}</Text>
+          </View>
+          <View style={[styles.trackerColumn, styles.trackerColumnCenter]}>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_mood', { defaultValue: 'MOOD' })}</Text>
+            <Text style={styles.trackerValue}>{trackerData.mood}</Text>
+          </View>
+          <View style={styles.trackerColumn}>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_drive', { defaultValue: 'DRIVE' })}</Text>
+            <Text style={styles.trackerValue}>{trackerData.drive}</Text>
+          </View>
         </View>
-      </View>
-
-      <View style={{ marginBottom: 36 }} />
-
-      {/* 3. Cycle Info (Horizontal Row) */}
-      <View style={styles.cycleInfoSection}>
-        <View>
-          <Text style={styles.cycleInfoText}>
-            {t('dashboard.cycle_day', { day: cycleInfo?.cycleDay || 1 })}
-          </Text>
-          <Text style={styles.cycleInfoTextSecondary}>
-            {t('dashboard.next_period', { days: cycleInfo?.daysUntilNextPeriod || 28 })}
-          </Text>
-        </View>
-        <Pressable style={styles.logTodayBtn} onPress={() => onNavigate('dailyLog')}>
-          <Text style={styles.logTodayText}>{t('dashboard.log_action', { defaultValue: 'Registrar' })}</Text>
+        <Pressable style={styles.trackerBtn} onPress={() => onNavigate('calendar')}>
+          <Text style={styles.trackerBtnText}>{t('dashboard.view_full_tracker', { defaultValue: 'VIEW FULL TRACKER' })}</Text>
+          <ChevronRight size={14} color="#1A1A2E" />
         </Pressable>
       </View>
 
@@ -204,15 +171,19 @@ export const DashboardScreen = ({
       {/* 4. Hormone curve chart section */}
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>{t('dashboard.hormone_tides')}</Text>
+          <Text style={styles.chartTitle}>{t('dashboard.hormone_map', { defaultValue: 'Tu mapa hormonal' })}</Text>
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#C9605A' }]} />
               <Text style={styles.legendLabel}>{t('dashboard.estrogen')}</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#6EA87B' }]} />
               <Text style={styles.legendLabel}>{t('dashboard.progesterone')}</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#D4897E' }]} />
+              <Text style={styles.legendLabel}>{t('dashboard.testosterone', { defaultValue: 'Testosterona' })}</Text>
             </View>
           </View>
         </View>
@@ -220,34 +191,22 @@ export const DashboardScreen = ({
         <View style={styles.chartWrapper}>
           <Svg width={chartWidth} height={chartHeight}>
             {/* Estrogen Curve */}
-            <Path
-              d={estrogenPath}
-              fill="none"
-              stroke="#A78BFA"
-              strokeWidth={3}
-            />
+            <Path d={estrogenPath} fill="none" stroke="#C9605A" strokeWidth={1.5} />
             {/* Progesterone Curve */}
-            <Path
-              d={progesteronePath}
-              fill="none"
-              stroke="#F59E0B"
-              strokeWidth={3}
-            />
+            <Path d={progesteronePath} fill="none" stroke="#6EA87B" strokeWidth={1.5} />
+            {/* Testosterone Curve */}
+            <Path d={testosteronePath} fill="none" stroke="#D4897E" strokeWidth={1.5} />
 
             {/* Current day indicator line */}
             <Line
-              x1={currentDayX}
-              y1={5}
-              x2={currentDayX}
-              y2={chartHeight - 5}
-              stroke="#64748B"
-              strokeWidth={1.5}
-              strokeDasharray="4 4"
+              x1={currentDayX} y1={5} x2={currentDayX} y2={chartHeight - 5}
+              stroke="#64748B" strokeWidth={1} strokeDasharray="4 4"
             />
 
             {/* Intersection dots */}
-            <Circle cx={currentDayX} cy={curEstrogenY} r={6} fill="#A78BFA" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={currentDayX} cy={curProgesteroneY} r={6} fill="#F59E0B" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={currentDayX} cy={curEstrogenY} r={4} fill="#C9605A" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={currentDayX} cy={curProgesteroneY} r={4} fill="#6EA87B" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={currentDayX} cy={curTestosteroneY} r={4} fill="#D4897E" stroke="#FFFFFF" strokeWidth={1.5} />
           </Svg>
         </View>
 
@@ -345,18 +304,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: colors.on_surface,
   },
-  goalBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 6,
-  },
-  goalText: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 12,
-    color: colors.on_surface_variant,
-    opacity: 0.8,
-  },
   avatar: {
     width: 44,
     height: 44,
@@ -365,87 +312,56 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#EFEDE4',
   },
-  mainCard: {
-    width: '100%',
-    height: 280, // Reduced from 440 to fit curve chart cleanly on one page
-    borderRadius: 40,
-    overflow: 'hidden',
-    backgroundColor: '#FFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
+  trackerCard: {
+    backgroundColor: '#1A1A2E',
+    borderRadius: 24,
+    padding: 20,
   },
-  mainCardImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#FAF9F6',
-    opacity: 0.95,
-  },
-  mainCardOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 24,
-    backgroundColor: 'rgba(74,68,83,0.3)', // softer overlay
-  },
-  mainCardPhase: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 28,
-    color: '#FFF',
-    marginBottom: 8,
-  },
-  mainCardMessage: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 14,
-    color: '#FFF',
-    lineHeight: 20,
-    opacity: 0.95,
-  },
-  cycleInfoSection: {
+  trackerColumns: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  trackerColumn: {
     alignItems: 'center',
-    paddingHorizontal: 4,
+    flex: 1,
   },
-  cycleInfoText: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 24,
-    color: colors.on_surface,
-    marginBottom: 4,
+  trackerColumnCenter: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  cycleInfoTextSecondary: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 14,
-    color: colors.primary,
+  trackerLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 1,
+    marginBottom: 6,
   },
-  logTodayBtn: {
-    backgroundColor: colors.primary, // Sage Green (#A3B3A5)
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+  trackerValue: {
+    fontFamily: 'InstrumentSerif_400Regular_Italic',
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  trackerBtn: {
+    backgroundColor: '#F6C94E',
     borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
-  logTodayText: {
+  trackerBtnText: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 12,
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
+    color: '#1A1A2E',
+    letterSpacing: 1,
   },
   chartCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02,
-    shadowRadius: 10,
-    elevation: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   chartHeader: {
     flexDirection: 'row',

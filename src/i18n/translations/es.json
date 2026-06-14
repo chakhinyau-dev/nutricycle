@@ -150,13 +150,19 @@
       "luteal": "Fase lútea"
     },
     "hormone_tides": "Mareas Hormonales",
+    "hormone_map": "Tu mapa hormonal",
     "estrogen": "Estrógeno",
     "progesterone": "Progesterona",
+    "testosterone": "Testosterona",
     "today_label": "Hoy",
     "quick_access": "Accesos Rápidos",
     "key_foods_title": "Comer Bien",
     "log_action": "Registrar",
-    "suggested_recipe": "Receta Sugerida del Día"
+    "suggested_recipe": "Receta Sugerida del Día",
+    "tracker_energy": "ENERGÍA",
+    "tracker_mood": "ÁNIMO",
+    "tracker_drive": "IMPULSO",
+    "view_full_tracker": "VER TRACKER COMPLETO"
   },
   "phase_menstrual_msg": "Tu cuerpo está descansando.\nHoy prioriza alimentos ricos en hierro y momentos de calma",
   "phase_follicular_msg": "Tu energía está subiendo.\nEs un buen momento para nuevos proyectos y movimiento suave.",
@@ -513,6 +519,26 @@
       "calm": "CALMA"
     },
     "hero_desc": "Práctica guiada para el equilibrio hormonal."
+  },
+  "tracker": {
+    "energy": {
+      "low": "Baja",
+      "rising": "Subiendo",
+      "peak": "En Pico",
+      "declining": "Bajando"
+    },
+    "mood": {
+      "reflective": "Reflexiva",
+      "optimistic": "Optimista",
+      "positive": "Positiva",
+      "introspective": "Introspectiva"
+    },
+    "drive": {
+      "resting": "Descansando",
+      "building": "Construyendo",
+      "high": "Alto",
+      "winding": "Bajando el Ritmo"
+    }
   },
   "loading": {
     "sys_init": "Iniciando Sistema de Bienestar",

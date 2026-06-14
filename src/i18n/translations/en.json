@@ -147,13 +147,19 @@
       "luteal": "Luteal phase"
     },
     "hormone_tides": "Hormonal Tides",
+    "hormone_map": "Your Hormonal Map",
     "estrogen": "Estrogen",
     "progesterone": "Progesterone",
+    "testosterone": "Testosterone",
     "today_label": "Today",
     "quick_access": "Quick Access",
     "key_foods_title": "Eat Well",
     "log_action": "Log Info",
-    "suggested_recipe": "Suggested Recipe of the Day"
+    "suggested_recipe": "Suggested Recipe of the Day",
+    "tracker_energy": "ENERGY",
+    "tracker_mood": "MOOD",
+    "tracker_drive": "DRIVE",
+    "view_full_tracker": "VIEW FULL TRACKER"
   },
   "phase_menstrual_msg": "Your body is resting.\nToday focus on iron-rich foods and quiet moments.",
     "phase_follicular_msg": "Your energy is gently rising.\nThis is a good time for fresh ideas and light movement.",
@@ -540,6 +546,26 @@
     "sardine_pasta": "Whole Wheat Pasta with Sardines and Spinach",
     "nut_mix": "Nut and Dark Chocolate Mix",
     "green_smoothie": "Energizing Green Smoothie"
+  },
+  "tracker": {
+    "energy": {
+      "low": "Low",
+      "rising": "Rising",
+      "peak": "Peak",
+      "declining": "Declining"
+    },
+    "mood": {
+      "reflective": "Reflective",
+      "optimistic": "Optimistic",
+      "positive": "Positive",
+      "introspective": "Introspective"
+    },
+    "drive": {
+      "resting": "Resting",
+      "building": "Building",
+      "high": "High",
+      "winding": "Winding Down"
+    }
   },
   "loading": {
     "sys_init": "Starting Wellness System",
