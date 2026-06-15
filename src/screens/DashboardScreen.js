@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
-import { CookingPot, Leaf, ClipboardList, ChevronRight } from 'lucide-react-native';
+import { Utensils, Leaf, Play, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 
 
@@ -219,14 +219,22 @@ export const DashboardScreen = ({
 
       <View style={{ marginBottom: 32 }} />
 
+      {/* Log how you feel */}
+      <Pressable style={styles.logFeelBtn} onPress={() => onNavigate('dailyLog')}>
+        <Heart size={18} color={colors.on_primary_container} />
+        <Text style={styles.logFeelBtnText}>{t('dashboard.log_feel', { defaultValue: 'Registrar cómo me siento' })}</Text>
+      </Pressable>
+
+      <View style={{ marginBottom: 28 }} />
+
       {/* 5. Quick Access Circles */}
       <View style={styles.quickAccessSection}>
         <View style={styles.circlesRow}>
-          <Pressable style={styles.circleItem} onPress={() => onNavigate('recipes')}>
+          <Pressable style={styles.circleItem} onPress={() => onNavigate('nutrition')}>
             <View style={[styles.circleIconBox, { backgroundColor: '#EBF2EB' }]}>
-              <CookingPot size={22} color={colors.on_primary_container} />
+              <Utensils size={22} color={colors.on_primary_container} />
             </View>
-            <Text style={styles.circleLabel}>{t('nav.recipes')}</Text>
+            <Text style={styles.circleLabel}>{t('nav.nutrition')}</Text>
           </Pressable>
 
           <Pressable style={styles.circleItem} onPress={() => onNavigate('keyFoods')}>
@@ -236,11 +244,11 @@ export const DashboardScreen = ({
             <Text style={styles.circleLabel}>{t('dashboard.key_foods_title')}</Text>
           </Pressable>
 
-          <Pressable style={styles.circleItem} onPress={() => onNavigate('shoppingList')}>
+          <Pressable style={styles.circleItem} onPress={() => onNavigate('videos')}>
             <View style={[styles.circleIconBox, { backgroundColor: '#ECFDF5' }]}>
-              <ClipboardList size={22} color="#059669" />
+              <Play size={22} color="#059669" />
             </View>
-            <Text style={styles.circleLabel}>{t('shopping.title')}</Text>
+            <Text style={styles.circleLabel}>{t('nav.videos')}</Text>
           </Pressable>
         </View>
       </View>
@@ -400,6 +408,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.on_surface_variant,
     opacity: 0.7,
+  },
+  logFeelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#EBF2EB',
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+  },
+  logFeelBtnText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    color: colors.on_primary_container,
   },
   quickAccessSection: {
     paddingHorizontal: 4,

@@ -13,9 +13,8 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-import { Play, ChevronLeft, Clock, Sparkles, LayoutGrid, Coffee, Utensils, Apple, Moon, Crown } from 'lucide-react-native';
+import { Play, ChevronLeft, Crown, CheckCircle } from 'lucide-react-native';
 import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
-import { PHASE_LABELS } from '../utils/cycle';
 import { translateContent } from '../services/translationService';
 
 const { width } = Dimensions.get('window');
@@ -43,7 +42,7 @@ const getMealTypes = (t) => [
 ];
 
 
-export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, isLocked = false, onSubscribe }) => {
+export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe }) => {
   const { t, i18n } = useTranslation();
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [displayVideo, setDisplayVideo] = useState(null);
@@ -138,6 +137,11 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   }, [activeFilterId, activeMealType, displayLibrary]);
 
   if (selectedVideo) {
+    const linkedRecipe = activeVideo?.contentType === 'recipe'
+      ? (recipes.find(r => r.phaseKey === activeVideo.phaseKey && r.mealType === activeVideo.mealType)
+        || recipes.find(r => r.phaseKey === activeVideo.phaseKey))
+      : null;
+
     const isAudioOnly =
       activeVideo?.contentType === 'wellness' ||
       activeVideo?.category?.toLowerCase().includes('meditación') ||
@@ -227,6 +231,34 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
             </View>
             <Text style={styles.detailTitle}>{activeVideo?.title}</Text>
             <Text style={styles.detailDesc}>{activeVideo?.description}</Text>
+
+            {linkedRecipe && (
+              <View style={styles.recipeSection}>
+                <View style={styles.recipeMacroRow}>
+                  <Text style={styles.recipeMacroItem}>{linkedRecipe.time} min</Text>
+                  <Text style={styles.recipeMacroDot}>·</Text>
+                  <Text style={styles.recipeMacroItem}>{linkedRecipe.calories} kcal</Text>
+                  <Text style={styles.recipeMacroDot}>·</Text>
+                  <Text style={styles.recipeMacroItem}>{t('recipe_detail.high_protein')}</Text>
+                </View>
+
+                <Text style={styles.recipeSectionTitle}>{t('recipe_detail.ingredients')}</Text>
+                {linkedRecipe.ingredients?.map((item, idx) => (
+                  <View key={idx} style={styles.ingredientRow}>
+                    <CheckCircle size={16} color="#A3B3A5" />
+                    <Text style={styles.ingredientText}>{item}</Text>
+                  </View>
+                ))}
+
+                <Text style={[styles.recipeSectionTitle, { marginTop: 24 }]}>{t('recipe_detail.preparation')}</Text>
+                {linkedRecipe.instructions?.map((step, idx) => (
+                  <View key={idx} style={styles.stepRow}>
+                    <Text style={styles.stepNumber}>{idx + 1}.</Text>
+                    <Text style={styles.stepText}>{step}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -480,6 +512,67 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  recipeSection: {
+    marginTop: 32,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F1E8',
+    paddingTop: 24,
+  },
+  recipeMacroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 8,
+  },
+  recipeMacroItem: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+  },
+  recipeMacroDot: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: '#A3B3A5',
+  },
+  recipeSectionTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 22,
+    color: colors.on_surface,
+    marginBottom: 16,
+  },
+  ingredientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  ingredientText: {
+    flex: 1,
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 15,
+    color: colors.on_surface,
+    lineHeight: 22,
+    opacity: 0.85,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 12,
+  },
+  stepNumber: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 18,
+    color: '#A3B3A5',
+    width: 20,
+  },
+  stepText: {
+    flex: 1,
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 15,
+    color: colors.on_surface,
+    lineHeight: 24,
+    opacity: 0.85,
   },
 });
 

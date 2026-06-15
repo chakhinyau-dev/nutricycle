@@ -155,6 +155,7 @@
     "quick_access": "Quick Access",
     "key_foods_title": "Alimentos Clave",
     "log_action": "Log Info",
+    "log_feel": "Log how I feel",
     "suggested_recipe": "Suggested Recipe of the Day",
     "tracker_energy": "ENERGY",
     "tracker_mood": "MOOD",
@@ -310,6 +311,7 @@
     "insight_title": "NUTRITIONAL WISDOM",
     "ingredients": "Ingredients",
     "instructions": "Instructions",
+    "key_ingredients": "Key Ingredients",
     "serving_info": "{{count}} INGREDIENTS • 1 PERSON",
     "approve_cta": "RECOMMENDED FOR YOUR PHASE",
     "insight_fallback": "This recipe is designed to improve your hormonal balance."

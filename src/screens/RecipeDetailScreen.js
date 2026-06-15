@@ -209,7 +209,7 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
               style={styles.collapsibleHeader} 
               onPress={() => setIsIngredientsExpanded(!isIngredientsExpanded)}
             >
-              <Text style={styles.sectionTitle}>Ingredientes Clave</Text>
+              <Text style={styles.sectionTitle}>{t('recipe_detail.key_ingredients')}</Text>
               {isIngredientsExpanded ? (
                 <ChevronUp size={24} color="#1A1A1A" />
               ) : (

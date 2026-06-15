@@ -579,10 +579,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
           );
         case 'videos':
           return (
-            <VideosScreen 
-              onBack={goBack} 
-              currentPhaseKey={cycleInfo.currentPhaseKey} 
-              videos={videos} 
+            <VideosScreen
+              onBack={goBack}
+              currentPhaseKey={cycleInfo.currentPhaseKey}
+              videos={videos}
+              recipes={recipes}
               isLocked={!canAccessPremium}
               onSubscribe={() => navigateTo('subscription')}
             />
@@ -604,12 +605,13 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
         case 'recipes':
           return (
-            <RecipesScreen
+            <VideosScreen
               onBack={goBack}
-              onNavigate={navigateTo}
+              currentPhaseKey={cycleInfo.currentPhaseKey}
+              videos={videos}
+              recipes={recipes}
               isLocked={!canAccessPremium}
               onSubscribe={() => navigateTo('subscription')}
-              {...sharedScreenProps}
             />
           );
         case 'keyFoods':
@@ -651,10 +653,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
         );
       case 'videos':
         return (
-          <VideosScreen 
-            onBack={() => setActiveTab('today')} 
-            currentPhaseKey={cycleInfo.currentPhaseKey} 
-            videos={videos} 
+          <VideosScreen
+            onBack={() => setActiveTab('today')}
+            currentPhaseKey={cycleInfo.currentPhaseKey}
+            videos={videos}
+            recipes={recipes}
             isLocked={!canAccessPremium}
             onSubscribe={() => navigateTo('subscription')}
           />
