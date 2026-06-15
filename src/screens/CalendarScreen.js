@@ -19,10 +19,10 @@ const { width } = Dimensions.get('window');
 
 // Tracker Phase Colors
 const TRACKER_COLORS = {
-  menstrual: '#E57373', // soft red
-  follicular: '#A3B3A5', // green
-  ovulation: '#7DA2F5', // blue
-  luteal: '#E2A93E', // gold/amber
+  menstrual: '#D4907A',
+  follicular: '#C4B87E',
+  ovulation: '#D4A8A8',
+  luteal: '#9B8DC4',
 };
 
 export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [], onDeleteLog }) => {
@@ -222,17 +222,15 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
 
           {/* Center text of circular tracker */}
           <View style={styles.centerTextContainer}>
-            <Text style={styles.centerDayNum}>{t('calendar.cycle_day_label', { day: cycleDay, defaultValue: `Día ${cycleDay}` })}</Text>
+            <Text style={styles.centerDayNum}>{cycleDay}</Text>
             <Text style={styles.centerPhaseName}>{t(`phases.${currentPhase}`)}</Text>
+            <Text style={styles.centerCountdown}>
+              {nextPhaseInfo.days === 1
+                ? t('calendar.countdown_one_day', { phase: nextPhaseInfo.name, defaultValue: `Falta 1 día para ${nextPhaseInfo.name}` })
+                : t('calendar.countdown_days', { days: nextPhaseInfo.days, phase: nextPhaseInfo.name, defaultValue: `Faltan ${nextPhaseInfo.days} días para ${nextPhaseInfo.name}` })}
+            </Text>
           </View>
         </View>
-
-        {/* Days remaining countdown */}
-        <Text style={styles.countdownText}>
-          {nextPhaseInfo.days === 1 
-            ? t('calendar.countdown_one_day', { phase: nextPhaseInfo.name, defaultValue: `Falta 1 día para la fase ${nextPhaseInfo.name}` })
-            : t('calendar.countdown_days', { days: nextPhaseInfo.days, phase: nextPhaseInfo.name, defaultValue: `Faltan ${nextPhaseInfo.days} días para la fase ${nextPhaseInfo.name}` })}
-        </Text>
 
         {/* Log Period CTA */}
         <Pressable
@@ -438,16 +436,6 @@ const styles = StyleSheet.create({
   },
   trackerContainer: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 40,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.02,
-    shadowRadius: 16,
-    elevation: 3,
   },
   circleLayout: {
     position: 'relative',
@@ -479,32 +467,28 @@ const styles = StyleSheet.create({
   centerTextContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 140,
-    height: 140,
+    width: 160,
   },
   centerDayNum: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 44,
-    color: colors.on_surface,
-    marginBottom: 4,
+    fontSize: 72,
+    color: '#B5705A',
+    lineHeight: 76,
+    marginBottom: 2,
   },
   centerPhaseName: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 20,
+    color: colors.on_surface,
+    fontStyle: 'italic',
+    marginBottom: 6,
   },
-  countdownText: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 14,
+  centerCountdown: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 11,
     color: colors.on_surface_variant,
     textAlign: 'center',
-    marginBottom: 20,
-  },
-  countdownHighlight: {
-    fontFamily: 'Outfit_700Bold',
-    color: colors.primary,
+    opacity: 0.7,
   },
   logBtn: {
     flexDirection: 'row',
