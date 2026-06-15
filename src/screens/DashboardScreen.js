@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
-import { Utensils, Apple, Calendar, Play, ChevronRight } from 'lucide-react-native';
+import { CookingPot, Leaf, ClipboardList, ChevronRight } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 
 
@@ -221,32 +221,24 @@ export const DashboardScreen = ({
 
       {/* 5. Quick Access Circles */}
       <View style={styles.quickAccessSection}>
-        <Text style={styles.quickAccessTitle}>{t('dashboard.quick_access')}</Text>
         <View style={styles.circlesRow}>
           <Pressable style={styles.circleItem} onPress={() => onNavigate('recipes')}>
             <View style={[styles.circleIconBox, { backgroundColor: '#EBF2EB' }]}>
-              <Utensils size={22} color={colors.on_primary_container} />
+              <CookingPot size={22} color={colors.on_primary_container} />
             </View>
             <Text style={styles.circleLabel}>{t('nav.recipes')}</Text>
           </Pressable>
 
-          <Pressable style={styles.circleItem} onPress={() => onNavigate('videos')}>
-            <View style={[styles.circleIconBox, { backgroundColor: '#F5F3FF' }]}>
-              <Play size={22} color={colors.secondary} />
-            </View>
-            <Text style={styles.circleLabel}>{t('nav.videos')}</Text>
-          </Pressable>
-
           <Pressable style={styles.circleItem} onPress={() => onNavigate('keyFoods')}>
             <View style={[styles.circleIconBox, { backgroundColor: '#FEF9EC' }]}>
-              <Apple size={22} color="#D97706" />
+              <Leaf size={22} color="#D97706" />
             </View>
             <Text style={styles.circleLabel}>{t('dashboard.key_foods_title')}</Text>
           </Pressable>
 
           <Pressable style={styles.circleItem} onPress={() => onNavigate('shoppingList')}>
             <View style={[styles.circleIconBox, { backgroundColor: '#ECFDF5' }]}>
-              <Calendar size={22} color="#059669" />
+              <ClipboardList size={22} color="#059669" />
             </View>
             <Text style={styles.circleLabel}>{t('shopping.title')}</Text>
           </Pressable>
@@ -427,7 +419,7 @@ const styles = StyleSheet.create({
   },
   circleItem: {
     alignItems: 'center',
-    width: (width - 48) / 4.5,
+    width: (width - 48) / 3,
   },
   circleIconBox: {
     width: 54,
