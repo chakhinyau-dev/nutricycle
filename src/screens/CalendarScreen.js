@@ -133,41 +133,49 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
   }, [selectedDate, profile.lastPeriodStart, cycleLength]);
 
   const chartWidth = width - 56;
-  const chartHeight = 90;
+  const chartHeight = 110;
 
-  const { estrogenPath, progesteronePath, selectDayX, selectE_Y, selectP_Y } = useMemo(() => {
+  const { estrogenPath, progesteronePath, testosteronePath, selectDayX, selectE_Y, selectP_Y, selectT_Y } = useMemo(() => {
     let ePoints = [];
     let pPoints = [];
+    let tPoints = [];
     let curE_Y = chartHeight / 2;
     let curP_Y = chartHeight / 2;
+    let curT_Y = chartHeight / 2;
     let curX = 0;
 
     for (let i = 1; i <= cycleLength; i++) {
       const x = ((i - 1) / (cycleLength - 1)) * chartWidth;
-      const t = (i - 1) / (cycleLength - 1);
+      const ratio = (i - 1) / (cycleLength - 1);
 
-      const eVal = 0.15 + 0.65 * Math.exp(-Math.pow((t - 0.44) / 0.08, 2)) + 0.3 * Math.exp(-Math.pow((t - 0.76) / 0.12, 2));
-      const pVal = 0.05 + 0.7 * Math.exp(-Math.pow((t - 0.76) / 0.12, 2));
+      const eVal = 0.15 + 0.65 * Math.exp(-Math.pow((ratio - 0.44) / 0.08, 2)) + 0.3 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
+      const pVal = 0.05 + 0.7 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
+      const tVal = 0.1 + 0.55 * Math.exp(-Math.pow((ratio - 0.42) / 0.13, 2));
 
-      const yE = chartHeight - 12 - eVal * (chartHeight - 24);
-      const yP = chartHeight - 12 - pVal * (chartHeight - 24);
+      const yE = chartHeight - 15 - eVal * (chartHeight - 30);
+      const yP = chartHeight - 15 - pVal * (chartHeight - 30);
+      const yT = chartHeight - 15 - tVal * (chartHeight - 30);
 
       ePoints.push(`${x},${yE}`);
       pPoints.push(`${x},${yP}`);
+      tPoints.push(`${x},${yT}`);
 
       if (i === selectedCycleDay) {
         curX = x;
         curE_Y = yE;
         curP_Y = yP;
+        curT_Y = yT;
       }
     }
 
     return {
       estrogenPath: `M ${ePoints.join(' L ')}`,
       progesteronePath: `M ${pPoints.join(' L ')}`,
+      testosteronePath: `M ${tPoints.join(' L ')}`,
       selectDayX: curX,
       selectE_Y: curE_Y,
-      selectP_Y: curP_Y
+      selectP_Y: curP_Y,
+      selectT_Y: curT_Y,
     };
   }, [cycleLength, selectedCycleDay, chartWidth, chartHeight]);
 
@@ -372,30 +380,47 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
 
       <View style={{ marginBottom: 28 }} />
 
-      {/* Hormone Tides SVG Chart for selected day context */}
+      {/* Hormone Chart */}
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>{t('calendar.hormone_curves_day')}</Text>
+          <Text style={styles.chartTitle}>
+            {t('dashboard.chart_title_prefix', { defaultValue: 'Tu mapa ' })}
+            <Text style={{ color: '#7BC8B8' }}>{t('dashboard.chart_title_suffix', { defaultValue: 'hormonal' })}</Text>
+          </Text>
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
-              <Text style={styles.legendLabel}>{t('calendar.estrogen_short')}</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#C9605A' }]} />
+              <Text style={styles.legendLabel}>{t('dashboard.estrogen')}</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
-              <Text style={styles.legendLabel}>{t('calendar.progesterone_short')}</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#6EA87B' }]} />
+              <Text style={styles.legendLabel}>{t('dashboard.progesterone')}</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#D4897E' }]} />
+              <Text style={styles.legendLabel}>{t('dashboard.testosterone')}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.chartWrapper}>
           <Svg width={chartWidth} height={chartHeight}>
-            <Path d={estrogenPath} fill="none" stroke="#A78BFA" strokeWidth={2.5} />
-            <Path d={progesteronePath} fill="none" stroke="#F59E0B" strokeWidth={2.5} />
+            <Path d={estrogenPath} fill="none" stroke="#C9605A" strokeWidth={2} />
+            <Path d={progesteronePath} fill="none" stroke="#6EA87B" strokeWidth={2} />
+            <Path d={testosteronePath} fill="none" stroke="#D4897E" strokeWidth={2} />
             <Line x1={selectDayX} y1={5} x2={selectDayX} y2={chartHeight - 5} stroke="#64748B" strokeWidth={1} strokeDasharray="3 3" />
-            <Circle cx={selectDayX} cy={selectE_Y} r={5} fill="#A78BFA" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={selectDayX} cy={selectP_Y} r={5} fill="#F59E0B" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectE_Y} r={4} fill="#C9605A" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectP_Y} r={4} fill="#6EA87B" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectT_Y} r={4} fill="#D4897E" stroke="#FFFFFF" strokeWidth={1.5} />
           </Svg>
+        </View>
+
+        <View style={styles.chartFooter}>
+          <Text style={styles.chartFooterText}>{t('common.day')} 1</Text>
+          <Text style={[styles.chartFooterText, { fontWeight: '700', color: colors.on_surface }]}>
+            {t('common.day')} {selectedCycleDay} ({t('dashboard.today_label')})
+          </Text>
+          <Text style={styles.chartFooterText}>{t('common.day')} {cycleLength}</Text>
         </View>
       </View>
 
@@ -698,11 +723,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   chartCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   chartHeader: {
     flexDirection: 'row',
@@ -736,5 +758,17 @@ const styles = StyleSheet.create({
   },
   chartWrapper: {
     alignItems: 'center',
-  }
+  },
+  chartFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 2,
+  },
+  chartFooterText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+  },
 });
