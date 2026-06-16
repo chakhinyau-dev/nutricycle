@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   Image,
-  Dimensions,
   Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,8 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, RefreshCw, Play, BookOpen, ShoppingBag, Clock, Plus, X } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { getRecipesForDayAndPhase } from '../utils/recipeHelper';
-
-const { width } = Dimensions.get('window');
 
 const DAYS = [
   { index: 0, key: 'mon' },
@@ -26,6 +23,8 @@ const DAYS = [
   { index: 5, key: 'sat' },
   { index: 6, key: 'sun' }
 ];
+
+const GRADIENT_STEPS = [0, 0.04, 0.1, 0.2, 0.35, 0.52, 0.68];
 
 export const NutritionScreen = ({
   onBack,
@@ -38,184 +37,182 @@ export const NutritionScreen = ({
   const userId = user?.id || 'guest';
   const phaseKey = currentPhaseKey || 'follicular';
 
-  // Determine current day of week (0 = Mon, 6 = Sun)
   const defaultDay = useMemo(() => {
-    const day = new Date().getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const day = new Date().getDay();
     return day === 0 ? 6 : day - 1;
   }, []);
 
   const [selectedDay, setSelectedDay] = useState(defaultDay);
   const [swaps, setSwaps] = useState({});
-  const [activeSwapMeal, setActiveSwapMeal] = useState(null); // { mealType, currentRecipe }
+  const [activeSwapMeal, setActiveSwapMeal] = useState(null);
   const [showSwapModal, setShowSwapModal] = useState(false);
 
-  // Load swaps from AsyncStorage
+  // Calendar date numbers for the week strip
+  const weekDates = useMemo(() => {
+    const today = new Date();
+    return DAYS.map(day => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + (day.index - defaultDay));
+      return d.getDate();
+    });
+  }, [defaultDay]);
+
   useEffect(() => {
     const loadSwaps = async () => {
       try {
-        const savedSwaps = await AsyncStorage.getItem(`@nutricycle_swaps_${userId}`);
-        if (savedSwaps) {
-          setSwaps(JSON.parse(savedSwaps));
-        }
-      } catch (e) {
-        console.error('Error loading swaps:', e);
-      }
+        const saved = await AsyncStorage.getItem(`@nutricycle_swaps_${userId}`);
+        if (saved) setSwaps(JSON.parse(saved));
+      } catch (e) {}
     };
     loadSwaps();
   }, [userId]);
 
-  // Save swaps to AsyncStorage
-  const handleSelectSwap = async (alternativeRecipeId) => {
+  const handleSelectSwap = async (altId) => {
     if (!activeSwapMeal) return;
-
     const { mealType } = activeSwapMeal;
     const swapKey = `${selectedDay}_${mealType}`;
-    const newSwaps = {
-      ...swaps,
-      [swapKey]: alternativeRecipeId
-    };
-
+    const newSwaps = { ...swaps, [swapKey]: altId };
     setSwaps(newSwaps);
     setShowSwapModal(false);
     setActiveSwapMeal(null);
-
     try {
       await AsyncStorage.setItem(`@nutricycle_swaps_${userId}`, JSON.stringify(newSwaps));
-    } catch (e) {
-      console.error('Error saving swaps:', e);
-    }
+    } catch (e) {}
   };
 
-  // Get current day's meals
-  const dailyMeals = useMemo(() => {
-    return getRecipesForDayAndPhase(recipes, phaseKey, selectedDay, swaps);
-  }, [recipes, phaseKey, selectedDay, swaps]);
+  const dailyMeals = useMemo(
+    () => getRecipesForDayAndPhase(recipes, phaseKey, selectedDay, swaps),
+    [recipes, phaseKey, selectedDay, swaps]
+  );
 
-  // Calculate summary stats
   const stats = useMemo(() => {
-    let totalCalories = 0;
-    let totalProtein = 0;
-    let totalTime = 0;
-
+    let totalCalories = 0, totalProtein = 0, totalTime = 0;
     dailyMeals.forEach(({ recipe }) => {
       if (recipe) {
         totalCalories += Number(recipe.calories || 0);
-        totalProtein += Number(recipe.protein || recipe.calories ? Math.round(Number(recipe.calories) * 0.08) : 25); // estimate if missing
+        totalProtein += Number(recipe.protein || Math.round(Number(recipe.calories) * 0.08));
         totalTime += Number(recipe.time || 0);
       }
     });
-
-    return {
-      calories: totalCalories,
-      protein: totalProtein,
-      mealsCount: dailyMeals.length,
-      time: totalTime
-    };
+    return { calories: totalCalories, protein: totalProtein, mealsCount: dailyMeals.length, time: totalTime };
   }, [dailyMeals]);
 
-  // Get alternative recipes for swap modal
   const alternatives = useMemo(() => {
     if (!activeSwapMeal) return [];
     const { mealType, currentRecipe } = activeSwapMeal;
-    
-    // Filter recipes for current phase and same meal type, excluding current active recipe
-    return recipes.filter(
-      r => r.phaseKey === phaseKey && r.mealType === mealType && r.id !== currentRecipe.id
-    ).slice(0, 3); // Get maximum 3 alternative recipes
+    return recipes
+      .filter(r => r.phaseKey === phaseKey && r.mealType === mealType && r.id !== currentRecipe.id)
+      .slice(0, 3);
   }, [recipes, phaseKey, activeSwapMeal]);
 
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
   const isSpanish = currentLanguage?.toLowerCase().startsWith('es');
 
+  const getMacros = (recipe) => {
+    const cal = Number(recipe.calories || 0);
+    const prot = recipe.protein || Math.max(10, Math.round(cal * 0.08));
+    const fat = recipe.fat || Math.max(5, Math.round(cal * 0.035));
+    const carbs = recipe.carbs || Math.max(15, Math.round((cal - prot * 4 - fat * 9) / 4));
+    return { cal, prot, fat, carbs };
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
+
+        {/* ── Header ── */}
         <View style={styles.header}>
           <Pressable onPress={onBack} style={styles.backButton}>
             <ChevronLeft size={24} color={colors.on_surface} />
           </Pressable>
-          <Text style={styles.title}>
-            {isSpanish ? 'Plan Nutricional' : 'Nutrition Plan'}
-          </Text>
-        </View>
-
-        {/* Day of Week Selector */}
-        <View style={styles.selectorCard}>
-          <Text style={styles.selectorTitle}>
-            {isSpanish ? 'Selecciona el día' : 'Select Day'}
-          </Text>
-          <View style={styles.daysStrip}>
-            {DAYS.map((day) => {
-              const isSelected = selectedDay === day.index;
-              const isToday = day.index === defaultDay;
-              
-              // Get short day name from translation
-              const shortName = t(`shopping.days.${day.key}.short`, { defaultValue: day.key.toUpperCase() });
-
-              return (
-                <Pressable
-                  key={day.index}
-                  style={[
-                    styles.stripDayButton,
-                    isSelected && styles.stripDayButtonActive,
-                    isToday && !isSelected && styles.stripDayButtonToday
-                  ]}
-                  onPress={() => setSelectedDay(day.index)}
-                >
-                  <Text style={[
-                    styles.stripDayLabel,
-                    isSelected && styles.stripTextActive,
-                    isToday && !isSelected && { color: colors.primary }
-                  ]}>
-                    {shortName}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>
+              {isSpanish ? 'Plan Nutricional' : 'Nutrition Plan'}
+            </Text>
+            <View style={styles.phasePill}>
+              <Text style={styles.phasePillText}>{t(`phases.${phaseKey}`)}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Summary Card */}
+        {/* ── Day Strip ── */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.daysScroll}
+          contentContainerStyle={styles.daysStrip}
+        >
+          {DAYS.map((day) => {
+            const isSelected = selectedDay === day.index;
+            const isToday = day.index === defaultDay;
+            const shortName = t(`shopping.days.${day.key}.short`, { defaultValue: day.key.slice(0, 1).toUpperCase() });
+            return (
+              <Pressable
+                key={day.index}
+                style={[styles.dayPill, isSelected && styles.dayPillActive]}
+                onPress={() => setSelectedDay(day.index)}
+              >
+                <Text style={[styles.dayLetter, isSelected && styles.dayLetterActive]}>
+                  {shortName}
+                </Text>
+                <Text style={[styles.dayNum, isSelected && styles.dayNumActive]}>
+                  {weekDates[day.index]}
+                </Text>
+                {isToday && !isSelected && <View style={styles.todayDot} />}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={{ marginBottom: 28 }} />
+
+        {/* ── Stats Card ── */}
         {dailyMeals.length > 0 && (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>
-              {isSpanish ? 'Resumen Diario' : 'Daily Summary'}
-            </Text>
+          <View style={styles.statsCard}>
+            <View style={styles.statsCardTop}>
+              <Text style={styles.statsPhaseLabel}>{t(`phases.${phaseKey}`).toUpperCase()}</Text>
+              <Text style={styles.statsCardTitle}>
+                {isSpanish ? 'Plan de hoy' : "Today's Plan"}
+              </Text>
+            </View>
             <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>{stats.calories} kcal</Text>
-                <Text style={styles.statLabel}>{isSpanish ? 'Calorías' : 'Calories'}</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>{stats.protein}g</Text>
-                <Text style={styles.statLabel}>{isSpanish ? 'Proteínas' : 'Protein'}</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>{stats.mealsCount}</Text>
-                <Text style={styles.statLabel}>{isSpanish ? 'Comidas' : 'Meals'}</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>{stats.time} min</Text>
-                <Text style={styles.statLabel}>{isSpanish ? 'Preparación' : 'Prep Time'}</Text>
-              </View>
+              {[
+                { val: `${stats.calories}`, unit: 'kcal', label: isSpanish ? 'Calorías' : 'Calories' },
+                { val: `${stats.protein}g`, unit: '', label: isSpanish ? 'Proteína' : 'Protein' },
+                { val: `${stats.mealsCount}`, unit: '', label: isSpanish ? 'Comidas' : 'Meals' },
+                { val: `${stats.time}`, unit: 'min', label: isSpanish ? 'Prep' : 'Prep' },
+              ].map((s, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <View style={styles.statDivider} />}
+                  <View style={styles.statBox}>
+                    <Text style={styles.statVal}>{s.val}</Text>
+                    {s.unit ? <Text style={styles.statUnit}>{s.unit}</Text> : null}
+                    <Text style={styles.statLabel}>{s.label}</Text>
+                  </View>
+                </React.Fragment>
+              ))}
             </View>
           </View>
         )}
 
-        {/* Meal List */}
+        <View style={{ marginBottom: 40 }} />
+
+        {/* ── Section label ── */}
+        <Text style={styles.sectionLabel}>
+          {isSpanish ? 'COMIDAS DEL DÍA' : 'MEALS OF THE DAY'}
+        </Text>
+
+        {/* ── Meal Cards ── */}
         <View style={styles.mealList}>
           {dailyMeals.map(({ time, recipe }) => {
             if (!recipe) return null;
-
             const timeLabel = t(`dailylog.meal_types.${time}`);
-            const hasVideo = recipe.videoUrl || recipe.youtubeUrl || false;
+            const hasVideo = !!(recipe.videoUrl || recipe.youtubeUrl);
+            const { cal, prot, fat, carbs } = getMacros(recipe);
 
             return (
               <View key={time} style={styles.mealCard}>
+                {/* Meal header */}
                 <View style={styles.mealHeader}>
                   <Text style={styles.mealTimeTitle}>{timeLabel}</Text>
                   <Pressable
@@ -225,47 +222,69 @@ export const NutritionScreen = ({
                       setShowSwapModal(true);
                     }}
                   >
-                    <RefreshCw size={14} color={colors.secondary} style={{ marginRight: 6 }} />
-                    <Text style={styles.swapBtnText}>
-                      {isSpanish ? 'Cambiar' : 'Swap'}
-                    </Text>
+                    <RefreshCw size={13} color={colors.secondary} />
+                    <Text style={styles.swapBtnText}>{isSpanish ? 'Cambiar' : 'Swap'}</Text>
                   </Pressable>
                 </View>
 
+                {/* Recipe card */}
                 <Pressable
-                  style={styles.recipeCardContent}
+                  style={styles.recipeCard}
                   onPress={() => onNavigate('recipeDetail', recipe)}
                 >
-                  <View style={styles.imageContainer}>
+                  {/* Full-bleed image with overlays */}
+                  <View style={styles.imageWrap}>
                     <Image
                       source={typeof recipe.image === 'object' ? recipe.image : { uri: recipe.image }}
                       style={styles.recipeImage}
                       resizeMode="cover"
                     />
+
+                    {/* Time tag */}
                     <View style={styles.timeTag}>
-                      <Clock size={12} color="#FFF" style={{ marginRight: 4 }} />
+                      <Clock size={10} color="#FFF" />
                       <Text style={styles.timeTagText}>{recipe.time} min</Text>
                     </View>
-                    
+
+                    {/* Play button */}
                     {hasVideo && (
-                      <View style={styles.playOverlay}>
-                        <Play size={20} color="#FFF" fill="#FFF" />
+                      <View style={styles.playBtn}>
+                        <Play size={18} color="#FFF" fill="#FFF" />
                       </View>
                     )}
+
+                    {/* Pseudo-gradient overlay + title */}
+                    <View style={styles.gradientOverlay} pointerEvents="none">
+                      {GRADIENT_STEPS.map((opacity, i) => (
+                        <View
+                          key={i}
+                          style={{ flex: 1, backgroundColor: `rgba(26,20,35,${opacity})` }}
+                        />
+                      ))}
+                    </View>
+                    <View style={styles.overlayTitle} pointerEvents="none">
+                      <Text style={styles.recipeNameOverlay} numberOfLines={2}>
+                        {recipe.title}
+                      </Text>
+                    </View>
                   </View>
 
-                  <View style={styles.recipeInfo}>
-                    <Text style={styles.recipeTitleText}>{recipe.title}</Text>
-                    <Text style={styles.recipeMacros}>
-                      {(() => {
-                        const prot = recipe.protein || Math.max(10, Math.round(recipe.calories * 0.08));
-                        const fat = recipe.fat || Math.max(5, Math.round(recipe.calories * 0.035));
-                        const carbs = recipe.carbs || Math.max(15, Math.round((recipe.calories - (prot * 4) - (fat * 9)) / 4));
-                        return isSpanish
-                          ? `${recipe.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g grasa`
-                          : `${recipe.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g fat`;
-                      })()}
-                    </Text>
+                  {/* Macro chips */}
+                  <View style={styles.macroRow}>
+                    <View style={[styles.macroPill, { backgroundColor: '#FEF3C7' }]}>
+                      <Text style={[styles.macroPillText, { color: '#D97706' }]}>{cal} kcal</Text>
+                    </View>
+                    <View style={[styles.macroPill, { backgroundColor: '#DCFCE7' }]}>
+                      <Text style={[styles.macroPillText, { color: '#16A34A' }]}>{prot}g prot</Text>
+                    </View>
+                    <View style={[styles.macroPill, { backgroundColor: '#DBEAFE' }]}>
+                      <Text style={[styles.macroPillText, { color: '#2563EB' }]}>{carbs}g carb</Text>
+                    </View>
+                    <View style={[styles.macroPill, { backgroundColor: '#FCE7F3' }]}>
+                      <Text style={[styles.macroPillText, { color: '#DB2777' }]}>
+                        {fat}g {isSpanish ? 'grasa' : 'fat'}
+                      </Text>
+                    </View>
                   </View>
                 </Pressable>
               </View>
@@ -273,25 +292,24 @@ export const NutritionScreen = ({
           })}
         </View>
 
-        {/* Shortcuts Section */}
-        <View style={styles.shortcutsGroup}>
-          <Pressable 
-            style={styles.shortcutCard}
+        {/* ── Shortcuts ── */}
+        <View style={styles.shortcutsRow}>
+          <Pressable
+            style={[styles.shortcutCard, { backgroundColor: '#EBF2EB' }]}
             onPress={() => onNavigate('recipes')}
           >
             <BookOpen size={20} color={colors.primary} />
-            <Text style={styles.shortcutText}>
-              {isSpanish ? 'Explorar todas las recetas' : 'Browse All Recipes'}
+            <Text style={[styles.shortcutText, { color: colors.primary }]}>
+              {isSpanish ? 'Recetas' : 'Recipes'}
             </Text>
           </Pressable>
-
-          <Pressable 
-            style={[styles.shortcutCard, { marginTop: 12 }]}
+          <Pressable
+            style={[styles.shortcutCard, { backgroundColor: '#EDE8F5' }]}
             onPress={() => onNavigate('shoppingList')}
           >
             <ShoppingBag size={20} color={colors.secondary} />
-            <Text style={styles.shortcutText}>
-              {isSpanish ? 'Ver mi Lista de Compras' : 'View Shopping List'}
+            <Text style={[styles.shortcutText, { color: colors.secondary }]}>
+              {isSpanish ? 'Compras' : 'Shopping'}
             </Text>
           </Pressable>
         </View>
@@ -299,7 +317,7 @@ export const NutritionScreen = ({
         <View style={{ height: 160 }} />
       </ScrollView>
 
-      {/* Swap Alternatives Modal */}
+      {/* ── Swap Modal ── */}
       <Modal
         visible={showSwapModal}
         animationType="slide"
@@ -314,10 +332,7 @@ export const NutritionScreen = ({
               </Text>
               <Pressable
                 style={styles.closeBtn}
-                onPress={() => {
-                  setShowSwapModal(false);
-                  setActiveSwapMeal(null);
-                }}
+                onPress={() => { setShowSwapModal(false); setActiveSwapMeal(null); }}
               >
                 <X size={20} color={colors.on_surface} />
               </Pressable>
@@ -325,50 +340,48 @@ export const NutritionScreen = ({
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalList}>
               <Text style={styles.modalSubtitle}>
-                {isSpanish 
-                  ? `Alternativas recomendadas para la fase ${t(`phases.${phaseKey}`)}:` 
-                  : `Recommended options for ${t(`phases.${phaseKey}`)} phase:`}
+                {isSpanish
+                  ? `Alternativas para la fase ${t(`phases.${phaseKey}`)}:`
+                  : `Options for ${t(`phases.${phaseKey}`)} phase:`}
               </Text>
 
               {alternatives.length === 0 ? (
                 <View style={styles.emptyAlternatives}>
                   <Text style={styles.emptyAltText}>
-                    {isSpanish 
-                      ? 'No hay recetas alternativas disponibles para esta comida y fase.' 
-                      : 'No alternative recipes available for this meal and phase.'}
+                    {isSpanish
+                      ? 'No hay recetas alternativas disponibles.'
+                      : 'No alternative recipes available.'}
                   </Text>
                 </View>
               ) : (
-                alternatives.map((altRecipe) => (
-                  <Pressable
-                    key={altRecipe.id}
-                    style={styles.altCard}
-                    onPress={() => handleSelectSwap(altRecipe.id)}
-                  >
-                    <Image
-                      source={typeof altRecipe.image === 'object' ? altRecipe.image : { uri: altRecipe.image }}
-                      style={styles.altImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.altInfo}>
-                      <Text style={styles.altTitle}>{altRecipe.title}</Text>
-                      <Text style={styles.altTime}>{altRecipe.time} min</Text>
-                      <Text style={styles.altMacros}>
-                        {(() => {
-                          const prot = altRecipe.protein || Math.max(10, Math.round(altRecipe.calories * 0.08));
-                          const fat = altRecipe.fat || Math.max(5, Math.round(altRecipe.calories * 0.035));
-                          const carbs = altRecipe.carbs || Math.max(15, Math.round((altRecipe.calories - (prot * 4) - (fat * 9)) / 4));
-                          return isSpanish
-                            ? `${altRecipe.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g grasa`
-                            : `${altRecipe.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g fat`;
-                        })()}
-                      </Text>
-                    </View>
-                    <View style={styles.selectAltBadge}>
-                      <Plus size={16} color={colors.primary} />
-                    </View>
-                  </Pressable>
-                ))
+                alternatives.map((alt) => {
+                  const m = getMacros(alt);
+                  return (
+                    <Pressable
+                      key={alt.id}
+                      style={styles.altCard}
+                      onPress={() => handleSelectSwap(alt.id)}
+                    >
+                      <Image
+                        source={typeof alt.image === 'object' ? alt.image : { uri: alt.image }}
+                        style={styles.altImage}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.altInfo}>
+                        <Text style={styles.altTitle}>{alt.title}</Text>
+                        <Text style={styles.altTime}>{alt.time} min</Text>
+                        <Text style={styles.altMacros}>
+                          {isSpanish
+                            ? `${m.cal} kcal · ${m.prot}g prot · ${m.carbs}g carb`
+                            : `${m.cal} kcal · ${m.prot}g prot · ${m.carbs}g carb`}
+                        </Text>
+                      </View>
+                      <View style={styles.selectAltBadge}>
+                        <Plus size={16} color={colors.primary} />
+                      </View>
+                    </Pressable>
+                  );
+                })
               )}
             </ScrollView>
           </View>
@@ -379,17 +392,14 @@ export const NutritionScreen = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F9F2', // Cream Background (#F9F9F2)
-  },
-  scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 60,
-  },
+  container: { flex: 1, backgroundColor: '#F9F9F2' },
+  scrollContent: { paddingTop: 60 },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 24,
     marginBottom: 32,
   },
   backButton: {
@@ -407,120 +417,144 @@ const styles = StyleSheet.create({
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 32,
     color: colors.on_surface,
+    lineHeight: 36,
   },
-  selectorCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    marginBottom: 24,
-  },
-  selectorTitle: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
-    color: colors.on_surface_variant,
-    marginBottom: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    opacity: 0.6,
-  },
-  daysStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  stripDayButton: {
-    width: (width - 104) / 7,
-    height: 44,
+  phasePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary_container,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FAF9F6',
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
+    marginTop: 6,
   },
-  stripDayButtonActive: {
-    backgroundColor: colors.primary, // Sage Green (#A3B3A5)
-    borderColor: colors.primary,
-  },
-  stripDayButtonToday: {
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  stripDayLabel: {
+  phasePillText: {
     fontFamily: 'Outfit_700Bold',
-    fontSize: 12,
-    color: colors.on_surface_variant,
-  },
-  stripTextActive: {
-    color: '#FFFFFF',
-  },
-  summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    marginBottom: 32,
-  },
-  summaryTitle: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
-    color: colors.on_surface_variant,
-    marginBottom: 16,
+    fontSize: 10,
+    color: colors.on_primary_container,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+
+  // Day strip
+  daysScroll: { paddingLeft: 20 },
+  daysStrip: { paddingRight: 24, gap: 6 },
+  dayPill: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
+    borderRadius: 22,
+    minWidth: 50,
+  },
+  dayPillActive: { backgroundColor: '#A3B3A5' },
+  dayLetter: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.on_surface_variant,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 5,
+    opacity: 0.55,
+  },
+  dayLetterActive: { color: 'rgba(255,255,255,0.55)', opacity: 1 },
+  dayNum: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 20,
+    color: colors.on_surface,
+  },
+  dayNumActive: { color: '#FFFFFF' },
+  todayDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+    marginTop: 5,
+  },
+
+  // Stats card
+  statsCard: {
+    marginHorizontal: 24,
+    backgroundColor: '#A3B3A5',
+    borderRadius: 28,
+    padding: 24,
+  },
+  statsCardTop: { marginBottom: 22 },
+  statsPhaseLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.4)',
     letterSpacing: 1.5,
-    opacity: 0.6,
+    marginBottom: 4,
+  },
+  statsCardTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 24,
+    color: '#FFFFFF',
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  statBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
+  statBox: { flex: 1, alignItems: 'center' },
   statVal: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 15,
-    color: colors.on_surface,
-    marginBottom: 4,
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 22,
+    color: '#FFFFFF',
+    lineHeight: 26,
+  },
+  statUnit: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.45)',
+    marginTop: 2,
+    marginBottom: 5,
   },
   statLabel: {
     fontFamily: 'Outfit_600SemiBold',
-    fontSize: 10,
-    color: colors.on_surface_variant,
-    opacity: 0.7,
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.3)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statDivider: {
     width: 1,
-    height: 28,
-    backgroundColor: '#F1F1E8',
+    height: 36,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
-  mealList: {
-    gap: 24,
+
+  // Section label
+  sectionLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    opacity: 0.5,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    paddingHorizontal: 24,
+    marginBottom: 20,
   },
-  mealCard: {
-    width: '100%',
-  },
+
+  // Meal cards
+  mealList: { gap: 40, paddingHorizontal: 24 },
+  mealCard: {},
   mealHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   mealTimeTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 22,
+    fontSize: 26,
     color: colors.on_surface,
   },
   swapBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#EFEDE4',
@@ -530,22 +564,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.secondary,
   },
-  recipeCardContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
+
+  recipeCard: {
+    borderRadius: 28,
     overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#4A4453',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 28,
+    elevation: 6,
     borderWidth: 1,
     borderColor: '#EFEDE4',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.02,
-    shadowRadius: 12,
-    elevation: 3,
   },
-  imageContainer: {
+  imageWrap: {
     width: '100%',
-    height: 180,
-    backgroundColor: '#FAF9F6',
+    height: 220,
+    position: 'relative',
   },
   recipeImage: {
     width: '100%',
@@ -555,67 +590,99 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     right: 14,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
   timeTagText: {
-    color: '#FFFFFF',
     fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
+    fontSize: 10,
+    color: '#FFFFFF',
   },
-  playOverlay: {
+  playBtn: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    marginTop: -22,
-    marginLeft: -22,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    marginTop: -26,
+    marginLeft: -26,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(0,0,0,0.32)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
-  recipeInfo: {
-    padding: 20,
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 110,
+    flexDirection: 'column',
   },
-  recipeTitleText: {
+  overlayTitle: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+  },
+  recipeNameOverlay: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 24,
-    color: colors.on_surface,
-    marginBottom: 6,
+    fontSize: 22,
+    color: '#FFFFFF',
+    lineHeight: 28,
   },
-  recipeMacros: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 13,
-    color: colors.on_surface_variant,
-    opacity: 0.7,
+
+  // Macro chips
+  macroRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    padding: 16,
   },
-  shortcutsGroup: {
-    marginTop: 40,
+  macroPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  macroPillText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 11,
+  },
+
+  // Shortcuts
+  shortcutsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 24,
+    marginTop: 44,
   },
   shortcutCard: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
     borderRadius: 24,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    gap: 12,
   },
   shortcutText: {
     fontFamily: 'Outfit_700Bold',
-    fontSize: 14,
-    color: colors.on_surface,
+    fontSize: 13,
   },
+
+  // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(74, 68, 83, 0.4)',
+    backgroundColor: 'rgba(74,68,83,0.4)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -719,5 +786,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary_container,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
 });
