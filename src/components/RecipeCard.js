@@ -1,28 +1,51 @@
 import React from 'react';
 import { StyleSheet, Text, View, Image, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '../theme/colors';
-import { Clock, Flame, ChevronRight } from 'lucide-react-native';
-import { getRecipeImageSource } from '../services/recipeService';
+import { Play } from 'lucide-react-native';
+import { getRecipeImageSource, getRecipeVideoThumbnail } from '../services/recipeService';
 
-export const RecipeCard = ({ title, calories, time, image, category, phaseKey, horizontal = false, grid = false, onPress }) => {
+export const RecipeCard = ({
+  title,
+  calories,
+  time,
+  image,
+  category,
+  phaseKey,
+  youtubeUrl,
+  videoUrl,
+  grid = false,
+  onPress,
+}) => {
   const { t } = useTranslation();
-  const imageSource = getRecipeImageSource(image);
   const displayCategory = phaseKey ? t(`phases.${phaseKey}`) : category;
 
+  const thumbUrl = getRecipeVideoThumbnail({ youtubeUrl, videoUrl });
+  const imageSource = thumbUrl ? { uri: thumbUrl } : getRecipeImageSource(image);
+  const hasVideo = !!thumbUrl;
+
   return (
-    <Pressable 
+    <Pressable
       style={[styles.card, grid && styles.gridCard]}
       onPress={onPress}
     >
-      <Image source={imageSource} style={grid ? styles.gridImage : styles.image} resizeMode="cover" />
+      <View style={grid ? styles.gridImageWrap : styles.imageWrap}>
+        <Image source={imageSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        {hasVideo && (
+          <View style={styles.playOverlay}>
+            <View style={styles.playBtn}>
+              <Play size={grid ? 14 : 20} color="#FFFFFF" fill="#FFFFFF" />
+            </View>
+          </View>
+        )}
+      </View>
+
       <View style={styles.content}>
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryText}>{displayCategory?.toUpperCase()}</Text>
         </View>
         <Text style={styles.title} numberOfLines={2}>{title}</Text>
         <Text style={styles.infoText}>
-           {time} {t('common.unit_min')} • {calories} {t('common.unit_kcal')}
+          {time} {t('common.unit_min')} • {calories} {t('common.unit_kcal')}
         </Text>
       </View>
     </Pressable>
@@ -43,18 +66,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F1F1E8',
   },
-  image: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#F8F9FA',
-  },
   gridCard: {
     width: '48%',
     borderRadius: 24,
   },
-  gridImage: {
+  imageWrap: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#F8F9FA',
+  },
+  gridImageWrap: {
     width: '100%',
     height: 120,
+    backgroundColor: '#F8F9FA',
+  },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+  playBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
   },
   content: {
     padding: 20,

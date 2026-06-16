@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, RefreshCw, Play, BookOpen, ShoppingBag, Clock, Plus, X } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { getRecipesForDayAndPhase } from '../utils/recipeHelper';
+import { getRecipeVideoThumbnail } from '../services/recipeService';
 
 const DAYS = [
   { index: 0, key: 'mon' },
@@ -207,7 +208,8 @@ export const NutritionScreen = ({
           {dailyMeals.map(({ time, recipe }) => {
             if (!recipe) return null;
             const timeLabel = t(`dailylog.meal_types.${time}`);
-            const hasVideo = !!(recipe.videoUrl || recipe.youtubeUrl);
+            const videoThumb = getRecipeVideoThumbnail(recipe);
+            const hasVideo = !!(recipe.videoUrl || recipe.youtubeUrl || videoThumb);
             const { cal, prot, fat, carbs } = getMacros(recipe);
 
             return (
@@ -232,10 +234,12 @@ export const NutritionScreen = ({
                   style={styles.recipeCard}
                   onPress={() => onNavigate('recipeDetail', recipe)}
                 >
-                  {/* Full-bleed image with overlays */}
+                  {/* Full-bleed video thumbnail with overlays */}
                   <View style={styles.imageWrap}>
                     <Image
-                      source={typeof recipe.image === 'object' ? recipe.image : { uri: recipe.image }}
+                      source={videoThumb
+                        ? { uri: videoThumb }
+                        : typeof recipe.image === 'object' ? recipe.image : { uri: recipe.image }}
                       style={styles.recipeImage}
                       resizeMode="cover"
                     />

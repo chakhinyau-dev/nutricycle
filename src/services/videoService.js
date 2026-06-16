@@ -17,11 +17,12 @@ export const extractYouTubeId = (url) => {
 const normalizeVideo = (video) => {
   const youtubeUrl = video.youtube_url || video.youtubeUrl || '';
   const videoUrl = video.video_url || video.videoUrl || '';
-  
+
   return {
     id: String(video.id),
     phaseKey: video.phase_key || video.phaseKey || 'follicular',
     category: video.category || 'General',
+    contentType: video.content_type || video.contentType || 'educational',
     title: video.title || 'Untitled',
     description: video.description || '',
     youtubeUrl: youtubeUrl,

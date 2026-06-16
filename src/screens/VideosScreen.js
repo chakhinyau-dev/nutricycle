@@ -137,10 +137,19 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   }, [activeFilterId, activeMealType, displayLibrary]);
 
   if (selectedVideo) {
-    const linkedRecipe = activeVideo?.contentType === 'recipe'
-      ? (recipes.find(r => r.phaseKey === activeVideo.phaseKey && r.mealType === activeVideo.mealType)
-        || recipes.find(r => r.phaseKey === activeVideo.phaseKey))
-      : null;
+    const linkedRecipe = (() => {
+      if (activeVideo?.contentType !== 'recipe' || !recipes?.length) return null;
+      // Exact match: same phase + meal type
+      const exact = recipes.find(
+        r => r.phaseKey === activeVideo.phaseKey && r.mealType === activeVideo.mealType
+      );
+      if (exact) return exact;
+      // Same phase, any meal
+      const byPhase = recipes.find(r => r.phaseKey === activeVideo.phaseKey);
+      if (byPhase) return byPhase;
+      // Fallback: first available recipe
+      return recipes[0] || null;
+    })();
 
     const isAudioOnly =
       activeVideo?.contentType === 'wellness' ||
@@ -230,7 +239,9 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
               <Text style={styles.durationDetail}>{activeVideo?.duration}</Text>
             </View>
             <Text style={styles.detailTitle}>{activeVideo?.title}</Text>
-            <Text style={styles.detailDesc}>{activeVideo?.description}</Text>
+            {!linkedRecipe && (
+              <Text style={styles.detailDesc}>{activeVideo?.description}</Text>
+            )}
 
             {linkedRecipe && (
               <View style={styles.recipeSection}>

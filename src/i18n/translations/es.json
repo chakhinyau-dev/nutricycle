@@ -268,7 +268,7 @@
     "progesterone_short": "Progest.",
     "countdown_days": "Faltan {{days}} días para la fase {{phase}}",
     "countdown_one_day": "Falta 1 día para la fase {{phase}}",
-    "log_btn": "+ Registrar período"
+    "log_btn": "Registrar período"
   },
   "videos": {
     "types": {

@@ -7,6 +7,18 @@ import { createClerkSupabaseClient } from '../lib/supabase';
 const FALLBACK_RECIPE_IMAGE =
   'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800';
 
+const _extractYouTubeId = (url) => {
+  if (!url) return null;
+  const m = String(url).match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/)([^#&?]{11})/);
+  return m ? m[1] : null;
+};
+
+export const getRecipeVideoThumbnail = (recipe) => {
+  const url = recipe?.youtubeUrl || recipe?.videoUrl || recipe?.youtube_url || recipe?.video_url;
+  const id = _extractYouTubeId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+};
+
 const toArray = (value) => {
   if (Array.isArray(value)) {
     return value;
@@ -62,6 +74,8 @@ const normalizeRecipe = (recipe) => ({
   nutritionalInsight: recipe.nutritional_insight || recipe.nutritionalInsight || '',
   imageUrl: getRecipeImageUrl(recipe),
   image: getRecipeImageSource(recipe),
+  youtubeUrl: recipe.youtube_url || recipe.youtubeUrl || '',
+  videoUrl: recipe.video_url || recipe.videoUrl || '',
   ingredients: toArray(recipe.ingredients),
   instructions: toArray(recipe.instructions),
 });

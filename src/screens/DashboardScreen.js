@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { Utensils, Leaf, Play, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../theme/colors';
+import { getRecipeVideoThumbnail } from '../services/recipeService';
 
 
 const { width } = Dimensions.get('window');
@@ -263,7 +264,22 @@ export const DashboardScreen = ({
             style={styles.recipeCard}
             onPress={() => onNavigate('recipeDetail', suggestedRecipe)}
           >
-            <Image source={suggestedRecipe.image} style={styles.recipeCardImage} resizeMode="cover" />
+            {(() => {
+                const thumb = getRecipeVideoThumbnail(suggestedRecipe);
+                const src = thumb ? { uri: thumb } : suggestedRecipe.image;
+                return (
+                  <View style={styles.recipeCardImageWrap}>
+                    <Image source={src} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                    {thumb && (
+                      <View style={styles.recipeCardPlayOverlay}>
+                        <View style={styles.recipeCardPlayBtn}>
+                          <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                );
+              })()}
             <View style={styles.recipeCardContent}>
               <View style={styles.recipeCardTags}>
                 <View style={styles.recipeBadge}>
@@ -492,6 +508,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.02,
     shadowRadius: 12,
     elevation: 3,
+  },
+  recipeCardImageWrap: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#FAF9F6',
+    position: 'relative',
+  },
+  recipeCardPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+  recipeCardPlayBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
   },
   recipeCardImage: {
     width: '100%',

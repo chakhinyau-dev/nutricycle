@@ -5,7 +5,7 @@ import { ChevronLeft, Bookmark, Heart, Clock, Zap } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { translateContent } from '../services/translationService';
-import { getRecipeImageSource } from '../services/recipeService';
+import { getRecipeImageSource, getRecipeVideoThumbnail } from '../services/recipeService';
 
 export const SavedRecipesScreen = ({ onBack, onNavigate, recipes = [] }) => {
   const { t, i18n } = useTranslation();
@@ -56,27 +56,40 @@ export const SavedRecipesScreen = ({ onBack, onNavigate, recipes = [] }) => {
         </View>
 
         <View style={styles.grid}>
-          {savedRecipes.map((recipe) => (
-            <Pressable key={recipe.id} style={styles.card} onPress={() => onNavigate('recipeDetail', recipe)}>
-              <Image source={getRecipeImageSource(recipe)} style={styles.cardImage} />
-              <View style={styles.cardContent}>
-                <View style={styles.tagRow}>
-                  <View style={styles.phaseTag}>
-                    <Text style={styles.phaseTagText}>{recipe.category}</Text>
+          {savedRecipes.map((recipe) => {
+            const thumb = getRecipeVideoThumbnail(recipe);
+            const imgSrc = thumb ? { uri: thumb } : getRecipeImageSource(recipe);
+            return (
+              <Pressable key={recipe.id} style={styles.card} onPress={() => onNavigate('recipeDetail', recipe)}>
+                <View style={styles.cardImageWrap}>
+                  <Image source={imgSrc} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  {thumb && (
+                    <View style={styles.playOverlay}>
+                      <View style={styles.playBtn}>
+                        <Text style={styles.playIcon}>▶</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.cardContent}>
+                  <View style={styles.tagRow}>
+                    <View style={styles.phaseTag}>
+                      <Text style={styles.phaseTagText}>{recipe.category}</Text>
+                    </View>
+                    <Heart size={16} color="#EB5757" fill="#EB5757" />
                   </View>
-                  <Heart size={16} color="#EB5757" fill="#EB5757" />
+                  <Text style={styles.cardTitle}>{recipe.title}</Text>
+                  <View style={styles.metaRow}>
+                    <Clock size={12} color={colors.on_surface_variant} />
+                    <Text style={styles.metaText}>{recipe.time} min</Text>
+                    <View style={styles.dot} />
+                    <Zap size={12} color={colors.on_surface_variant} />
+                    <Text style={styles.metaText}>{recipe.calories} kcal</Text>
+                  </View>
                 </View>
-                <Text style={styles.cardTitle}>{recipe.title}</Text>
-                <View style={styles.metaRow}>
-                  <Clock size={12} color={colors.on_surface_variant} />
-                  <Text style={styles.metaText}>{recipe.time} min</Text>
-                  <View style={styles.dot} />
-                  <Zap size={12} color={colors.on_surface_variant} />
-                  <Text style={styles.metaText}>{recipe.calories} kcal</Text>
-                </View>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            );
+          })}
         </View>
 
         {!savedRecipes.length ? (
@@ -143,6 +156,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 24,
     overflow: 'hidden',
+  },
+  cardImageWrap: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#F8F9FA',
+    position: 'relative',
+  },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+  playBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
+  },
+  playIcon: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginLeft: 3,
   },
   cardImage: {
     width: '100%',
