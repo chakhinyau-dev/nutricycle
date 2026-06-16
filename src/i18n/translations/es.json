@@ -257,7 +257,18 @@
       "thu": "Jue",
       "fri": "Vie",
       "sat": "Sáb"
-    }
+    },
+    "navigate_days": "Navegar por Día de la Semana",
+    "cycle_day_label": "Día del ciclo {{day}}",
+    "mood_label": "Ánimo:",
+    "delete_log_title": "Eliminar Log",
+    "delete_log_confirm": "¿Estás seguro de que deseas eliminar este registro?",
+    "hormone_curves_day": "Curvas Hormonales del Día",
+    "estrogen_short": "Estrog.",
+    "progesterone_short": "Progest.",
+    "countdown_days": "Faltan {{days}} días para la fase {{phase}}",
+    "countdown_one_day": "Falta 1 día para la fase {{phase}}",
+    "log_btn": "+ Registrar período"
   },
   "videos": {
     "types": {
@@ -590,19 +601,6 @@
     "empty": "Aún no has guardado nada."
   },
 
-  "calendar": {
-    "navigate_days": "Navegar por Día de la Semana",
-    "cycle_day_label": "Día del ciclo {{day}}",
-    "mood_label": "Ánimo:",
-    "delete_log_title": "Eliminar Log",
-    "delete_log_confirm": "¿Estás seguro de que deseas eliminar este registro?",
-    "hormone_curves_day": "Curvas Hormonales del Día",
-    "estrogen_short": "Estrog.",
-    "progesterone_short": "Progest.",
-    "countdown_days": "Faltan {{days}} días para la fase {{phase}}",
-    "countdown_one_day": "Falta 1 día para la fase {{phase}}",
-    "log_btn": "Registrar Período / Síntomas"
-  },
   "shopping": {
     "title": "Lista de Compras",
     "days_cook": "1. ¿Qué días cocinarás?",

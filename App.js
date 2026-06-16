@@ -37,6 +37,7 @@ import { WizardScreen } from './src/screens/WizardScreen';
 import { EditProfileScreen } from './src/screens/EditProfileScreen';
 import { SavedRecipesScreen } from './src/screens/SavedRecipesScreen';
 import { SubscriptionScreen } from './src/screens/SubscriptionScreen';
+import { PeriodCalculatorScreen } from './src/screens/PeriodCalculatorScreen';
 import { VideosScreen } from './src/screens/VideosScreen';
 import { AdminScreen } from './src/screens/AdminScreen';
 import { KeyFoodsScreen } from './src/screens/KeyFoodsScreen';
@@ -549,6 +550,8 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
           return <ArticlesScreen onBack={goBack} articles={articles} />;
         case 'dailyLog':
           return <DailyLogScreen onBack={goBack} onNavigate={navigateTo} {...sharedScreenProps} />;
+        case 'periodCalculator':
+          return <PeriodCalculatorScreen onBack={goBack} />;
         case 'notifications':
           return <NotificationsScreen onBack={goBack} onNavigate={navigateTo} {...sharedScreenProps} />;
         case 'settings':

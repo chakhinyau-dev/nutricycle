@@ -201,6 +201,22 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
       {/* Circular Tracker Container */}
       <View style={styles.trackerContainer}>
         <View style={[styles.circleLayout, { width: containerSize, height: containerSize }]}>
+          {/* Connecting ring behind the dots */}
+          <Svg
+            width={containerSize}
+            height={containerSize}
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          >
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={circleRadius}
+              fill="none"
+              stroke="#D1C8C0"
+              strokeWidth={1.5}
+            />
+          </Svg>
+
           {/* Render circular dots */}
           {dots.map(dot => (
             <View
@@ -244,11 +260,11 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
         <Pressable
           style={styles.logBtn}
           onPress={() => {
-            if (typeof onNavigate === 'function') onNavigate('dailyLog');
+            if (typeof onNavigate === 'function') onNavigate('periodCalculator');
           }}
         >
           <Plus size={16} color="#FFF" style={{ marginRight: 8 }} />
-          <Text style={styles.logBtnText}>{t('calendar.log_btn', { defaultValue: 'Registrar Período / Síntomas' })}</Text>
+          <Text style={styles.logBtnText}>{t('calendar.log_btn', { defaultValue: '+ Registrar período' })}</Text>
         </Pressable>
       </View>
 
