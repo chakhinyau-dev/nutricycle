@@ -648,10 +648,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
         return <CalendarScreen onBack={() => setActiveTab('today')} onNavigate={navigateTo} cycleProfile={cycleProfile} dailyLogs={dailyLogs} onDeleteLog={handleDeleteLog} />;
       case 'nutrition':
         return (
-          <NutritionScreen 
-            onBack={() => setActiveTab('today')} 
-            onNavigate={navigateTo} 
-            {...sharedScreenProps} 
+          <NutritionScreen
+            onBack={() => setActiveTab('today')}
+            onNavigate={navigateTo}
+            cycleDay={cycleInfo.cycleDay}
+            {...sharedScreenProps}
           />
         );
       case 'videos':

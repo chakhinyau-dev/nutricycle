@@ -195,7 +195,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
         <Pressable onPress={onBack} style={styles.backButton}>
           <ChevronLeft size={24} color={colors.on_surface} />
         </Pressable>
-        <Text style={styles.title}>Tu Ciclo</Text>
+        <Text style={styles.title}>{isSpanish ? 'Tu Ciclo' : 'Your Cycle'}</Text>
       </View>
 
       {/* Circular Tracker Container */}
@@ -400,8 +400,8 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
           <Text style={styles.chartTitle}>
-            {t('dashboard.chart_title_prefix', { defaultValue: 'Tu mapa ' })}
-            <Text style={{ color: '#7BC8B8' }}>{t('dashboard.chart_title_suffix', { defaultValue: 'hormonal' })}</Text>
+            {isSpanish ? 'Mareas ' : 'Hormone '}
+            <Text style={{ color: '#7BC8B8' }}>{isSpanish ? 'Hormonales' : 'Tides'}</Text>
           </Text>
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>

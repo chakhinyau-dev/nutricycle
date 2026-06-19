@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { colors } from '../theme/colors';
 import { 
   ArrowLeft,
   Share2,
@@ -146,30 +145,26 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
           )}
         </View>
 
-        {/* Video Info Overlay Fallback if playing video */}
-        {videoUrl && (
-          <View style={{ paddingHorizontal: 28, paddingTop: 20 }}>
-            <View style={[styles.phaseBadge, { marginBottom: 12 }]}>
-              <Text style={styles.phaseBadgeText}>
-                {data.phaseKey ? t(`phases.${data.phaseKey}`) : data.category}
-              </Text>
-            </View>
-            <Text style={[styles.recipeTitle, { color: colors.on_surface, fontSize: 32 }]}>{data.title}</Text>
+        {/* Title + stats — flow directly below video/image with no container break */}
+        <View style={styles.metaBlock}>
+          <View style={styles.phaseBadge}>
+            <Text style={styles.phaseBadgeText}>
+              {data.phaseKey ? t(`phases.${data.phaseKey}`) : data.category}
+            </Text>
           </View>
-        )}
-
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-           <Text style={styles.statText}>
-              {data.time} {t('common.unit_min')} • {(() => {
-                 const prot = data.protein || Math.max(10, Math.round(Number(data.calories) * 0.08));
-                 const fat = data.fat || Math.max(5, Math.round(Number(data.calories) * 0.035));
-                 const carbs = data.carbs || Math.max(15, Math.round((Number(data.calories) - (prot * 4) - (fat * 9)) / 4));
-                 return currentLanguage.toLowerCase().startsWith('es')
-                   ? `${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g grasa`
-                   : `${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g fat`;
-               })()}
-           </Text>
+          {videoUrl && (
+            <Text style={styles.recipeTitleDark}>{data.title}</Text>
+          )}
+          <Text style={styles.statText}>
+            {(() => {
+              const prot = data.protein || Math.max(10, Math.round(Number(data.calories) * 0.08));
+              const fat = data.fat || Math.max(5, Math.round(Number(data.calories) * 0.035));
+              const carbs = data.carbs || Math.max(15, Math.round((Number(data.calories) - (prot * 4) - (fat * 9)) / 4));
+              return currentLanguage.toLowerCase().startsWith('es')
+                ? `${data.time} min • ${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g grasa`
+                : `${data.time} min • ${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g fat`;
+            })()}
+          </Text>
         </View>
 
         <View style={styles.mainContent}>
@@ -257,7 +252,8 @@ const styles = StyleSheet.create({
   phaseBadge: { backgroundColor: '#A3B3A5', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 12 },
   phaseBadgeText: { fontFamily: 'Outfit_700Bold', fontSize: 10, color: '#FFF', letterSpacing: 1, textTransform: 'uppercase' },
   recipeTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 36, color: '#FFFFFF', lineHeight: 42 },
-  statsRow: { paddingHorizontal: 28, paddingVertical: 16, backgroundColor: '#F9F9F2' },
+  recipeTitleDark: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 32, color: '#1A1A1A', lineHeight: 38, marginBottom: 8 },
+  metaBlock: { paddingHorizontal: 28, paddingTop: 20, paddingBottom: 4 },
   statText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: '#64748B', opacity: 0.7, letterSpacing: 0.5 },
   mainContent: { paddingHorizontal: 28, paddingTop: 16 },
   sectionTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 28, color: '#1A1A1A' },

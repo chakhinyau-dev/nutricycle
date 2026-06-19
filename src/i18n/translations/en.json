@@ -280,6 +280,13 @@
     "overline": "NUTRICYCLE VIDEO LIBRARY",
     "audio_session": "Audio session",
     "category_prefix": "Phase {{phase}} • {{meal}}",
+    "types": {
+      "recipe": "Recipe",
+      "educational": "Hormonal Education",
+      "wellness": "Wellness",
+      "fitness": "Movement",
+      "tips": "Tips"
+    },
     "featured": "FEATURED FOR {{phase}}",
     "recommended": "RECOMMENDED VIDEOS",
     "youtube_integrated": "YouTube Integrated",

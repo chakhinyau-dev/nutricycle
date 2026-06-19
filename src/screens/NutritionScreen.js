@@ -7,6 +7,7 @@ import {
   Pressable,
   Image,
   Modal,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +15,8 @@ import { ChevronLeft, RefreshCw, Play, BookOpen, ShoppingBag, Clock, Plus, X } f
 import { colors } from '../theme/colors';
 import { getRecipesForDayAndPhase } from '../utils/recipeHelper';
 import { getRecipeVideoThumbnail } from '../services/recipeService';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const DAYS = [
   { index: 0, key: 'mon' },
@@ -32,6 +35,7 @@ export const NutritionScreen = ({
   onNavigate,
   recipes = [],
   currentPhaseKey = 'follicular',
+  cycleDay,
   user,
 }) => {
   const { t, i18n } = useTranslation();
@@ -128,10 +132,14 @@ export const NutritionScreen = ({
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>
-              {isSpanish ? 'Plan Nutricional' : 'Nutrition Plan'}
+              {isSpanish ? 'Nutrición' : 'Nutrition'}
             </Text>
-            <View style={styles.phasePill}>
-              <Text style={styles.phasePillText}>{t(`phases.${phaseKey}`)}</Text>
+            <View style={styles.headerMeta}>
+              <View style={styles.phaseDot} />
+              <Text style={styles.headerMetaText}>
+                {t(`phases.${phaseKey}`)}
+                {cycleDay ? ` · ${isSpanish ? 'Día' : 'Day'} ${cycleDay}` : ''}
+              </Text>
             </View>
           </View>
         </View>
@@ -207,34 +215,18 @@ export const NutritionScreen = ({
         <View style={styles.mealList}>
           {dailyMeals.map(({ time, recipe }) => {
             if (!recipe) return null;
-            const timeLabel = t(`dailylog.meal_types.${time}`);
+            const timeLabel = t(`dailylog.meal_types.${time}`).toUpperCase();
             const videoThumb = getRecipeVideoThumbnail(recipe);
             const hasVideo = !!(recipe.videoUrl || recipe.youtubeUrl || videoThumb);
             const { cal, prot, fat, carbs } = getMacros(recipe);
 
             return (
               <View key={time} style={styles.mealCard}>
-                {/* Meal header */}
-                <View style={styles.mealHeader}>
-                  <Text style={styles.mealTimeTitle}>{timeLabel}</Text>
-                  <Pressable
-                    style={styles.swapBtn}
-                    onPress={() => {
-                      setActiveSwapMeal({ mealType: time, currentRecipe: recipe });
-                      setShowSwapModal(true);
-                    }}
-                  >
-                    <RefreshCw size={13} color={colors.secondary} />
-                    <Text style={styles.swapBtnText}>{isSpanish ? 'Cambiar' : 'Swap'}</Text>
-                  </Pressable>
-                </View>
-
-                {/* Recipe card */}
                 <Pressable
                   style={styles.recipeCard}
                   onPress={() => onNavigate('recipeDetail', recipe)}
                 >
-                  {/* Full-bleed video thumbnail with overlays */}
+                  {/* Full-bleed image */}
                   <View style={styles.imageWrap}>
                     <Image
                       source={videoThumb
@@ -244,26 +236,36 @@ export const NutritionScreen = ({
                       resizeMode="cover"
                     />
 
-                    {/* Time tag */}
-                    <View style={styles.timeTag}>
+                    {/* Meal type + time badge — top left */}
+                    <View style={styles.mealBadge}>
+                      <Text style={styles.mealBadgeText}>{timeLabel}</Text>
+                      <View style={styles.mealBadgeDot} />
                       <Clock size={10} color="#FFF" />
-                      <Text style={styles.timeTagText}>{recipe.time} min</Text>
+                      <Text style={styles.mealBadgeText}>{recipe.time} min</Text>
                     </View>
 
-                    {/* Play button */}
+                    {/* Play button — center */}
                     {hasVideo && (
                       <View style={styles.playBtn}>
                         <Play size={18} color="#FFF" fill="#FFF" />
                       </View>
                     )}
 
-                    {/* Pseudo-gradient overlay + title */}
+                    {/* Swap button — top right */}
+                    <Pressable
+                      style={styles.swapBtn}
+                      onPress={() => {
+                        setActiveSwapMeal({ mealType: time, currentRecipe: recipe });
+                        setShowSwapModal(true);
+                      }}
+                    >
+                      <RefreshCw size={13} color="#FFF" />
+                    </Pressable>
+
+                    {/* Gradient + title at bottom */}
                     <View style={styles.gradientOverlay} pointerEvents="none">
                       {GRADIENT_STEPS.map((opacity, i) => (
-                        <View
-                          key={i}
-                          style={{ flex: 1, backgroundColor: `rgba(26,20,35,${opacity})` }}
-                        />
+                        <View key={i} style={{ flex: 1, backgroundColor: `rgba(26,20,35,${opacity})` }} />
                       ))}
                     </View>
                     <View style={styles.overlayTitle} pointerEvents="none">
@@ -273,7 +275,7 @@ export const NutritionScreen = ({
                     </View>
                   </View>
 
-                  {/* Macro chips */}
+                  {/* Macro row below image */}
                   <View style={styles.macroRow}>
                     <View style={[styles.macroPill, { backgroundColor: '#FEF3C7' }]}>
                       <Text style={[styles.macroPillText, { color: '#D97706' }]}>{cal} kcal</Text>
@@ -423,20 +425,23 @@ const styles = StyleSheet.create({
     color: colors.on_surface,
     lineHeight: 36,
   },
-  phasePill: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primary_container,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 6,
+  headerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+    gap: 6,
   },
-  phasePillText: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 10,
-    color: colors.on_primary_container,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+  phaseDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  headerMetaText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+    opacity: 0.75,
   },
 
   // Day strip
@@ -539,50 +544,23 @@ const styles = StyleSheet.create({
   },
 
   // Meal cards
-  mealList: { gap: 40, paddingHorizontal: 24 },
+  mealList: { gap: 28, paddingHorizontal: 20 },
   mealCard: {},
-  mealHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  mealTimeTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 26,
-    color: colors.on_surface,
-  },
-  swapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-  },
-  swapBtnText: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
-    color: colors.secondary,
-  },
 
   recipeCard: {
     borderRadius: 28,
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
     shadowColor: '#4A4453',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 28,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.09,
+    shadowRadius: 24,
+    elevation: 5,
     borderWidth: 1,
     borderColor: '#EFEDE4',
   },
   imageWrap: {
-    width: '100%',
+    width: SCREEN_WIDTH - 40,
     height: 220,
     position: 'relative',
   },
@@ -590,22 +568,44 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  timeTag: {
+  // Meal type + time badge on image top-left
+  mealBadge: {
     position: 'absolute',
     top: 14,
-    right: 14,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    left: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 12,
   },
-  timeTagText: {
+  mealBadgeText: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
     color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  mealBadgeDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  // Swap button on image top-right
+  swapBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.38)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   playBtn: {
     position: 'absolute',

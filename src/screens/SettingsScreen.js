@@ -207,12 +207,12 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
               <ChevronLeft size={24} color={colors.on_surface} />
             </Pressable>
             <Pressable style={styles.navRight} onPress={() => onNavigate('subscription')}>
-              <View style={[styles.premiumPill, !isPremium && styles.basicPill]}>
-                <Crown size={14} color={isPremium ? "#FFD700" : colors.on_surface_variant} fill={isPremium ? "#FFD700" : "none"} />
+              <View style={[styles.premiumPill, !isPremium && styles.basicPill, isPremium && styles.premiumPillActive]}>
+                <Crown size={14} color={isPremium ? "#B8860B" : colors.on_surface_variant} fill={isPremium ? "#FFD700" : "none"} />
                 <Text style={[styles.premiumText, !isPremium && styles.basicText]}>
-                  {isPremium 
-                    ? (isSpanish ? "PLAN BALANCE ACTIVO" : "BALANCE PLAN ACTIVE") 
-                    : (isSpanish ? "PLAN BÁSICO (MEJORAR)" : "BASIC PLAN (UPGRADE)")}
+                  {isPremium
+                    ? (isSpanish ? 'Plan Balance · Activo' : 'Balance Plan · Active')
+                    : (isSpanish ? 'Plan Básico · Mejorar' : 'Basic Plan · Upgrade')}
                 </Text>
               </View>
             </Pressable>
@@ -383,6 +383,10 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     borderWidth: 1,
+    borderColor: '#EAEAE2',
+  },
+  premiumPillActive: {
+    backgroundColor: '#FFFBEB',
     borderColor: '#FFD700',
   },
   basicPill: {

@@ -438,6 +438,13 @@
     "audio_session": "Sesión de audio",
     "no_source": "No hay video disponible",
     "category_prefix": "Fase {{phase}} • {{meal}}",
+    "types": {
+      "recipe": "Receta",
+      "educational": "Educación Hormonal",
+      "wellness": "Bienestar",
+      "fitness": "Movimiento",
+      "tips": "Consejos"
+    },
     "duration": "Duración",
     "video_source": "Fuente del Video",
     "file_ready": "Archivo Listo",
