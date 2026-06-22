@@ -265,13 +265,13 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
       <View style={styles.historySection}>
         <View style={styles.historyPreview}>
           <History size={20} color={colors.primary} />
-          <Text style={styles.historySectionTitle}>{t('dailylog.history_title', 'Historial Reciente')}</Text>
+          <Text style={styles.historySectionTitle}>{t('dailylog.history_title', 'Recent History')}</Text>
         </View>
 
         {recentHistory.length === 0 ? (
           <View style={styles.emptyHistory}>
             <AlertCircle size={24} color="#CBD5E1" />
-            <Text style={styles.emptyHistoryText}>{t('dailylog.no_history', 'Aún no tienes registros guardados.')}</Text>
+            <Text style={styles.emptyHistoryText}>{t('dailylog.no_history', 'No records saved yet.')}</Text>
           </View>
         ) : (
           recentHistory.map((item) => (

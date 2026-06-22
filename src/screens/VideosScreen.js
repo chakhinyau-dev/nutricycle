@@ -137,19 +137,27 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   }, [activeFilterId, activeMealType, displayLibrary]);
 
   if (selectedVideo) {
+    // Prefer ingredients/instructions embedded directly on the video.
+    // Fall back to a linked recipe for older content that pre-dates this feature.
+    const videoIngredients = activeVideo?.ingredients?.length ? activeVideo.ingredients : null;
+    const videoInstructions = activeVideo?.instructions?.length ? activeVideo.instructions : null;
+    const hasEmbeddedRecipe = !!(videoIngredients || videoInstructions);
+
     const linkedRecipe = (() => {
+      if (hasEmbeddedRecipe) return null; // video carries its own content
       if (activeVideo?.contentType !== 'recipe' || !recipes?.length) return null;
-      // Exact match: same phase + meal type
       const exact = recipes.find(
         r => r.phaseKey === activeVideo.phaseKey && r.mealType === activeVideo.mealType
       );
       if (exact) return exact;
-      // Same phase, any meal
       const byPhase = recipes.find(r => r.phaseKey === activeVideo.phaseKey);
       if (byPhase) return byPhase;
-      // Fallback: first available recipe
       return recipes[0] || null;
     })();
+
+    const recipeIngredients = videoIngredients || linkedRecipe?.ingredients || [];
+    const recipeInstructions = videoInstructions || linkedRecipe?.instructions || [];
+    const hasRecipeContent = !!(recipeIngredients.length || recipeInstructions.length);
 
     const isAudioOnly =
       activeVideo?.contentType === 'wellness' ||
@@ -239,35 +247,45 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
               <Text style={styles.durationDetail}>{activeVideo?.duration}</Text>
             </View>
             <Text style={styles.detailTitle}>{activeVideo?.title}</Text>
-            {!linkedRecipe && (
+            {!hasRecipeContent && (
               <Text style={styles.detailDesc}>{activeVideo?.description}</Text>
             )}
 
-            {linkedRecipe && (
+            {hasRecipeContent && (
               <View style={styles.recipeSection}>
-                <View style={styles.recipeMacroRow}>
-                  <Text style={styles.recipeMacroItem}>{linkedRecipe.time} min</Text>
-                  <Text style={styles.recipeMacroDot}>·</Text>
-                  <Text style={styles.recipeMacroItem}>{linkedRecipe.calories} kcal</Text>
-                  <Text style={styles.recipeMacroDot}>·</Text>
-                  <Text style={styles.recipeMacroItem}>{t('recipe_detail.high_protein')}</Text>
-                </View>
-
-                <Text style={styles.recipeSectionTitle}>{t('recipe_detail.ingredients')}</Text>
-                {linkedRecipe.ingredients?.map((item, idx) => (
-                  <View key={idx} style={styles.ingredientRow}>
-                    <CheckCircle size={16} color="#A3B3A5" />
-                    <Text style={styles.ingredientText}>{item}</Text>
+                {linkedRecipe && (
+                  <View style={styles.recipeMacroRow}>
+                    <Text style={styles.recipeMacroItem}>{linkedRecipe.time} min</Text>
+                    <Text style={styles.recipeMacroDot}>·</Text>
+                    <Text style={styles.recipeMacroItem}>{linkedRecipe.calories} kcal</Text>
+                    <Text style={styles.recipeMacroDot}>·</Text>
+                    <Text style={styles.recipeMacroItem}>{t('recipe_detail.high_protein')}</Text>
                   </View>
-                ))}
+                )}
 
-                <Text style={[styles.recipeSectionTitle, { marginTop: 24 }]}>{t('recipe_detail.preparation')}</Text>
-                {linkedRecipe.instructions?.map((step, idx) => (
-                  <View key={idx} style={styles.stepRow}>
-                    <Text style={styles.stepNumber}>{idx + 1}.</Text>
-                    <Text style={styles.stepText}>{step}</Text>
-                  </View>
-                ))}
+                {recipeIngredients.length > 0 && (
+                  <>
+                    <Text style={styles.recipeSectionTitle}>{t('recipe_detail.ingredients')}</Text>
+                    {recipeIngredients.map((item, idx) => (
+                      <View key={idx} style={styles.ingredientRow}>
+                        <CheckCircle size={16} color="#A3B3A5" />
+                        <Text style={styles.ingredientText}>{item}</Text>
+                      </View>
+                    ))}
+                  </>
+                )}
+
+                {recipeInstructions.length > 0 && (
+                  <>
+                    <Text style={[styles.recipeSectionTitle, { marginTop: 24 }]}>{t('recipe_detail.preparation')}</Text>
+                    {recipeInstructions.map((step, idx) => (
+                      <View key={idx} style={styles.stepRow}>
+                        <Text style={styles.stepNumber}>{idx + 1}.</Text>
+                        <Text style={styles.stepText}>{step}</Text>
+                      </View>
+                    ))}
+                  </>
+                )}
               </View>
             )}
           </View>

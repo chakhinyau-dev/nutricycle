@@ -6,15 +6,12 @@ import {
   ScrollView,
   Pressable,
   Modal,
-  Dimensions,
 } from 'react-native';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react-native';
 import { addDays, format, getDaysInMonth, startOfMonth, getDay } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-
-const { width } = Dimensions.get('window');
 
 // ── Stepper ────────────────────────────────────────────────────────────────
 const Stepper = ({ value, onDecrement, onIncrement, min = 1, max = 99 }) => (
@@ -40,7 +37,8 @@ const Stepper = ({ value, onDecrement, onIncrement, min = 1, max = 99 }) => (
 // ── Calendar Picker Modal ──────────────────────────────────────────────────
 const DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale, isSpanish }) => {
+const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) => {
+  const { t } = useTranslation();
   const [viewMonth, setViewMonth] = useState(
     selectedDate
       ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
@@ -123,8 +121,9 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale, isSp
           ))}
 
           <Pressable style={styles.calCancelBtn} onPress={onClose}>
-            <Text style={styles.calCancelText}>{isSpanish ? 'Cancelar' : 'Cancel'}</Text>
+            <Text style={styles.calCancelText}>{t('common.cancel')}</Text>
           </Pressable>
+
         </Pressable>
       </Pressable>
     </Modal>
@@ -133,7 +132,7 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale, isSp
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 export const PeriodCalculatorScreen = ({ onBack }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isSpanish = (i18n.resolvedLanguage || i18n.language || '').toLowerCase().startsWith('es');
   const locale = isSpanish ? es : enUS;
 
@@ -153,17 +152,6 @@ export const PeriodCalculatorScreen = ({ onBack }) => {
   const fmtRange = (a, b) =>
     `${format(a, 'd')} – ${format(b, 'd MMMM', { locale })}`;
 
-  const T = {
-    title: isSpanish ? 'Calculadora de Período' : 'Period Calculator',
-    subtitle: isSpanish
-      ? 'Registra tu período para ajustar tu ciclo y estimar tu próxima ovulación.'
-      : 'Log your period to adjust your cycle or estimate your next period and ovulation window.',
-    firstDay: isSpanish ? 'Primer día de tu último período' : 'First day of your last period',
-    howLong: isSpanish ? '¿Cuántos días duró?' : 'How many days did it last?',
-    avgCycle: isSpanish ? 'Duración del ciclo (días)' : 'Average cycle length (days)',
-    ovulLabel: isSpanish ? 'Fecha de ovulación estimada' : 'Estimated ovulation date',
-    periodLabel: isSpanish ? 'Próximo período estimado' : 'Estimated period date',
-  };
 
   return (
     <View style={styles.screen}>
@@ -172,17 +160,17 @@ export const PeriodCalculatorScreen = ({ onBack }) => {
         <Pressable onPress={onBack} style={styles.backBtn}>
           <ChevronLeft size={22} color={colors.on_surface} />
         </Pressable>
-        <Text style={styles.headerTitle}>{T.title}</Text>
+        <Text style={styles.headerTitle}>{t('period_calculator.title')}</Text>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.subtitle}>{T.subtitle}</Text>
+        <Text style={styles.subtitle}>{t('period_calculator.subtitle')}</Text>
 
         {/* ── First day of period ── */}
-        <Text style={styles.fieldLabel}>{T.firstDay}</Text>
+        <Text style={styles.fieldLabel}>{t('period_calculator.first_day')}</Text>
         <Pressable style={styles.dateField} onPress={() => setShowPicker(true)}>
           <Text style={styles.dateFieldText}>
             {format(lastPeriodDate, 'd MMMM yyyy', { locale })}
@@ -193,7 +181,7 @@ export const PeriodCalculatorScreen = ({ onBack }) => {
         </Pressable>
 
         {/* ── Duration stepper ── */}
-        <Text style={styles.fieldLabel}>{T.howLong}</Text>
+        <Text style={styles.fieldLabel}>{t('period_calculator.how_long')}</Text>
         <Stepper
           value={periodDuration}
           onDecrement={() => setPeriodDuration((v) => Math.max(1, v - 1))}
@@ -203,7 +191,7 @@ export const PeriodCalculatorScreen = ({ onBack }) => {
         />
 
         {/* ── Cycle length stepper ── */}
-        <Text style={styles.fieldLabel}>{T.avgCycle}</Text>
+        <Text style={styles.fieldLabel}>{t('period_calculator.avg_cycle')}</Text>
         <Stepper
           value={cycleLength}
           onDecrement={() => setCycleLength((v) => Math.max(20, v - 1))}
@@ -215,12 +203,12 @@ export const PeriodCalculatorScreen = ({ onBack }) => {
         {/* ── Result cards ── */}
         <View style={styles.resultsRow}>
           <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>{T.ovulLabel}</Text>
+            <Text style={styles.resultLabel}>{t('period_calculator.ovul_label')}</Text>
             <Text style={styles.resultValue}>{fmtDate(ovulationDate)}</Text>
           </View>
 
           <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>{T.periodLabel}</Text>
+            <Text style={styles.resultLabel}>{t('period_calculator.period_label')}</Text>
             <Text style={styles.resultValue}>{fmtRange(nextPeriodStart, nextPeriodEnd)}</Text>
           </View>
         </View>

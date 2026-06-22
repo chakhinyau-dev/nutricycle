@@ -38,7 +38,7 @@ export const NutritionScreen = ({
   cycleDay,
   user,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const userId = user?.id || 'guest';
   const phaseKey = currentPhaseKey || 'follicular';
 
@@ -103,7 +103,7 @@ export const NutritionScreen = ({
   }, [dailyMeals]);
 
   const alternatives = useMemo(() => {
-    if (!activeSwapMeal) return [];
+    if (!activeSwapMeal || !recipes?.length) return [];
     const { mealType, currentRecipe } = activeSwapMeal;
     return recipes
       .filter(r => r.phaseKey === phaseKey && r.mealType === mealType && r.id !== currentRecipe.id)
@@ -111,7 +111,6 @@ export const NutritionScreen = ({
   }, [recipes, phaseKey, activeSwapMeal]);
 
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
-  const isSpanish = currentLanguage?.toLowerCase().startsWith('es');
 
   const getMacros = (recipe) => {
     const cal = Number(recipe.calories || 0);
@@ -131,14 +130,12 @@ export const NutritionScreen = ({
             <ChevronLeft size={24} color={colors.on_surface} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>
-              {isSpanish ? 'Nutrición' : 'Nutrition'}
-            </Text>
+            <Text style={styles.title}>{t('nutrition.title')}</Text>
             <View style={styles.headerMeta}>
               <View style={styles.phaseDot} />
               <Text style={styles.headerMetaText}>
                 {t(`phases.${phaseKey}`)}
-                {cycleDay ? ` · ${isSpanish ? 'Día' : 'Day'} ${cycleDay}` : ''}
+                {cycleDay ? ` · ${t('nutrition.day_label')} ${cycleDay}` : ''}
               </Text>
             </View>
           </View>
@@ -180,16 +177,14 @@ export const NutritionScreen = ({
           <View style={styles.statsCard}>
             <View style={styles.statsCardTop}>
               <Text style={styles.statsPhaseLabel}>{t(`phases.${phaseKey}`).toUpperCase()}</Text>
-              <Text style={styles.statsCardTitle}>
-                {isSpanish ? 'Plan de hoy' : "Today's Plan"}
-              </Text>
+              <Text style={styles.statsCardTitle}>{t('nutrition.plan_today')}</Text>
             </View>
             <View style={styles.statsRow}>
               {[
-                { val: `${stats.calories}`, unit: 'kcal', label: isSpanish ? 'Calorías' : 'Calories' },
-                { val: `${stats.protein}g`, unit: '', label: isSpanish ? 'Proteína' : 'Protein' },
-                { val: `${stats.mealsCount}`, unit: '', label: isSpanish ? 'Comidas' : 'Meals' },
-                { val: `${stats.time}`, unit: 'min', label: isSpanish ? 'Prep' : 'Prep' },
+                { val: `${stats.calories}`, unit: 'kcal', label: t('nutrition.calories_label') },
+                { val: `${stats.protein}g`, unit: '', label: t('nutrition.protein_label') },
+                { val: `${stats.mealsCount}`, unit: '', label: t('nutrition.meals_label') },
+                { val: `${stats.time}`, unit: 'min', label: t('nutrition.prep_label') },
               ].map((s, i) => (
                 <React.Fragment key={i}>
                   {i > 0 && <View style={styles.statDivider} />}
@@ -207,9 +202,7 @@ export const NutritionScreen = ({
         <View style={{ marginBottom: 40 }} />
 
         {/* ── Section label ── */}
-        <Text style={styles.sectionLabel}>
-          {isSpanish ? 'COMIDAS DEL DÍA' : 'MEALS OF THE DAY'}
-        </Text>
+        <Text style={styles.sectionLabel}>{t('nutrition.meals_of_day')}</Text>
 
         {/* ── Meal Cards ── */}
         <View style={styles.mealList}>
@@ -288,7 +281,7 @@ export const NutritionScreen = ({
                     </View>
                     <View style={[styles.macroPill, { backgroundColor: '#FCE7F3' }]}>
                       <Text style={[styles.macroPillText, { color: '#DB2777' }]}>
-                        {fat}g {isSpanish ? 'grasa' : 'fat'}
+                        {fat}g {t('nutrition.fat_label')}
                       </Text>
                     </View>
                   </View>
@@ -306,7 +299,7 @@ export const NutritionScreen = ({
           >
             <BookOpen size={20} color={colors.primary} />
             <Text style={[styles.shortcutText, { color: colors.primary }]}>
-              {isSpanish ? 'Recetas' : 'Recipes'}
+              {t('nutrition.recipes_shortcut')}
             </Text>
           </Pressable>
           <Pressable
@@ -315,7 +308,7 @@ export const NutritionScreen = ({
           >
             <ShoppingBag size={20} color={colors.secondary} />
             <Text style={[styles.shortcutText, { color: colors.secondary }]}>
-              {isSpanish ? 'Compras' : 'Shopping'}
+              {t('nutrition.shopping_shortcut')}
             </Text>
           </Pressable>
         </View>
@@ -333,9 +326,7 @@ export const NutritionScreen = ({
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {isSpanish ? 'Intercambiar comida' : 'Swap Meal'}
-              </Text>
+              <Text style={styles.modalTitle}>{t('nutrition.swap_title')}</Text>
               <Pressable
                 style={styles.closeBtn}
                 onPress={() => { setShowSwapModal(false); setActiveSwapMeal(null); }}
@@ -346,17 +337,13 @@ export const NutritionScreen = ({
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalList}>
               <Text style={styles.modalSubtitle}>
-                {isSpanish
-                  ? `Alternativas para la fase ${t(`phases.${phaseKey}`)}:`
-                  : `Options for ${t(`phases.${phaseKey}`)} phase:`}
+                {t('nutrition.swap_subtitle', { phase: t(`phases.${phaseKey}`) })}
               </Text>
 
               {alternatives.length === 0 ? (
                 <View style={styles.emptyAlternatives}>
                   <Text style={styles.emptyAltText}>
-                    {isSpanish
-                      ? 'No hay recetas alternativas disponibles.'
-                      : 'No alternative recipes available.'}
+                    {t('nutrition.no_alternatives')}
                   </Text>
                 </View>
               ) : (

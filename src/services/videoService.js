@@ -32,6 +32,12 @@ const normalizeVideo = (video) => {
     thumbnail: video.thumbnail || (youtubeUrl ? `https://img.youtube.com/vi/${extractYouTubeId(youtubeUrl)}/hqdefault.jpg` : ''),
     mealType: video.meal_type || video.mealType || 'none',
     youtubeId: extractYouTubeId(youtubeUrl),
+    ingredients: Array.isArray(video.ingredients)
+      ? video.ingredients
+      : (video.ingredients ? String(video.ingredients).split('\n').filter(Boolean) : []),
+    instructions: Array.isArray(video.instructions)
+      ? video.instructions
+      : (video.instructions ? String(video.instructions).split('\n').filter(Boolean) : []),
   };
 };
 
@@ -79,6 +85,12 @@ export const saveVideo = async (getToken, videoData) => {
     thumbnail: videoData.thumbnail || '',
     meal_type: videoData.meal_type || videoData.mealType || 'none',
     updated_at: new Date().toISOString(),
+    ingredients: Array.isArray(videoData.ingredients)
+      ? videoData.ingredients
+      : (videoData.ingredients ? String(videoData.ingredients).split('\n').filter(Boolean) : []),
+    instructions: Array.isArray(videoData.instructions)
+      ? videoData.instructions
+      : (videoData.instructions ? String(videoData.instructions).split('\n').filter(Boolean) : []),
   };
 
   console.log('[Supabase Video Save] Payload:', JSON.stringify(payload, null, 2));

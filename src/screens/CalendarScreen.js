@@ -1,18 +1,17 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { colors } from '../theme/colors';
 import {
   addDays,
-  subDays,
   format,
   isSameDay,
   startOfWeek,
   eachDayOfInterval,
 } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, AlertCircle, Plus, Calendar as CalendarIcon, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, AlertCircle, Plus, Trash2 } from 'lucide-react-native';
 import { getCycleInsights, getPhaseForDate, isFertileDate, isPeriodDate, normalizeCycleProfile } from '../utils/cycle';
 
 const { width } = Dimensions.get('window');
@@ -35,8 +34,8 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
   const profile = normalizeCycleProfile(cycleProfile);
   const cycleInfo = useMemo(() => getCycleInsights(profile), [profile]);
 
-  const cycleLength = profile.cycleLength;
-  const periodLength = profile.periodLength;
+  const cycleLength = Number(profile.cycleLength) || 28;
+  const periodLength = Number(profile.periodLength) || 5;
   const cycleDay = cycleInfo.cycleDay;
   const currentPhase = cycleInfo.currentPhaseKey;
 
@@ -195,7 +194,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
         <Pressable onPress={onBack} style={styles.backButton}>
           <ChevronLeft size={24} color={colors.on_surface} />
         </Pressable>
-        <Text style={styles.title}>{isSpanish ? 'Tu Ciclo' : 'Your Cycle'}</Text>
+        <Text style={styles.title}>{t('calendar.cycle_title')}</Text>
       </View>
 
       {/* Circular Tracker Container */}
@@ -400,8 +399,8 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
           <Text style={styles.chartTitle}>
-            {isSpanish ? 'Mareas ' : 'Hormone '}
-            <Text style={{ color: '#7BC8B8' }}>{isSpanish ? 'Hormonales' : 'Tides'}</Text>
+            {t('calendar.hormone_tides_prefix')}
+            <Text style={{ color: '#7BC8B8' }}>{t('calendar.hormone_tides_accent')}</Text>
           </Text>
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>

@@ -92,6 +92,8 @@
     "password_mismatch": "The passwords do not match.",
     "password_updated": "Password updated successfully!",
     "password_update_failed": "Unable to update the password.",
+    "new_password_placeholder": "New Password",
+    "confirm_password_placeholder": "Confirm Password",
     "profile_image_updated": "Profile photo updated successfully!",
     "profile_image_error": "Unable to update the profile photo. Please try again.",
     "export_desc": "Export Data generates a detailed report of your cycle logs, symptoms, and health metrics. You can use this file for your own records or share it with your healthcare professional.",
@@ -153,7 +155,7 @@
     "testosterone": "Testosterone",
     "today_label": "Today",
     "quick_access": "Quick Access",
-    "key_foods_title": "Alimentos Clave",
+    "key_foods_title": "Key Foods",
     "log_action": "Log Info",
     "log_feel": "Log how I feel",
     "suggested_recipe": "Suggested Recipe of the Day",
@@ -267,7 +269,10 @@
     "progesterone_short": "Progest.",
     "countdown_days": "{{days}} days until {{phase}} phase",
     "countdown_one_day": "1 day until {{phase}} phase",
-    "log_btn": "+ Log Period"
+    "log_btn": "+ Log Period",
+    "cycle_title": "Your Cycle",
+    "hormone_tides_prefix": "Hormone ",
+    "hormone_tides_accent": "Tides"
   },
   "videos": {
     "types": {
@@ -706,5 +711,30 @@
       "calabaza": { "name": "Pumpkin / Squash", "benefit": "Rich in fiber and beta-carotenes. Provides natural sweet comfort to avoid bingeing." },
       "platano": { "name": "Banana", "benefit": "Rich in potassium and vitamin B6, helping to reduce water retention and premenstrual bloating." }
     }
+  },
+  "nutrition": {
+    "title": "Nutrition",
+    "day_label": "Day",
+    "plan_today": "Today's Plan",
+    "calories_label": "Calories",
+    "protein_label": "Protein",
+    "meals_label": "Meals",
+    "prep_label": "Prep",
+    "meals_of_day": "MEALS OF THE DAY",
+    "fat_label": "fat",
+    "recipes_shortcut": "Recipes",
+    "shopping_shortcut": "Shopping",
+    "swap_title": "Swap Meal",
+    "swap_subtitle": "Options for {{phase}} phase:",
+    "no_alternatives": "No alternative recipes available."
+  },
+  "period_calculator": {
+    "title": "Period Calculator",
+    "subtitle": "Log your period to adjust your cycle or estimate your next period and ovulation window.",
+    "first_day": "First day of your last period",
+    "how_long": "How many days did it last?",
+    "avg_cycle": "Average cycle length (days)",
+    "ovul_label": "Estimated ovulation date",
+    "period_label": "Estimated period date"
   }
 }

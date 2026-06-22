@@ -6,13 +6,10 @@ import {
   ScrollView,
   Pressable,
   Image,
-  Dimensions,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ChevronLeft, ChevronDown, ChevronUp, Leaf } from 'lucide-react-native';
 import { colors } from '../theme/colors';
-
-const { width } = Dimensions.get('window');
 
 // Structured key foods data for all phases (pointing to translation keys)
 const FOODS_BY_PHASE = {
@@ -201,6 +198,12 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular' }) => {
 
         {/* Categories and Foods List */}
         <View style={styles.listSection}>
+          {categories.length === 0 && (
+            <View style={styles.emptyState}>
+              <Leaf size={36} color={colors.primary} style={{ opacity: 0.4, marginBottom: 14 }} />
+              <Text style={styles.emptyStateText}>{t('key_foods.no_foods', { defaultValue: 'No foods available for this phase.' })}</Text>
+            </View>
+          )}
           {categories.map((cat, catIdx) => (
             <View key={cat.categoryKey} style={[styles.categoryCard, catIdx > 0 && { marginTop: 24 }]}>
               <Text style={styles.categoryTitle}>{t(`key_foods.categories.${cat.categoryKey}`)}</Text>
@@ -373,5 +376,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.on_surface_variant,
     lineHeight: 22,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 15,
+    color: colors.on_surface_variant,
+    opacity: 0.6,
+    textAlign: 'center',
   },
 });

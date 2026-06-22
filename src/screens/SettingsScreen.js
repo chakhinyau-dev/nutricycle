@@ -10,6 +10,7 @@ import {
   Image,
   ImageBackground,
   Alert,
+  ActivityIndicator,
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -43,6 +44,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
   const [showPassForm, setShowPassForm] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPasswordSaving, setIsPasswordSaving] = useState(false);
 
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
   const isSpanish = currentLanguage?.toLowerCase().startsWith('es');
@@ -151,6 +153,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
       return;
     }
 
+    setIsPasswordSaving(true);
     try {
       await user.update({ password: newPassword });
       Alert.alert(t('common.success'), t('settings.password_updated'));
@@ -160,6 +163,8 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
     } catch (err) {
       console.error("Update error:", err);
       Alert.alert(t('settings.error'), err.errors?.[0]?.message || t('settings.password_update_failed'));
+    } finally {
+      setIsPasswordSaving(false);
     }
   };
 
@@ -257,24 +262,29 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
               <Text style={styles.formTitle}>{t('settings.update_password')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Nueva Contraseña"
+                placeholder={t('settings.new_password_placeholder')}
                 secureTextEntry
                 value={newPassword}
                 onChangeText={setNewPassword}
+                editable={!isPasswordSaving}
               />
               <TextInput
                 style={styles.input}
-                placeholder="Confirmar Contraseña"
+                placeholder={t('settings.confirm_password_placeholder')}
                 secureTextEntry
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                editable={!isPasswordSaving}
               />
               <View style={styles.formButtons}>
-                <Pressable style={styles.cancelBtn} onPress={() => setShowPassForm(false)}>
+                <Pressable style={styles.cancelBtn} onPress={() => setShowPassForm(false)} disabled={isPasswordSaving}>
                   <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                 </Pressable>
-                <Pressable style={styles.saveBtn} onPress={handleUpdatePassword}>
-                  <Text style={styles.saveBtnText}>{t('common.save')}</Text>
+                <Pressable style={[styles.saveBtn, isPasswordSaving && { opacity: 0.6 }]} onPress={handleUpdatePassword} disabled={isPasswordSaving}>
+                  {isPasswordSaving
+                    ? <ActivityIndicator size="small" color="#FFF" />
+                    : <Text style={styles.saveBtnText}>{t('common.save')}</Text>
+                  }
                 </Pressable>
               </View>
             </View>

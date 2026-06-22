@@ -94,6 +94,8 @@
     "password_mismatch": "Las contraseñas no coinciden.",
     "password_updated": "¡Contraseña actualizada con éxito!",
     "password_update_failed": "No se pudo actualizar la contraseña.",
+    "new_password_placeholder": "Nueva Contraseña",
+    "confirm_password_placeholder": "Confirmar Contraseña",
     "profile_image_updated": "¡Foto de perfil actualizada con éxito!",
     "profile_image_error": "No se pudo actualizar la foto de perfil. Inténtalo de nuevo.",
     "export_desc": "Exportar Datos genera un informe detallado de tus registros de ciclo, síntomas y métricas de salud. Puedes usar este archivo para tus propios registros o compartirlo con tu profesional de la salud.",
@@ -268,7 +270,10 @@
     "progesterone_short": "Progest.",
     "countdown_days": "Faltan {{days}} días para la fase {{phase}}",
     "countdown_one_day": "Falta 1 día para la fase {{phase}}",
-    "log_btn": "Registrar período"
+    "log_btn": "Registrar período",
+    "cycle_title": "Tu Ciclo",
+    "hormone_tides_prefix": "Mareas ",
+    "hormone_tides_accent": "Hormonales"
   },
   "videos": {
     "types": {
@@ -679,5 +684,30 @@
       "calabaza": { "name": "Calabaza / Zapallo", "benefit": "Rica en fibra y betacarotenos. Aporta confort estomacal dulce natural para evitar atracones." },
       "platano": { "name": "Plátano / Banano", "benefit": "Rico en potasio y vitamina B6, ayudando a disminuir la retención de agua y la hinchazón premenstrual." }
     }
+  },
+  "nutrition": {
+    "title": "Nutrición",
+    "day_label": "Día",
+    "plan_today": "Plan de hoy",
+    "calories_label": "Calorías",
+    "protein_label": "Proteína",
+    "meals_label": "Comidas",
+    "prep_label": "Prep",
+    "meals_of_day": "COMIDAS DEL DÍA",
+    "fat_label": "grasa",
+    "recipes_shortcut": "Recetas",
+    "shopping_shortcut": "Compras",
+    "swap_title": "Intercambiar comida",
+    "swap_subtitle": "Alternativas para la fase {{phase}}:",
+    "no_alternatives": "No hay recetas alternativas disponibles."
+  },
+  "period_calculator": {
+    "title": "Calculadora de Período",
+    "subtitle": "Registra tu período para ajustar tu ciclo y estimar tu próxima ovulación.",
+    "first_day": "Primer día de tu último período",
+    "how_long": "¿Cuántos días duró?",
+    "avg_cycle": "Duración del ciclo (días)",
+    "ovul_label": "Fecha de ovulación estimada",
+    "period_label": "Próximo período estimado"
   }
 }

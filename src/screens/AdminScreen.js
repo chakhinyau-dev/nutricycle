@@ -108,6 +108,8 @@ export const AdminScreen = ({
     videoUrl: '',
     duration: '5:00',
     thumbnail: '',
+    ingredients: '',
+    instructions: '',
   });
 
   // Recipe State
@@ -137,6 +139,8 @@ export const AdminScreen = ({
       videoUrl: '',
       duration: '5:00',
       thumbnail: '',
+      ingredients: '',
+      instructions: '',
     });
     setLocalVideoFile(null);
     setEditingVideoId(null);
@@ -230,6 +234,8 @@ export const AdminScreen = ({
       videoUrl: vid.videoUrl || vid.video_url || '',
       duration: vid.duration,
       thumbnail: vid.thumbnail || '',
+      ingredients: Array.isArray(vid.ingredients) ? vid.ingredients.join('\n') : '',
+      instructions: Array.isArray(vid.instructions) ? vid.instructions.join('\n') : '',
     });
     setLocalVideoFile(null);
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -237,7 +243,7 @@ export const AdminScreen = ({
   };
 
   const handleSaveVideo = async () => {
-    if (!newVideo.title || (!newVideo.youtubeUrl && !localVideoFile && !newVideo.videoUrl)) {
+    if (!newVideo.title?.trim() || (!newVideo.youtubeUrl && !localVideoFile && !newVideo.videoUrl)) {
       if (showToast) showToast(t('admin.video_required'), 'error');
       return;
     }
@@ -297,7 +303,9 @@ export const AdminScreen = ({
         duration: newVideo.duration,
         thumbnail: finalThumbnail,
         is_youtube: isYoutube,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        ingredients: newVideo.ingredients ? newVideo.ingredients.split('\n').filter(Boolean) : [],
+        instructions: newVideo.instructions ? newVideo.instructions.split('\n').filter(Boolean) : [],
       };
 
       const success = await saveVideo(getToken, payload);
@@ -375,9 +383,19 @@ export const AdminScreen = ({
   };
 
   const handleSaveRecipe = async () => {
-    if (!newRecipe.title) {
-        if (showToast) showToast(t('admin.recipe_required'), 'error');
-        return;
+    if (!newRecipe.title?.trim()) {
+      if (showToast) showToast(t('admin.recipe_required'), 'error');
+      return;
+    }
+    const parsedCalories = parseInt(newRecipe.calories, 10);
+    const parsedTime = parseInt(newRecipe.time, 10);
+    if (isNaN(parsedCalories) || parsedCalories < 0) {
+      if (showToast) showToast(t('admin.calories_invalid', { defaultValue: 'Enter a valid calorie amount.' }), 'error');
+      return;
+    }
+    if (isNaN(parsedTime) || parsedTime < 1) {
+      if (showToast) showToast(t('admin.time_invalid', { defaultValue: 'Enter a valid preparation time.' }), 'error');
+      return;
     }
 
     setIsSaving(true);
@@ -588,6 +606,24 @@ export const AdminScreen = ({
                         </Pressable>
                     ))}
                 </View>
+
+                <Text style={styles.label}>{t('admin.ingredients')}</Text>
+                <TextInput
+                  multiline
+                  numberOfLines={4}
+                  style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
+                  value={newVideo.ingredients}
+                  onChangeText={v => setNewVideo({...newVideo, ingredients: v})}
+                />
+
+                <Text style={styles.label}>{t('admin.instructions')}</Text>
+                <TextInput
+                  multiline
+                  numberOfLines={4}
+                  style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
+                  value={newVideo.instructions}
+                  onChangeText={v => setNewVideo({...newVideo, instructions: v})}
+                />
 
                 <Pressable style={styles.saveBtn} onPress={handleSaveVideo} disabled={isSaving}>
                     {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{editingVideoId ? t('admin.update_video') : t('admin.save_video')}</Text>}

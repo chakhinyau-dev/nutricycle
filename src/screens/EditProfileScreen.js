@@ -7,6 +7,7 @@ import {
   Pressable,
   TextInput,
   Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -16,7 +17,6 @@ import { ChevronLeft, User, Mail, Calendar, TimerReset, Droplets } from 'lucide-
 import {
   getCycleInsights,
   normalizeCycleProfile,
-  PHASE_LABELS,
   formatLastPeriodForDisplay,
   parseDisplayLastPeriodToISO,
 } from '../utils/cycle';
@@ -24,6 +24,7 @@ import {
 export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
   const { t } = useTranslation();
   const defaults = normalizeCycleProfile(cycleProfile);
+  const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState(user?.fullName || user?.firstName || '');
   const [email, setEmail] = useState(
     user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || ''
@@ -50,8 +51,8 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
       return;
     }
 
+    setIsSaving(true);
     try {
-      // Sync with Clerk if name changed
       const currentFullName = user?.fullName || user?.firstName || '';
       if (name !== currentFullName && user) {
         const parts = name.trim().split(' ');
@@ -65,13 +66,15 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
         lastPeriodStart,
         cycleLength,
         periodLength,
-        full_name: name, // Pass name to onSave so it updates Supabase too
+        full_name: name,
       });
 
       Alert.alert(t('common.success'), t('edit_profile.updated_success'));
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert(t('settings.error'), t('edit_profile.update_error'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -82,8 +85,11 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
           <ChevronLeft size={24} color={colors.on_surface} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('edit_profile.title')}</Text>
-        <Pressable onPress={handleSave}>
-          <Text style={styles.saveText}>{t('common.save')}</Text>
+        <Pressable onPress={handleSave} disabled={isSaving} style={{ opacity: isSaving ? 0.5 : 1 }}>
+          {isSaving
+            ? <ActivityIndicator size="small" color={colors.primary} />
+            : <Text style={styles.saveText}>{t('common.save')}</Text>
+          }
         </Pressable>
       </View>
 
@@ -98,7 +104,7 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
       >
         <View style={styles.heroCard}>
           <Text style={styles.heroLabel}>{t('edit_profile.current_summary')}</Text>
-          <Text style={styles.heroTitle}>{PHASE_LABELS[preview.currentPhaseKey]}</Text>
+          <Text style={styles.heroTitle}>{t(`phases.${preview.currentPhaseKey}`)}</Text>
           <Text style={styles.heroSubtitle}>
             {t('edit_profile.subtitle', { day: preview.cycleDay, days: preview.daysUntilNextPeriod })}
           </Text>
