@@ -12,17 +12,19 @@ import {
   Dimensions,
 } from 'react-native';
 import { ChevronLeft, Send, Sparkles, User, Bot } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { getGeminiChatResponse } from '../services/aiService';
 
 const { width } = Dimensions.get('window');
 
 export const AIChatScreen = ({ onBack, cycleInfo, isPremium }) => {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState([
     {
       id: '1',
       role: 'model',
-      text: `¡Hola! Soy tu asistente NutriCycle. Veo que estás en tu fase ${cycleInfo?.currentPhaseKey}. ¿En qué puedo ayudarte hoy con tu nutrición o bienestar?`,
+      text: t('chat.initial_greeting', { phase: cycleInfo?.currentPhaseKey || '' }),
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -65,12 +67,10 @@ export const AIChatScreen = ({ onBack, cycleInfo, isPremium }) => {
         <View style={styles.lockIconBox}>
           <Sparkles size={48} color={colors.primary} />
         </View>
-        <Text style={styles.lockedTitle}>Coach de Bienestar IA</Text>
-        <Text style={styles.lockedSubtitle}>
-          Desbloquea chats personalizados de IA y conocimientos predictivos de salud actualizando a NutriCycle Pro.
-        </Text>
+        <Text style={styles.lockedTitle}>{t('chat.locked_title')}</Text>
+        <Text style={styles.lockedSubtitle}>{t('chat.locked_sub')}</Text>
         <Pressable style={styles.upgradeBtn} onPress={onBack}>
-          <Text style={styles.upgradeBtnText}>Descubrir Beneficios Pro</Text>
+          <Text style={styles.upgradeBtnText}>{t('chat.discover_pro')}</Text>
         </Pressable>
       </View>
     );
@@ -86,10 +86,10 @@ export const AIChatScreen = ({ onBack, cycleInfo, isPremium }) => {
           <ChevronLeft size={24} color={colors.on_surface} />
         </Pressable>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>COACH DE BIENESTAR IA</Text>
+          <Text style={styles.headerTitle}>{t('chat.title')}</Text>
           <View style={styles.onlineBadge}>
             <View style={styles.onlineDot} />
-            <Text style={styles.onlineText}>POTENCIADO POR GEMINI</Text>
+            <Text style={styles.onlineText}>{t('ai.powered_by')}</Text>
           </View>
         </View>
         <View style={{ width: 44 }} />
@@ -144,7 +144,7 @@ export const AIChatScreen = ({ onBack, cycleInfo, isPremium }) => {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Escribe tu duda nutricional..."
+            placeholder={t('chat.placeholder')}
             placeholderTextColor={colors.placeholder}
             value={inputText}
             onChangeText={setInputText}

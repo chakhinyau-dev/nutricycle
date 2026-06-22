@@ -8,15 +8,12 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
-  Dimensions,
   ImageBackground,
 } from 'react-native';
-import { ChevronLeft, Sparkles, Send, BrainCircuit, Activity, Zap, Lock, Crown } from 'lucide-react-native';
+import { ChevronLeft, Sparkles, Send, BrainCircuit, Zap, Lock, Crown } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { env } from '../lib/env';
-
-const { width, height } = Dimensions.get('window');
 
 const genAI = new GoogleGenerativeAI(env.geminiApiKey);
 
@@ -60,12 +57,12 @@ export const AIPredictorScreen = ({ onBack, cycleInfo, cycleProfile, user, onNav
         console.log(`[AI] Using SDK with model: ${modelId}`);
         const model = genAI.getGenerativeModel({ model: modelId });
         const result = await model.generateContent(context);
-        const response = await result.response;
+        const response = result.response;
         const text = response.text();
         
         if (text) {
           const jsonMatch = text.match(/\{.*\}/s);
-          const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { title: 'Análisis Personalizado', advice: text, vitality: '7' };
+          const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { title: t('ai.analysis_fallback'), advice: text, vitality: '7' };
           
           setPrediction(parsed);
           setLoading(false);

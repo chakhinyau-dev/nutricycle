@@ -517,7 +517,8 @@
     "ai_unconfigured": "AI service is not configured. Please add Gemini API key.",
     "ai_failed": "Failed to reach the AI engine. Please try again.",
     "powered_by": "POWERED BY GEMINI",
-    "general_checkin": "General daily check-in"
+    "general_checkin": "General daily check-in",
+    "analysis_fallback": "Personalized Analysis"
   },
   "wellness": {
     "title": "Synced\nWellness",
@@ -736,5 +737,19 @@
     "avg_cycle": "Average cycle length (days)",
     "ovul_label": "Estimated ovulation date",
     "period_label": "Estimated period date"
+  },
+  "notifications": {
+    "title": "Notification\nCenter",
+    "new_count": "{{count}} NEW",
+    "mark_read": "Mark all as read",
+    "recent": "Recent"
+  },
+  "chat": {
+    "title": "AI WELLNESS COACH",
+    "initial_greeting": "Hello! I'm your NutriCycle assistant. I see you're in your {{phase}} phase. How can I help with your nutrition or wellness today?",
+    "placeholder": "Ask your nutrition question...",
+    "locked_title": "AI Wellness Coach",
+    "locked_sub": "Unlock personalized AI chats and predictive health insights by upgrading to NutriCycle Pro.",
+    "discover_pro": "Discover Pro Benefits"
   }
 }

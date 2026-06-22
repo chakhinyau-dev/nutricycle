@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View, Pressable, ScrollView, Alert } from 'react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import {
   ChevronLeft,
@@ -24,6 +25,7 @@ const iconMap = {
 };
 
 export const NotificationsScreen = ({ onBack, onNavigate, cycleInfo, recipes }) => {
+  const { t } = useTranslation();
   const { getToken } = useAuth();
   const { user } = useUser();
   const [logs, setLogs] = useState([]);
@@ -74,7 +76,7 @@ export const NotificationsScreen = ({ onBack, onNavigate, cycleInfo, recipes }) 
           <Pressable onPress={onBack} style={styles.backButton}>
             <ChevronLeft size={24} color={colors.on_surface} />
           </Pressable>
-          <Text style={styles.title}>Centro de{'\n'}notificaciones</Text>
+          <Text style={styles.title}>{t('notifications.title')}</Text>
         </View>
         <View style={styles.headerRight}>
           <Pressable style={styles.settingsBtn} onPress={() => onNavigate('saveDetail')}>
@@ -88,16 +90,16 @@ export const NotificationsScreen = ({ onBack, onNavigate, cycleInfo, recipes }) 
 
       <View style={styles.actionsRow}>
         <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>{unreadCount} NUEVAS</Text>
+          <Text style={styles.statusText}>{t('notifications.new_count', { count: unreadCount })}</Text>
         </View>
         <Pressable style={styles.markReadBtn} onPress={() => setReadIds(notifications.map((item) => item.id))}>
           <CheckCheck size={16} color={colors.primary} />
-          <Text style={styles.markReadText}>Marcar como leídas</Text>
+          <Text style={styles.markReadText}>{t('notifications.mark_read')}</Text>
         </Pressable>
       </View>
 
       <View style={styles.notifGroup}>
-        <Text style={styles.groupTitle}>Recientes</Text>
+        <Text style={styles.groupTitle}>{t('notifications.recent')}</Text>
         {notifications.map((notif) => {
           const isUnread = notif.isNew && !readIds.includes(notif.id);
 

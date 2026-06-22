@@ -1,65 +1,67 @@
 import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 
 export const PhaseCard = ({ phase, day, message }) => {
+  const { t } = useTranslation();
   const phaseStyles = getPhaseStyles(phase);
-  
+
   return (
     <Pressable style={[styles.card, { backgroundColor: phaseStyles.background }]} activeOpacity={0.9}>
       <View style={styles.header}>
-        <Text style={[styles.phaseLabel, { color: phaseStyles.text }]}>Día {day}</Text>
+        <Text style={[styles.phaseLabel, { color: phaseStyles.text }]}>{t('common.day')} {day}</Text>
         <View style={[styles.badge, { backgroundColor: phaseStyles.accent }]}>
-           <Text style={styles.badgeText}>{phase.toUpperCase()}</Text>
+           <Text style={styles.badgeText}>{t(`phases.${phase}`).toUpperCase()}</Text>
         </View>
       </View>
-      <Text style={[styles.title, { color: phaseStyles.text }]}>{phaseStyles.title}</Text>
+      <Text style={[styles.title, { color: phaseStyles.text }]}>{t(`phase_cards.${phase}`, phaseStyles.titleFallback)}</Text>
       <Text style={[styles.message, { color: phaseStyles.textSecondary }]}>{message}</Text>
     </Pressable>
   );
 };
 
 const getPhaseStyles = (phase) => {
-  switch (phase.toLowerCase()) {
+  switch (phase?.toLowerCase()) {
     case 'menstrual':
-      return { 
-        background: '#FFE0E0', 
-        text: colors.on_surface, 
+      return {
+        background: '#FFE0E0',
+        text: colors.on_surface,
         textSecondary: '#665555',
         accent: colors.phases.menstrual,
-        title: 'Calidez y Cuidado' 
+        titleFallback: 'Warmth & Care'
       };
-    case 'folicular':
-      return { 
-        background: colors.primary_container, 
-        text: colors.primary, 
+    case 'follicular':
+      return {
+        background: colors.primary_container,
+        text: colors.primary,
         textSecondary: colors.on_primary_container,
         accent: colors.phases.follicular,
-        title: 'Energía Renovada' 
+        titleFallback: 'Renewed Energy'
       };
-    case 'ovulatoria':
-      return { 
-        background: '#F3E5F5', 
-        text: '#4A148C', 
+    case 'ovulation':
+      return {
+        background: '#F3E5F5',
+        text: '#4A148C',
         textSecondary: '#6A1B9A',
         accent: colors.phases.ovulation,
-        title: 'Vitalidad Plena' 
+        titleFallback: 'Full Vitality'
       };
-    case 'lútea':
-      return { 
-        background: colors.secondary_container, 
-        text: colors.secondary, 
+    case 'luteal':
+      return {
+        background: colors.secondary_container,
+        text: colors.secondary,
         textSecondary: colors.on_secondary_container,
         accent: colors.phases.luteal,
-        title: 'Reflexión y Calma' 
+        titleFallback: 'Reflection & Calm'
       };
     default:
-      return { 
-        background: colors.surface_container, 
-        text: colors.on_surface, 
+      return {
+        background: colors.surface_container,
+        text: colors.on_surface,
         textSecondary: colors.on_surface_variant,
         accent: colors.primary,
-        title: 'Tu Ciclo' 
+        titleFallback: 'Your Cycle'
       };
   }
 };

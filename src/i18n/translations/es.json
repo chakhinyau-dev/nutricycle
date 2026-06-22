@@ -513,7 +513,8 @@
     "ai_unconfigured": "El servicio de IA no está configurado. Por favor añade la clave de API de Gemini.",
     "ai_failed": "Error al contactar con el motor de IA. Por favor inténtalo de nuevo.",
     "powered_by": "POTENCIADO POR GEMINI",
-    "general_checkin": "Consulta general diaria"
+    "general_checkin": "Consulta general diaria",
+    "analysis_fallback": "Análisis Personalizado"
   },
   "wellness": {
     "title": "Bienestar\nsincronizado",
@@ -709,5 +710,19 @@
     "avg_cycle": "Duración del ciclo (días)",
     "ovul_label": "Fecha de ovulación estimada",
     "period_label": "Próximo período estimado"
+  },
+  "notifications": {
+    "title": "Centro de\nNotificaciones",
+    "new_count": "{{count}} NUEVAS",
+    "mark_read": "Marcar como leídas",
+    "recent": "Recientes"
+  },
+  "chat": {
+    "title": "COACH DE BIENESTAR IA",
+    "initial_greeting": "¡Hola! Soy tu asistente NutriCycle. Veo que estás en tu fase {{phase}}. ¿En qué puedo ayudarte hoy con tu nutrición o bienestar?",
+    "placeholder": "Escribe tu duda nutricional...",
+    "locked_title": "Coach de Bienestar IA",
+    "locked_sub": "Desbloquea chats personalizados de IA y conocimientos predictivos de salud actualizando a NutriCycle Pro.",
+    "discover_pro": "Descubrir Beneficios Pro"
   }
 }

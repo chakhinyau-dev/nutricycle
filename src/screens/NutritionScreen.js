@@ -110,8 +110,6 @@ export const NutritionScreen = ({
       .slice(0, 3);
   }, [recipes, phaseKey, activeSwapMeal]);
 
-  const currentLanguage = i18n.resolvedLanguage || i18n.language;
-
   const getMacros = (recipe) => {
     const cal = Number(recipe.calories || 0);
     const prot = recipe.protein || Math.max(10, Math.round(cal * 0.08));
