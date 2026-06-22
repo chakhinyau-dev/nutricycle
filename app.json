@@ -44,8 +44,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "7ebc04f6-18fc-4925-bf39-eebad06fe4bb"
+        "projectId": "db7da973-e64d-4af2-8884-98e5225f54c0"
       }
-    }
+    },
+    "owner": "chakhinyaus-organization"
   }
 }
