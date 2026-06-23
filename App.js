@@ -146,7 +146,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
   const { user: clerkUser } = useUser();
 
   // Clerk authentication bypass for local browser testing and validation
-  const BYPASS_CLERK = true;
+  const BYPASS_CLERK = false;
   const isSignedIn = BYPASS_CLERK ? true : clerkIsSignedIn;
   const user = BYPASS_CLERK ? (clerkUser || {
     id: 'user_dev_test_123',
