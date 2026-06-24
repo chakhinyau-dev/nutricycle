@@ -21,7 +21,8 @@
     "focus": "DAILY FOCUS",
     "user_fallback": "beautiful",
     "unit_min": "min",
-    "unit_kcal": "kcal"
+    "unit_kcal": "kcal",
+    "see_all": "See all"
   },
   "nav": {
     "home": "Home",
@@ -168,6 +169,8 @@
     "today_label": "Today",
     "quick_access": "Quick Access",
     "key_foods_title": "Key Foods",
+    "key_foods_overline": "KEY FOODS",
+    "key_foods_section": "Foods for Your Phase",
     "log_action": "Log Info",
     "log_feel": "Log how I feel",
     "suggested_recipe": "Suggested Recipe of the Day",
@@ -190,9 +193,13 @@
     "symptoms_title": "Symptoms",
     "symptoms_sub": "Identify your body signals",
     "notes_title": "Daily Story",
+    "notes_sub": "Write how you feel, any cravings or sensations",
     "notes_placeholder": "Add details about your day, cravings or sensations...",
     "history_title": "Recent History",
     "no_history": "You do not have any saved logs yet.",
+    "delete_title": "Delete Log",
+    "delete_confirm": "Are you sure you want to delete this entry?",
+    "editing_label": "Editing entry from",
     "save_btn": "Save Log",
     "success_title": "Log Saved",
     "success_sub": "Your wellness journal is now updated and connected with your current phase.",
@@ -284,7 +291,7 @@
     "progesterone_short": "Progest.",
     "countdown_days": "{{days}} days until {{phase}} phase",
     "countdown_one_day": "1 day until {{phase}} phase",
-    "log_btn": "+ Log Period",
+    "log_btn": "Log Period",
     "cycle_title": "Your Cycle",
     "hormone_tides_prefix": "Hormone ",
     "hormone_tides_accent": "Tides"
@@ -688,6 +695,12 @@
     "select_phase": "Select Cycle Phase",
     "no_foods": "No foods available for this phase.",
     "add_to_list": "Added to list",
+    "phase_desc": {
+      "menstrual": "Rest & replenish — focus on iron-rich and anti-inflammatory foods to ease this phase.",
+      "follicular": "Rise & build — estrogen-supporting foods to fuel your natural energy growth.",
+      "ovulation": "Peak & shine — light, energising foods for your highest vitality window.",
+      "luteal": "Wind down & nourish — progesterone-friendly foods to ease the transition."
+    },
     "hormone_tags": {
       "estrogen": "Estrogen Support",
       "progesterone": "Progesterone Support",
@@ -745,6 +758,17 @@
     "recipes_shortcut": "Recipes",
     "videos_shortcut": "Videos",
     "shopping_shortcut": "Shopping",
+    "overline": "DAILY MEAL PLAN",
+    "phase_focus_label": "TODAY'S FOCUS",
+    "key_ingredients": "KEY INGREDIENTS",
+    "meal_times": {
+      "breakfast": "7–9 AM",
+      "lunch": "12–2 PM",
+      "snack": "3–5 PM",
+      "dinner": "6–8 PM"
+    },
+    "empty_meal": "No video planned",
+    "empty_meal_sub": "Tap to explore phase videos",
     "swap_title": "Swap Meal",
     "swap_subtitle": "Options for {{phase}} phase:",
     "no_alternatives": "No alternative recipes available."

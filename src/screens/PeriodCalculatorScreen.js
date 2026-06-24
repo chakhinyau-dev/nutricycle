@@ -7,14 +7,14 @@ import {
   Pressable,
   Modal,
 } from 'react-native';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Calendar, Droplets, Sun, Check } from 'lucide-react-native';
 import { addDays, format, getDaysInMonth, startOfMonth, getDay } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 
 // ── Stepper ────────────────────────────────────────────────────────────────
-const Stepper = ({ value, onDecrement, onIncrement, min = 1, max = 99 }) => (
+const Stepper = ({ value, onDecrement, onIncrement, min = 1, max = 99, unit = '' }) => (
   <View style={styles.stepperRow}>
     <Pressable
       style={[styles.stepBtn, value <= min && styles.stepBtnDisabled]}
@@ -23,7 +23,10 @@ const Stepper = ({ value, onDecrement, onIncrement, min = 1, max = 99 }) => (
     >
       <Text style={styles.stepBtnText}>−</Text>
     </Pressable>
-    <Text style={styles.stepValue}>{value}</Text>
+    <View style={styles.stepValueWrap}>
+      <Text style={styles.stepValue}>{value}</Text>
+      {unit ? <Text style={styles.stepUnit}>{unit}</Text> : null}
+    </View>
     <Pressable
       style={[styles.stepBtn, value >= max && styles.stepBtnDisabled]}
       onPress={onIncrement}
@@ -45,7 +48,7 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) =>
   );
 
   const daysInMonth = getDaysInMonth(viewMonth);
-  const firstDow = (getDay(startOfMonth(viewMonth)) + 6) % 7; // Mon = 0
+  const firstDow = (getDay(startOfMonth(viewMonth)) + 6) % 7;
 
   const cells = [];
   for (let i = 0; i < firstDow; i++) cells.push(null);
@@ -71,7 +74,6 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) =>
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.calModal} onPress={(e) => e.stopPropagation()}>
-          {/* Month navigation */}
           <View style={styles.calHeader}>
             <Pressable onPress={prevMonth} style={styles.calNavBtn}>
               <ChevronLeft size={18} color={colors.on_surface} />
@@ -84,14 +86,12 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) =>
             </Pressable>
           </View>
 
-          {/* Day-of-week headers */}
           <View style={styles.calDowRow}>
             {DOW.map((d, i) => (
               <Text key={i} style={styles.calDowText}>{d}</Text>
             ))}
           </View>
 
-          {/* Day grid */}
           {rows.map((row, ri) => (
             <View key={ri} style={styles.calRow}>
               {Array.from({ length: 7 }).map((_, ci) => {
@@ -102,14 +102,23 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) =>
                   day === selectedDate.getDate() &&
                   viewMonth.getMonth() === selectedDate.getMonth() &&
                   viewMonth.getFullYear() === selectedDate.getFullYear();
+                const isToday =
+                  day &&
+                  new Date().getDate() === day &&
+                  viewMonth.getMonth() === new Date().getMonth() &&
+                  viewMonth.getFullYear() === new Date().getFullYear();
                 return (
                   <Pressable
                     key={ci}
-                    style={[styles.calDayCell, isSel && styles.calDayCellSelected]}
+                    style={[
+                      styles.calDayCell,
+                      isSel && styles.calDayCellSelected,
+                      isToday && !isSel && styles.calDayCellToday,
+                    ]}
                     onPress={() => selectDay(day)}
                   >
                     {day ? (
-                      <Text style={[styles.calDayText, isSel && styles.calDayTextSel]}>
+                      <Text style={[styles.calDayText, isSel && styles.calDayTextSel, isToday && !isSel && styles.calDayTextToday]}>
                         {day}
                       </Text>
                     ) : null}
@@ -122,7 +131,6 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) =>
           <Pressable style={styles.calCancelBtn} onPress={onClose}>
             <Text style={styles.calCancelText}>{t('common.cancel')}</Text>
           </Pressable>
-
         </Pressable>
       </Pressable>
     </Modal>
@@ -130,27 +138,62 @@ const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) =>
 };
 
 // ── Screen ─────────────────────────────────────────────────────────────────
-export const PeriodCalculatorScreen = ({ onBack }) => {
+export const PeriodCalculatorScreen = ({ onBack, onSave, cycleProfile }) => {
   const { t, i18n } = useTranslation();
   const isSpanish = (i18n.resolvedLanguage || i18n.language || '').toLowerCase().startsWith('es');
   const locale = isSpanish ? es : enUS;
 
-  const [lastPeriodDate, setLastPeriodDate] = useState(new Date());
-  const [periodDuration, setPeriodDuration] = useState(3);
-  const [cycleLength, setCycleLength] = useState(28);
+  const [lastPeriodDate, setLastPeriodDate] = useState(() => {
+    if (cycleProfile?.lastPeriodStart) return new Date(cycleProfile.lastPeriodStart);
+    return new Date();
+  });
+  const [periodDuration, setPeriodDuration] = useState(cycleProfile?.periodLength || 5);
+  const [cycleLength, setCycleLength] = useState(cycleProfile?.cycleLength || 28);
   const [showPicker, setShowPicker] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const { ovulationDate, nextPeriodStart, nextPeriodEnd } = useMemo(() => {
-    const ovulation = addDays(lastPeriodDate, cycleLength - 14);
+  const { ovulationDate, nextPeriodStart, nextPeriodEnd, ovulationDay } = useMemo(() => {
+    const oDay = cycleLength - 14;
+    const ovulation = addDays(lastPeriodDate, oDay);
     const periodStart = addDays(lastPeriodDate, cycleLength);
     const periodEnd = addDays(periodStart, periodDuration - 1);
-    return { ovulationDate: ovulation, nextPeriodStart: periodStart, nextPeriodEnd: periodEnd };
+    return { ovulationDate: ovulation, nextPeriodStart: periodStart, nextPeriodEnd: periodEnd, ovulationDay: oDay };
   }, [lastPeriodDate, cycleLength, periodDuration]);
 
-  const fmtDate = (d) => format(d, 'd MMMM', { locale });
-  const fmtRange = (a, b) =>
-    `${format(a, 'd')} – ${format(b, 'd MMMM', { locale })}`;
+  // Phase timeline segments
+  const phaseSegments = useMemo(() => {
+    const fertileStart = Math.max(ovulationDay - 2, periodDuration + 1);
+    const fertileEnd = Math.min(ovulationDay + 2, cycleLength - 1);
+    const segs = [
+      { key: 'menstrual',  days: periodDuration,                  color: '#E07878' },
+      { key: 'follicular', days: Math.max(1, fertileStart - periodDuration), color: '#6EA87B' },
+      { key: 'ovulation',  days: fertileEnd - fertileStart + 1,   color: '#6BA8C9' },
+      { key: 'luteal',     days: Math.max(1, cycleLength - fertileEnd), color: '#C9A227' },
+    ];
+    return segs.filter(s => s.days > 0);
+  }, [cycleLength, periodDuration, ovulationDay]);
 
+  const fmtDate = (d) => format(d, 'd MMMM', { locale });
+  const fmtRange = (a, b) => `${format(a, 'd')} – ${format(b, 'd MMMM', { locale })}`;
+
+  const handleSave = async () => {
+    if (!onSave) return;
+    await onSave({
+      ...(cycleProfile || {}),
+      lastPeriodStart: format(lastPeriodDate, 'yyyy-MM-dd'),
+      cycleLength,
+      periodLength: periodDuration,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const isToday = (d) => {
+    const now = new Date();
+    return d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+  };
 
   return (
     <View style={styles.screen}>
@@ -159,58 +202,125 @@ export const PeriodCalculatorScreen = ({ onBack }) => {
         <Pressable onPress={onBack} style={styles.backBtn}>
           <ChevronLeft size={22} color={colors.on_surface} />
         </Pressable>
-        <Text style={styles.headerTitle}>{t('period_calculator.title')}</Text>
+        <View>
+          <Text style={styles.overline}>{t('period_calculator.overline', { defaultValue: 'CYCLE PLANNER' })}</Text>
+          <Text style={styles.headerTitle}>{t('period_calculator.title')}</Text>
+        </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>{t('period_calculator.subtitle')}</Text>
 
-        {/* ── First day of period ── */}
-        <Text style={styles.fieldLabel}>{t('period_calculator.first_day')}</Text>
-        <Pressable style={styles.dateField} onPress={() => setShowPicker(true)}>
-          <Text style={styles.dateFieldText}>
-            {format(lastPeriodDate, 'd MMMM yyyy', { locale })}
-          </Text>
-          <View style={styles.calIconBox}>
-            <Calendar size={18} color="#FFFFFF" />
-          </View>
-        </Pressable>
+        {/* ── Section: Your Inputs ── */}
+        <Text style={styles.sectionLabel}>{t('period_calculator.section_inputs', { defaultValue: 'YOUR INPUTS' })}</Text>
 
-        {/* ── Duration stepper ── */}
+        {/* First day of period */}
+        <Text style={styles.fieldLabel}>{t('period_calculator.first_day')}</Text>
+        <View style={styles.dateRow}>
+          <Pressable style={[styles.dateField, { flex: 1 }]} onPress={() => setShowPicker(true)}>
+            <Text style={styles.dateFieldText}>
+              {format(lastPeriodDate, 'd MMMM yyyy', { locale })}
+            </Text>
+            <View style={styles.calIconBox}>
+              <Calendar size={16} color="#FFFFFF" />
+            </View>
+          </Pressable>
+          {!isToday(lastPeriodDate) && (
+            <Pressable style={styles.todayChip} onPress={() => setLastPeriodDate(new Date())}>
+              <Text style={styles.todayChipText}>{t('dashboard.today_label', { defaultValue: 'Today' })}</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Duration stepper */}
         <Text style={styles.fieldLabel}>{t('period_calculator.how_long')}</Text>
         <Stepper
           value={periodDuration}
-          onDecrement={() => setPeriodDuration((v) => Math.max(1, v - 1))}
-          onIncrement={() => setPeriodDuration((v) => Math.min(10, v + 1))}
+          onDecrement={() => setPeriodDuration(v => Math.max(1, v - 1))}
+          onIncrement={() => setPeriodDuration(v => Math.min(10, v + 1))}
           min={1}
           max={10}
+          unit={t('common.days', { defaultValue: 'days' })}
         />
 
-        {/* ── Cycle length stepper ── */}
+        {/* Cycle length stepper */}
         <Text style={styles.fieldLabel}>{t('period_calculator.avg_cycle')}</Text>
         <Stepper
           value={cycleLength}
-          onDecrement={() => setCycleLength((v) => Math.max(20, v - 1))}
-          onIncrement={() => setCycleLength((v) => Math.min(45, v + 1))}
+          onDecrement={() => setCycleLength(v => Math.max(20, v - 1))}
+          onIncrement={() => setCycleLength(v => Math.min(45, v + 1))}
           min={20}
           max={45}
+          unit={t('common.days', { defaultValue: 'days' })}
         />
 
-        {/* ── Result cards ── */}
-        <View style={styles.resultsRow}>
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>{t('period_calculator.ovul_label')}</Text>
-            <Text style={styles.resultValue}>{fmtDate(ovulationDate)}</Text>
+        {/* ── Phase timeline strip ── */}
+        <Text style={styles.sectionLabel}>{t('period_calculator.section_cycle', { defaultValue: 'YOUR CYCLE PHASES' })}</Text>
+        <View style={styles.timelineCard}>
+          <View style={styles.timelineBar}>
+            {phaseSegments.map((seg, i) => (
+              <View
+                key={seg.key}
+                style={[
+                  styles.timelineSegment,
+                  { flex: seg.days, backgroundColor: seg.color },
+                  i === 0 && styles.timelineSegmentFirst,
+                  i === phaseSegments.length - 1 && styles.timelineSegmentLast,
+                ]}
+              />
+            ))}
           </View>
-
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>{t('period_calculator.period_label')}</Text>
-            <Text style={styles.resultValue}>{fmtRange(nextPeriodStart, nextPeriodEnd)}</Text>
+          <View style={styles.timelineLegend}>
+            {phaseSegments.map(seg => (
+              <View key={seg.key} style={[styles.timelineLegendItem, { flex: seg.days }]}>
+                <View style={[styles.timelineLegendDot, { backgroundColor: seg.color }]} />
+                <Text style={styles.timelineLegendText} numberOfLines={1}>
+                  {t(`phases.${seg.key}`)}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
+
+        {/* ── Section: Estimated Dates ── */}
+        <Text style={styles.sectionLabel}>{t('period_calculator.section_results', { defaultValue: 'ESTIMATED DATES' })}</Text>
+
+        {/* Ovulation card */}
+        <View style={[styles.resultCard, styles.resultCardOvulation]}>
+          <View style={styles.resultIconWrap}>
+            <Sun size={20} color="#6BA8C9" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.resultLabel}>{t('period_calculator.ovul_label')}</Text>
+            <Text style={[styles.resultValue, { color: '#3D7A9E' }]}>{fmtDate(ovulationDate)}</Text>
+          </View>
+        </View>
+
+        {/* Next period card */}
+        <View style={[styles.resultCard, styles.resultCardPeriod]}>
+          <View style={styles.resultIconWrap}>
+            <Droplets size={20} color="#E07878" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.resultLabel}>{t('period_calculator.period_label')}</Text>
+            <Text style={[styles.resultValue, { color: '#B84C4C' }]}>{fmtRange(nextPeriodStart, nextPeriodEnd)}</Text>
+          </View>
+        </View>
+
+        {/* ── Save to Profile ── */}
+        {onSave && (
+          <Pressable
+            style={[styles.saveBtn, saved && styles.saveBtnDone]}
+            onPress={handleSave}
+          >
+            {saved
+              ? <Check size={18} color="#FFFFFF" />
+              : <Text style={styles.saveBtnText}>{t('period_calculator.save_profile', { defaultValue: 'Save to My Profile' })}</Text>
+            }
+          </Pressable>
+        )}
+
+        <View style={{ height: 80 }} />
       </ScrollView>
 
       <CalendarPicker
@@ -219,7 +329,6 @@ export const PeriodCalculatorScreen = ({ onBack }) => {
         onSelect={setLastPeriodDate}
         onClose={() => setShowPicker(false)}
         locale={locale}
-        isSpanish={isSpanish}
       />
     </View>
   );
@@ -231,33 +340,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9F9F2',
   },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 52,
+    paddingTop: 56,
     paddingHorizontal: 24,
     paddingBottom: 8,
     gap: 14,
   },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#EFEDE4',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  overline: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    opacity: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
   headerTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 26,
     color: colors.on_surface,
+    lineHeight: 30,
   },
-
-  // Content
   content: {
     paddingHorizontal: 24,
     paddingTop: 16,
@@ -269,18 +384,33 @@ const styles = StyleSheet.create({
     color: colors.on_surface_variant,
     lineHeight: 21,
     marginBottom: 28,
+    opacity: 0.8,
   },
-
-  // Field label
+  sectionLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    opacity: 0.45,
+    textTransform: 'uppercase',
+    marginBottom: 14,
+    marginTop: 4,
+  },
   fieldLabel: {
     fontFamily: 'Outfit_600SemiBold',
     fontSize: 13,
-    color: colors.on_surface_variant,
+    color: colors.on_surface,
     marginBottom: 10,
-    opacity: 0.8,
+    opacity: 0.85,
   },
 
-  // Date field
+  // Date row with Today chip
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 24,
+  },
   dateField: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -289,7 +419,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
     borderWidth: 1,
     borderColor: '#EFEDE4',
     shadowColor: '#000',
@@ -300,16 +429,29 @@ const styles = StyleSheet.create({
   },
   dateFieldText: {
     fontFamily: 'Outfit_600SemiBold',
-    fontSize: 16,
+    fontSize: 15,
     color: colors.on_surface,
   },
   calIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#A3B3A5',
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  todayChip: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  todayChipText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 12,
+    color: colors.primary,
   },
 
   // Stepper
@@ -329,64 +471,163 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   stepBtn: {
-    width: 56,
-    height: 54,
+    width: 60,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F9F9F2',
   },
-  stepBtnDisabled: {
-    opacity: 0.3,
-  },
+  stepBtnDisabled: { opacity: 0.25 },
   stepBtnText: {
-    fontSize: 22,
+    fontSize: 24,
     color: colors.on_surface,
-    lineHeight: 26,
     fontFamily: 'Outfit_400Regular',
   },
-  stepValue: {
+  stepValueWrap: {
     flex: 1,
-    textAlign: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'baseline',
+    gap: 5,
+  },
+  stepValue: {
     fontFamily: 'Outfit_700Bold',
-    fontSize: 20,
+    fontSize: 22,
     color: colors.on_surface,
+  },
+  stepUnit: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+  },
+
+  // Phase timeline
+  timelineCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    marginBottom: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  timelineBar: {
+    flexDirection: 'row',
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  timelineSegment: {
+    height: '100%',
+  },
+  timelineSegmentFirst: {
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 6,
+  },
+  timelineSegmentLast: {
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
+  },
+  timelineLegend: {
+    flexDirection: 'row',
+  },
+  timelineLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 1,
+  },
+  timelineLegendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  timelineLegendText: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 9,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
   },
 
   // Result cards
-  resultsRow: {
-    gap: 14,
-    marginTop: 8,
-  },
   resultCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 22,
-    borderLeftWidth: 4,
-    borderLeftColor: '#A3B3A5',
+    padding: 20,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: '#EFEDE4',
-    shadowColor: '#A3B3A5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  resultCardOvulation: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#6BA8C9',
+  },
+  resultCardPeriod: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#E07878',
+  },
+  resultIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F5F8FC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   resultLabel: {
     fontFamily: 'Outfit_600SemiBold',
-    fontSize: 11,
+    fontSize: 10,
     color: colors.on_surface_variant,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 8,
-    opacity: 0.7,
+    marginBottom: 6,
+    opacity: 0.65,
   },
   resultValue: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 28,
-    color: colors.on_surface,
+    fontSize: 26,
+    lineHeight: 30,
   },
 
-  // Calendar modal backdrop
+  // Save button
+  saveBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  saveBtnDone: {
+    backgroundColor: '#6EA87B',
+  },
+  saveBtnText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+
+  // Calendar modal
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -453,7 +694,10 @@ const styles = StyleSheet.create({
     borderRadius: 19,
   },
   calDayCellSelected: {
-    backgroundColor: '#A3B3A5',
+    backgroundColor: colors.primary,
+  },
+  calDayCellToday: {
+    backgroundColor: '#EBF2EB',
   },
   calDayText: {
     fontFamily: 'Outfit_500Medium',
@@ -462,6 +706,10 @@ const styles = StyleSheet.create({
   },
   calDayTextSel: {
     color: '#FFFFFF',
+    fontFamily: 'Outfit_700Bold',
+  },
+  calDayTextToday: {
+    color: colors.primary,
     fontFamily: 'Outfit_700Bold',
   },
   calCancelBtn: {

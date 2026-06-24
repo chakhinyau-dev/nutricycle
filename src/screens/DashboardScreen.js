@@ -2,8 +2,23 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle, Text as SvgText } from 'react-native-svg';
-import { Utensils, Leaf, Play, Heart, ChevronRight } from 'lucide-react-native';
+import { Play, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../theme/colors';
+import { FOODS_BY_PHASE } from '../utils/foodsData';
+
+const HORMONE_TAG_COLORS = {
+  estrogen:         { bg: '#EEF0FA', text: '#7B8DC8', dot: '#7B8DC8' },
+  progesterone:     { bg: '#EBF5ED', text: '#5A9E6A', dot: '#6EA87B' },
+  antiinflammatory: { bg: '#FEF0EA', text: '#C96B44', dot: '#E8845A' },
+  energy:           { bg: '#FDF5E4', text: '#B8882A', dot: '#D4A853' },
+};
+
+const CATEGORY_COLORS = {
+  proteins:   '#E8845A',
+  fats:       '#D4A853',
+  carbs:      '#8B9DC3',
+  veg_fruits: '#6EA87B',
+};
 
 
 const { width } = Dimensions.get('window');
@@ -116,6 +131,11 @@ export const DashboardScreen = ({
 
     return sortByGoal(matches)[0] || null;
   }, [videos, phaseKey, userGoal]);
+
+  const phaseKeyFoods = useMemo(() => {
+    const cats = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
+    return cats.flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey }))).slice(0, 3);
+  }, [phaseKey]);
 
   const trackerData = useMemo(() => {
     const data = {
@@ -261,37 +281,56 @@ export const DashboardScreen = ({
         <Text style={styles.logFeelBtnText}>{t('dashboard.log_feel', { defaultValue: 'Registrar cómo me siento' })}</Text>
       </Pressable>
 
-      <View style={{ marginBottom: 28 }} />
+      <View style={{ marginBottom: 36 }} />
 
-      {/* 5. Quick Access Circles */}
-      <View style={styles.quickAccessSection}>
-        <View style={styles.circlesRow}>
-          <Pressable style={styles.circleItem} onPress={() => onNavigate('nutrition')}>
-            <View style={[styles.circleIconBox, { backgroundColor: '#EBF2EB' }]}>
-              <Utensils size={22} color={colors.on_primary_container} />
-            </View>
-            <Text style={styles.circleLabel}>{t('nav.nutrition')}</Text>
-          </Pressable>
-
-          <Pressable style={styles.circleItem} onPress={() => onNavigate('keyFoods')}>
-            <View style={[styles.circleIconBox, { backgroundColor: '#FEF9EC' }]}>
-              <Leaf size={22} color="#D97706" />
-            </View>
-            <Text style={styles.circleLabel}>{t('dashboard.key_foods_title')}</Text>
-          </Pressable>
-
-          <Pressable style={styles.circleItem} onPress={() => onNavigate('videos')}>
-            <View style={[styles.circleIconBox, { backgroundColor: '#ECFDF5' }]}>
-              <Play size={22} color="#059669" />
-            </View>
-            <Text style={styles.circleLabel}>{t('nav.videos')}</Text>
+      {/* 6. Key Foods for Your Phase */}
+      <View style={styles.keyFoodsSection}>
+        <View style={styles.keyFoodsSectionHeader}>
+          <View>
+            <Text style={styles.sectionOverline}>{t('dashboard.key_foods_overline', { defaultValue: 'KEY FOODS' })}</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.key_foods_section', { defaultValue: 'Foods for Your Phase' })}</Text>
+          </View>
+          <Pressable onPress={() => onNavigate('keyFoods')} style={styles.seeAllBtn}>
+            <Text style={styles.seeAllText}>{t('common.see_all', { defaultValue: 'See all' })}</Text>
+            <ChevronRight size={14} color={colors.primary} />
           </Pressable>
         </View>
+
+        <Text style={styles.phaseDescText}>{t(`key_foods.phase_desc.${phaseKey}`)}</Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.keyFoodsScroll}>
+          {phaseKeyFoods.map(food => {
+            const tagColors = HORMONE_TAG_COLORS[food.hormoneTag] || HORMONE_TAG_COLORS.energy;
+            const catColor  = CATEGORY_COLORS[food.categoryKey] || colors.primary;
+            return (
+              <Pressable key={food.key} style={styles.keyFoodCard} onPress={() => onNavigate('keyFoods')}>
+                {/* Category-colored accent bar */}
+                <View style={[styles.keyFoodAccent, { backgroundColor: catColor }]} />
+                {/* Image with tinted placeholder */}
+                <View style={[styles.keyFoodImageWrap, { backgroundColor: catColor + '18' }]}>
+                  <Image source={{ uri: food.image }} style={styles.keyFoodImage} resizeMode="cover" />
+                </View>
+                {/* Name + badge */}
+                <View style={styles.keyFoodContent}>
+                  <Text style={styles.keyFoodName} numberOfLines={2}>
+                    {t(`key_foods.items.${food.key}.name`)}
+                  </Text>
+                  <View style={[styles.keyFoodTag, { backgroundColor: tagColors.bg }]}>
+                    <View style={[styles.keyFoodTagDot, { backgroundColor: tagColors.dot }]} />
+                    <Text style={[styles.keyFoodTagText, { color: tagColors.text }]} numberOfLines={1}>
+                      {t(`key_foods.hormone_tags.${food.hormoneTag}`)}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </View>
 
       <View style={{ marginBottom: 36 }} />
 
-      {/* 6. Featured Video of the Day */}
+      {/* 7. Featured Video of the Day */}
       {featuredVideo && (
         <View style={styles.suggestedSection}>
           <Text style={styles.suggestedTitle}>{t('dashboard.featured_video')}</Text>
@@ -478,41 +517,107 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.on_primary_container,
   },
-  quickAccessSection: {
+  keyFoodsSection: {
     paddingHorizontal: 4,
   },
-  quickAccessTitle: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
-    color: colors.on_surface_variant,
-    marginBottom: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    opacity: 0.6,
-  },
-  circlesRow: {
+  keyFoodsSectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 6,
   },
-  circleItem: {
-    alignItems: 'center',
-    width: (width - 48) / 3,
+  sectionOverline: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    opacity: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
-  circleIconBox: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    borderWidth: 1.5,
-    borderColor: '#A3B3A5',
-    backgroundColor: '#EBF2EB',
-  },
-  circleLabel: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 11,
+  sectionTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 22,
     color: colors.on_surface,
+    lineHeight: 26,
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingBottom: 2,
+  },
+  seeAllText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: colors.primary,
+  },
+  phaseDescText: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  keyFoodsScroll: {
+    gap: 14,
+    paddingRight: 8,
+    paddingBottom: 4,
+  },
+  keyFoodCard: {
+    width: 160,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    shadowColor: '#4A4453',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  keyFoodAccent: {
+    height: 4,
+    width: '100%',
+  },
+  keyFoodImageWrap: {
+    width: '100%',
+    height: 95,
+  },
+  keyFoodImage: {
+    width: '100%',
+    height: '100%',
+  },
+  keyFoodContent: {
+    padding: 12,
+  },
+  keyFoodName: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 13,
+    color: colors.on_surface,
+    lineHeight: 17,
+    marginBottom: 9,
+  },
+  keyFoodTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 5,
+    alignSelf: 'flex-start',
+  },
+  keyFoodTagDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  keyFoodTagText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    letterSpacing: 0.2,
   },
   suggestedSection: {
     paddingHorizontal: 4,

@@ -8,7 +8,7 @@ import {
   TextInput,
   Dimensions,
   ActivityIndicator,
-  Platform,
+  Alert,
 } from 'react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { format } from 'date-fns';
@@ -110,7 +110,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
 
     setIsSaving(true);
     try {
-      const saved = await saveDailyLog(getToken, user.id, {
+      await saveDailyLog(getToken, user.id, {
         mood,
         symptoms,
         notes,
@@ -148,21 +148,26 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
     // Scroll to top to see the form
   };
 
-  const handleDeleteLog = async (item) => {
+  const handleDeleteLog = (item) => {
     if (!user?.id) return;
-    
-    const confirm = Platform.OS === 'web' ? true : await new Promise(resolve => {
-        // In a real app we'd use Alert.alert here, for simplicity:
-        resolve(true);
-    });
-
-    if (confirm) {
-      const success = await deleteDailyLog(getToken, user.id, item.id, item.log_date || format(new Date(item.logged_at), 'yyyy-MM-dd'));
-      if (success) {
-        const logs = await loadDailyLogs(getToken, user.id);
-        setHistory(logs);
-      }
-    }
+    Alert.alert(
+      t('dailylog.delete_title'),
+      t('dailylog.delete_confirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteDailyLog(getToken, user.id, item.id, item.log_date || format(new Date(item.logged_at), 'yyyy-MM-dd'));
+            if (success) {
+              const logs = await loadDailyLogs(getToken, user.id);
+              setHistory(logs);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isDone) {
@@ -249,7 +254,10 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
       </View>
 
       <View style={[styles.card, { marginTop: 24 }]}>
-        <Text style={styles.cardTitle}>{t('dailylog.notes_title')}</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{t('dailylog.notes_title')}</Text>
+          <Text style={styles.cardSubtitle}>{t('dailylog.notes_sub')}</Text>
+        </View>
         <View style={styles.noteInputBox}>
           <TextInput
             style={styles.textInput}
@@ -263,65 +271,101 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
         </View>
       </View>
 
+      {editingLogDate && (
+        <View style={styles.editingBanner}>
+          <Edit2 size={14} color="#B8882A" />
+          <Text style={styles.editingBannerText}>
+            {t('dailylog.editing_label')} {format(new Date(editingLogDate), 'dd MMM yyyy', { locale })}
+          </Text>
+          <Pressable onPress={() => {
+            setEditingLogDate(null);
+            if (history[0]) {
+              setMood(history[0].mood || 'excelente');
+              setSymptoms(history[0].symptoms || []);
+              setNotes(history[0].notes || '');
+            }
+          }}>
+            <X size={14} color="#B8882A" />
+          </Pressable>
+        </View>
+      )}
+
       <View style={styles.historySection}>
         <View style={styles.historyPreview}>
-          <History size={20} color={colors.primary} />
-          <Text style={styles.historySectionTitle}>{t('dailylog.history_title', 'Recent History')}</Text>
+          <History size={16} color={colors.primary} />
+          <Text style={styles.historySectionTitle}>{t('dailylog.history_title')}</Text>
         </View>
 
         {recentHistory.length === 0 ? (
           <View style={styles.emptyHistory}>
             <AlertCircle size={24} color="#CBD5E1" />
-            <Text style={styles.emptyHistoryText}>{t('dailylog.no_history', 'No records saved yet.')}</Text>
+            <Text style={styles.emptyHistoryText}>{t('dailylog.no_history')}</Text>
           </View>
         ) : (
-          recentHistory.map((item) => (
-            <View key={item.id} style={styles.historyCard}>
-              <View style={styles.historyCardMain}>
-                <View style={styles.historyCardHeader}>
-                  <Text style={styles.historyDate}>{format(new Date(item.logged_at), 'dd MMMM, yyyy', { locale })}</Text>
-                  <View style={styles.historyActions}>
-                    <Pressable onPress={() => handleEditLog(item)} style={styles.actionBtn}>
-                      <Edit2 size={16} color={colors.primary} />
-                    </Pressable>
-                    <Pressable onPress={() => handleDeleteLog(item)} style={[styles.actionBtn, { marginLeft: 12 }]}>
-                      <Trash2 size={16} color="#EB5757" />
-                    </Pressable>
+          recentHistory.map((item) => {
+            const moodData    = MOODS.find(m => m.id === item.mood);
+            const phaseColors = {
+              menstrual: '#E07878', follicular: '#6EA87B',
+              ovulation: '#6BA8C9', luteal: '#C9A227',
+            };
+            const phaseColor = phaseColors[item.phase_key] || colors.primary;
+            return (
+              <View key={item.id} style={styles.historyCard}>
+                <View style={[styles.historyPhaseStripe, { backgroundColor: phaseColor }]} />
+                <View style={styles.historyCardMain}>
+                  <View style={styles.historyCardHeader}>
+                    <Text style={styles.historyDate}>
+                      {format(new Date(item.logged_at), 'dd MMM yyyy', { locale })}
+                    </Text>
+                    <View style={styles.historyActions}>
+                      <Pressable onPress={() => handleEditLog(item)} style={styles.actionBtn}>
+                        <Edit2 size={15} color={colors.primary} />
+                      </Pressable>
+                      <Pressable onPress={() => handleDeleteLog(item)} style={[styles.actionBtn, { marginLeft: 10 }]}>
+                        <Trash2 size={15} color="#EB5757" />
+                      </Pressable>
+                    </View>
                   </View>
-                </View>
-                
-                <View style={styles.historyTags}>
-                   <View style={[styles.miniMood, { backgroundColor: MOODS.find(m => m.id === item.mood)?.color + '20' }]}>
-                      <Text style={[styles.miniMoodText, { color: MOODS.find(m => m.id === item.mood)?.color }]}>
-                        {t(`dailylog.moods.${item.mood}`).toUpperCase()}
-                      </Text>
-                   </View>
-                    <Text style={styles.historyPhaseTag}>· {t(`phases.${item.phase_key}`)}</Text>
-                </View>
 
-                {item.symptoms.length > 0 && (
-                  <View style={styles.historySymptoms}>
-                    {item.symptoms.slice(0, 3).map(s => (
-                      <View key={s} style={styles.miniSymptom}>
-                        <Text style={styles.miniSymptomText}>{t(`dailylog.symptoms.${s}`)}</Text>
+                  <View style={styles.historyTags}>
+                    {moodData && (
+                      <View style={[styles.miniMood, { backgroundColor: moodData.color + '20' }]}>
+                        <Text style={[styles.miniMoodText, { color: moodData.color }]}>
+                          {t(`dailylog.moods.${item.mood}`).toUpperCase()}
+                        </Text>
                       </View>
-                    ))}
-                    {item.symptoms.length > 3 && (
-                      <Text style={styles.moreSymptoms}>+{item.symptoms.length - 3}</Text>
                     )}
+                    <View style={[styles.miniPhase, { backgroundColor: phaseColor + '18' }]}>
+                      <Text style={[styles.miniPhaseText, { color: phaseColor }]}>
+                        {t(`phases.${item.phase_key}`)}
+                      </Text>
+                    </View>
                   </View>
-                )}
-                
-                {item.notes ? (
-                  <Text style={styles.historyNotes} numberOfLines={1}>{`"${item.notes}"`}</Text>
-                ) : null}
+
+                  {item.symptoms?.length > 0 && (
+                    <View style={styles.historySymptoms}>
+                      {item.symptoms.slice(0, 3).map(s => (
+                        <View key={s} style={styles.miniSymptom}>
+                          <Text style={styles.miniSymptomText}>{t(`dailylog.symptoms.${s}`)}</Text>
+                        </View>
+                      ))}
+                      {item.symptoms.length > 3 && (
+                        <Text style={styles.moreSymptoms}>+{item.symptoms.length - 3}</Text>
+                      )}
+                    </View>
+                  )}
+
+                  {item.notes ? (
+                    <Text style={styles.historyNotes} numberOfLines={1}>{`"${item.notes}"`}</Text>
+                  ) : null}
+                </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
       </View>
 
-      <View style={{ height: 100 }} />
+      <View style={{ height: 200 }} />
     </ScrollView>
 
     <View style={styles.footer}>
@@ -495,7 +539,7 @@ const styles = StyleSheet.create({
     height: 100,
   },
   historySection: {
-    marginTop: 60,
+    marginTop: 36,
     marginBottom: 20,
   },
   historySectionTitle: {
@@ -597,9 +641,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 28,
     padding: 20,
+    paddingLeft: 24,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#F1F1E8',
+    overflow: 'hidden',
+    position: 'relative',
   },
   historyDate: {
     fontFamily: 'Outfit_700Bold',
@@ -629,6 +676,49 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 20,
   },
+  // Editing banner
+  editingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FDF5E4',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#E8C97A',
+  },
+  editingBannerText: {
+    flex: 1,
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: '#B8882A',
+  },
+
+  // History card phase stripe
+  historyPhaseStripe: {
+    position: 'absolute',
+    top: 16,
+    bottom: 16,
+    left: 0,
+    width: 4,
+    borderRadius: 2,
+  },
+
+  // Phase badge in history
+  miniPhase: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  miniPhaseText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+
   successContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -1,3 +1,13 @@
+import { FOODS_BY_PHASE } from './foodsData';
+
+export const getMealKeyFoods = (phaseKey, mealType) => {
+  const cats = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
+  return cats
+    .flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey })))
+    .filter(item => item.mealType === mealType)
+    .slice(0, 3);
+};
+
 const sortByGoal = (list, userGoal) => {
   if (!userGoal) return list;
   return [...list].sort((a, b) => {

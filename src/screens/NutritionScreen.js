@@ -11,9 +11,10 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, RefreshCw, Play, ShoppingBag, Plus, X } from 'lucide-react-native';
+import { ChevronLeft, RefreshCw, Play, ShoppingBag, Plus, X, Utensils } from 'lucide-react-native';
 import { colors } from '../theme/colors';
-import { getVideosForDayAndPhase } from '../utils/recipeHelper';
+import { getVideosForDayAndPhase, getMealKeyFoods } from '../utils/recipeHelper';
+import { FOODS_BY_PHASE } from '../utils/foodsData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -24,10 +25,26 @@ const DAYS = [
   { index: 3, key: 'thu' },
   { index: 4, key: 'fri' },
   { index: 5, key: 'sat' },
-  { index: 6, key: 'sun' }
+  { index: 6, key: 'sun' },
 ];
 
+const ALL_MEAL_SLOTS = ['breakfast', 'lunch', 'snack', 'dinner'];
+
 const GRADIENT_STEPS = [0, 0.04, 0.1, 0.2, 0.35, 0.52, 0.68];
+
+const PHASE_COLORS = {
+  menstrual:  '#E07878',
+  follicular: '#6EA87B',
+  ovulation:  '#6BA8C9',
+  luteal:     '#C9A227',
+};
+
+const CATEGORY_COLORS = {
+  proteins:   '#E8845A',
+  fats:       '#D4A853',
+  carbs:      '#8B9DC3',
+  veg_fruits: '#6EA87B',
+};
 
 export const NutritionScreen = ({
   onBack,
@@ -53,7 +70,6 @@ export const NutritionScreen = ({
   const [activeSwapMeal, setActiveSwapMeal] = useState(null);
   const [showSwapModal, setShowSwapModal] = useState(false);
 
-  // Calendar date numbers for the week strip
   const weekDates = useMemo(() => {
     const today = new Date();
     return DAYS.map(day => {
@@ -62,6 +78,31 @@ export const NutritionScreen = ({
       return d.getDate();
     });
   }, [defaultDay]);
+
+  // Which cycle phase each strip day falls in (for the colored bar)
+  const weekDayPhases = useMemo(() => {
+    const cycleLen = cycleProfile?.cycleLength || 28;
+    const periodLen = cycleProfile?.periodLength || 5;
+    const fertileStart = cycleLen - 16;
+    const fertileEnd   = cycleLen - 11;
+    const currentDay   = cycleDay || 1;
+    return DAYS.map(day => {
+      const offset    = day.index - defaultDay;
+      const targetDay = ((currentDay + offset - 1 + cycleLen * 2) % cycleLen) + 1;
+      if (targetDay <= periodLen)                          return 'menstrual';
+      if (targetDay >= fertileStart && targetDay <= fertileEnd) return 'ovulation';
+      if (targetDay > fertileEnd)                          return 'luteal';
+      return 'follicular';
+    });
+  }, [cycleDay, cycleProfile, defaultDay]);
+
+  // Top 3 foods for today's phase (shown in the focus card)
+  const phaseKeyFoods = useMemo(() => {
+    const cats = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
+    return cats
+      .flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey })))
+      .slice(0, 3);
+  }, [phaseKey]);
 
   useEffect(() => {
     const loadSwaps = async () => {
@@ -76,7 +117,7 @@ export const NutritionScreen = ({
   const handleSelectSwap = async (altId) => {
     if (!activeSwapMeal) return;
     const { mealType } = activeSwapMeal;
-    const swapKey = `${selectedDay}_${mealType}`;
+    const swapKey  = `${selectedDay}_${mealType}`;
     const newSwaps = { ...swaps, [swapKey]: altId };
     setSwaps(newSwaps);
     setShowSwapModal(false);
@@ -86,15 +127,14 @@ export const NutritionScreen = ({
     } catch (e) {}
   };
 
-  const dailyVideos = useMemo(
-    () => getVideosForDayAndPhase(videos, phaseKey, selectedDay, swaps, userGoal),
-    [videos, phaseKey, selectedDay, swaps, userGoal]
-  );
-
-  const stats = useMemo(() => ({
-    videosCount: dailyVideos.length,
-    mealsCount: dailyVideos.length,
-  }), [dailyVideos]);
+  // Always render all 4 meal slots; null video → empty state
+  const dailyVideos = useMemo(() => {
+    const found = getVideosForDayAndPhase(videos, phaseKey, selectedDay, swaps, userGoal);
+    return ALL_MEAL_SLOTS.map(time => ({
+      time,
+      video: found.find(f => f.time === time)?.video || null,
+    }));
+  }, [videos, phaseKey, selectedDay, swaps, userGoal]);
 
   const alternatives = useMemo(() => {
     if (!activeSwapMeal || !videos?.length) return [];
@@ -103,6 +143,8 @@ export const NutritionScreen = ({
       .filter(v => v.phaseKey === phaseKey && v.mealType === mealType && v.id !== currentVideo?.id)
       .slice(0, 3);
   }, [videos, phaseKey, activeSwapMeal]);
+
+  const phaseColor = PHASE_COLORS[phaseKey] || colors.primary;
 
   return (
     <View style={styles.container}>
@@ -114,9 +156,10 @@ export const NutritionScreen = ({
             <ChevronLeft size={24} color={colors.on_surface} />
           </Pressable>
           <View style={{ flex: 1 }}>
+            <Text style={styles.overline}>{t('nutrition.overline')}</Text>
             <Text style={styles.title}>{t('nutrition.title')}</Text>
             <View style={styles.headerMeta}>
-              <View style={styles.phaseDot} />
+              <View style={[styles.phaseDot, { backgroundColor: phaseColor }]} />
               <Text style={styles.headerMetaText}>
                 {t(`phases.${phaseKey}`)}
                 {cycleDay ? ` · ${t('nutrition.day_label')} ${cycleDay}` : ''}
@@ -125,7 +168,7 @@ export const NutritionScreen = ({
           </View>
         </View>
 
-        {/* ── Day Strip ── */}
+        {/* ── Day Strip with phase color bars ── */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -133,15 +176,20 @@ export const NutritionScreen = ({
           contentContainerStyle={styles.daysStrip}
         >
           {DAYS.map((day) => {
-            const isSelected = selectedDay === day.index;
-            const isToday = day.index === defaultDay;
-            const shortName = t(`shopping.days.${day.key}.short`, { defaultValue: day.key.slice(0, 1).toUpperCase() });
+            const isSelected    = selectedDay === day.index;
+            const isToday       = day.index === defaultDay;
+            const shortName     = t(`shopping.days.${day.key}.short`, { defaultValue: day.key.slice(0, 1).toUpperCase() });
+            const dayPhaseColor = PHASE_COLORS[weekDayPhases[day.index]];
+
             return (
               <Pressable
                 key={day.index}
                 style={[styles.dayPill, isSelected && styles.dayPillActive]}
                 onPress={() => setSelectedDay(day.index)}
               >
+                {!isSelected && (
+                  <View style={[styles.dayPhaseBar, { backgroundColor: dayPhaseColor }]} />
+                )}
                 <Text style={[styles.dayLetter, isSelected && styles.dayLetterActive]}>
                   {shortName}
                 </Text>
@@ -156,82 +204,114 @@ export const NutritionScreen = ({
 
         <View style={{ marginBottom: 28 }} />
 
-        {/* ── Stats Card ── */}
-        {dailyVideos.length > 0 && (
-          <View style={styles.statsCard}>
-            <View style={styles.statsCardTop}>
-              <Text style={styles.statsPhaseLabel}>{t(`phases.${phaseKey}`).toUpperCase()}</Text>
-              <Text style={styles.statsCardTitle}>{t('nutrition.plan_today')}</Text>
-            </View>
-            <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>{stats.videosCount}</Text>
-                <Text style={styles.statLabel}>{t('nutrition.meals_label')}</Text>
+        {/* ── Phase Focus Card ── */}
+        <View style={[styles.focusCard, { backgroundColor: phaseColor }]}>
+          <Text style={styles.focusOverline}>{t('nutrition.phase_focus_label')}</Text>
+          <Text style={styles.focusTitle}>{t(`phases_data.${phaseKey}.focus`)}</Text>
+          <Text style={styles.focusAdvice} numberOfLines={2}>
+            {t(`phases_data.${phaseKey}.advice`)}
+          </Text>
+          <View style={styles.focusFoodsRow}>
+            {phaseKeyFoods.map(food => (
+              <View key={food.key} style={styles.focusFoodChip}>
+                <View style={[styles.focusFoodDot, { backgroundColor: CATEGORY_COLORS[food.categoryKey] }]} />
+                <Text style={styles.focusFoodText} numberOfLines={1}>
+                  {t(`key_foods.items.${food.key}.name`)}
+                </Text>
               </View>
-            </View>
+            ))}
           </View>
-        )}
+        </View>
 
-        <View style={{ marginBottom: 40 }} />
+        <View style={{ marginBottom: 36 }} />
 
         {/* ── Section label ── */}
         <Text style={styles.sectionLabel}>{t('nutrition.meals_of_day')}</Text>
 
-        {/* ── Video Meal Cards ── */}
+        {/* ── Meal Slots ── */}
         <View style={styles.mealList}>
           {dailyVideos.map(({ time, video }) => {
-            if (!video) return null;
-            const timeLabel = t(`dailylog.meal_types.${time}`).toUpperCase();
+            const mealKeyFoods = getMealKeyFoods(phaseKey, time);
+            const timeLabel    = t(`dailylog.meal_types.${time}`).toUpperCase();
 
             return (
-              <View key={time} style={styles.mealCard}>
-                <Pressable
-                  style={styles.recipeCard}
-                  onPress={() => onNavigate('videos')}
-                >
-                  <View style={styles.imageWrap}>
-                    <Image
-                      source={{ uri: video.thumbnail }}
-                      style={styles.recipeImage}
-                      resizeMode="cover"
-                    />
+              <View key={time} style={styles.mealSlot}>
 
-                    {/* Meal type badge — top left */}
-                    <View style={styles.mealBadge}>
-                      <Text style={styles.mealBadgeText}>{timeLabel}</Text>
-                      <View style={styles.mealBadgeDot} />
-                      <Text style={styles.mealBadgeText}>{video.duration}</Text>
-                    </View>
+                {/* Meal time header */}
+                <View style={styles.mealTimeRow}>
+                  <Text style={styles.mealTimeText}>
+                    {t(`nutrition.meal_times.${time}`, { defaultValue: '' })}
+                  </Text>
+                  <Text style={styles.mealTypeLabel}>{timeLabel}</Text>
+                </View>
 
-                    {/* Play button — center */}
-                    <View style={styles.playBtn}>
-                      <Play size={18} color="#FFF" fill="#FFF" />
-                    </View>
-
-                    {/* Swap button — top right */}
-                    <Pressable
-                      style={styles.swapBtn}
-                      onPress={() => {
-                        setActiveSwapMeal({ mealType: time, currentVideo: video });
-                        setShowSwapModal(true);
-                      }}
-                    >
-                      <RefreshCw size={13} color="#FFF" />
+                {video ? (
+                  <>
+                    {/* Video card */}
+                    <Pressable style={styles.recipeCard} onPress={() => onNavigate('videos')}>
+                      <View style={styles.imageWrap}>
+                        <Image
+                          source={{ uri: video.thumbnail }}
+                          style={styles.recipeImage}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.mealBadge}>
+                          <Text style={styles.mealBadgeText}>{timeLabel}</Text>
+                          <View style={styles.mealBadgeDot} />
+                          <Text style={styles.mealBadgeText}>{video.duration}</Text>
+                        </View>
+                        <View style={styles.playBtn}>
+                          <Play size={18} color="#FFF" fill="#FFF" />
+                        </View>
+                        <Pressable
+                          style={styles.swapBtn}
+                          onPress={() => {
+                            setActiveSwapMeal({ mealType: time, currentVideo: video });
+                            setShowSwapModal(true);
+                          }}
+                        >
+                          <RefreshCw size={13} color="#FFF" />
+                        </Pressable>
+                        <View style={styles.gradientOverlay} pointerEvents="none">
+                          {GRADIENT_STEPS.map((opacity, i) => (
+                            <View key={i} style={{ flex: 1, backgroundColor: `rgba(26,20,35,${opacity})` }} />
+                          ))}
+                        </View>
+                        <View style={styles.overlayTitle} pointerEvents="none">
+                          <Text style={styles.recipeNameOverlay} numberOfLines={2}>
+                            {video.title}
+                          </Text>
+                        </View>
+                      </View>
                     </Pressable>
 
-                    {/* Gradient + title at bottom */}
-                    <View style={styles.gradientOverlay} pointerEvents="none">
-                      {GRADIENT_STEPS.map((opacity, i) => (
-                        <View key={i} style={{ flex: 1, backgroundColor: `rgba(26,20,35,${opacity})` }} />
-                      ))}
-                    </View>
-                    <View style={styles.overlayTitle} pointerEvents="none">
-                      <Text style={styles.recipeNameOverlay} numberOfLines={2}>
-                        {video.title}
-                      </Text>
-                    </View>
-                  </View>
-                </Pressable>
+                    {/* Key ingredient chips */}
+                    {mealKeyFoods.length > 0 && (
+                      <View style={styles.ingredientsBox}>
+                        <Text style={styles.ingredientsLabel}>{t('nutrition.key_ingredients')}</Text>
+                        <View style={styles.ingredientChips}>
+                          {mealKeyFoods.map(food => (
+                            <View
+                              key={food.key}
+                              style={[styles.ingredientChip, { borderLeftColor: CATEGORY_COLORS[food.categoryKey] }]}
+                            >
+                              <Text style={styles.ingredientChipText}>
+                                {t(`key_foods.items.${food.key}.name`)}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  /* Empty slot */
+                  <Pressable style={styles.emptyMealCard} onPress={() => onNavigate('videos')}>
+                    <Utensils size={22} color={colors.on_surface_variant} style={{ opacity: 0.3, marginBottom: 8 }} />
+                    <Text style={styles.emptyMealText}>{t('nutrition.empty_meal')}</Text>
+                    <Text style={styles.emptyMealSub}>{t('nutrition.empty_meal_sub')}</Text>
+                  </Pressable>
+                )}
               </View>
             );
           })}
@@ -288,23 +368,13 @@ export const NutritionScreen = ({
 
               {alternatives.length === 0 ? (
                 <View style={styles.emptyAlternatives}>
-                  <Text style={styles.emptyAltText}>
-                    {t('nutrition.no_alternatives')}
-                  </Text>
+                  <Text style={styles.emptyAltText}>{t('nutrition.no_alternatives')}</Text>
                 </View>
               ) : (
                 alternatives.map((alt) => (
-                  <Pressable
-                    key={alt.id}
-                    style={styles.altCard}
-                    onPress={() => handleSelectSwap(alt.id)}
-                  >
+                  <Pressable key={alt.id} style={styles.altCard} onPress={() => handleSelectSwap(alt.id)}>
                     <View style={{ position: 'relative' }}>
-                      <Image
-                        source={{ uri: alt.thumbnail }}
-                        style={styles.altImage}
-                        resizeMode="cover"
-                      />
+                      <Image source={{ uri: alt.thumbnail }} style={styles.altImage} resizeMode="cover" />
                       <View style={[styles.playBtn, { width: 28, height: 28, borderRadius: 14 }]}>
                         <Play size={12} color="#FFF" fill="#FFF" />
                       </View>
@@ -328,7 +398,7 @@ export const NutritionScreen = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9F9F2' },
+  container:     { flex: 1, backgroundColor: '#F9F9F2' },
   scrollContent: { paddingTop: 60 },
 
   // Header
@@ -349,6 +419,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EFEDE4',
   },
+  overline: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    opacity: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
   title: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 32,
@@ -365,7 +444,6 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: colors.primary,
   },
   headerMetaText: {
     fontFamily: 'Outfit_600SemiBold',
@@ -376,26 +454,36 @@ const styles = StyleSheet.create({
 
   // Day strip
   daysScroll: { paddingLeft: 20 },
-  daysStrip: { paddingRight: 24, gap: 6 },
+  daysStrip:  { paddingRight: 24, gap: 6 },
   dayPill: {
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingTop: 6,
     paddingBottom: 8,
     borderRadius: 22,
     minWidth: 50,
+    overflow: 'hidden',
   },
   dayPillActive: { backgroundColor: '#A3B3A5' },
+  dayPhaseBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    borderRadius: 2,
+  },
   dayLetter: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
     color: colors.on_surface_variant,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+    marginTop: 7,
     marginBottom: 5,
     opacity: 0.55,
   },
-  dayLetterActive: { color: 'rgba(255,255,255,0.55)', opacity: 1 },
+  dayLetterActive: { color: 'rgba(255,255,255,0.55)', opacity: 1, marginTop: 0 },
   dayNum: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 20,
@@ -410,55 +498,56 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  // Stats card
-  statsCard: {
+  // Phase Focus card
+  focusCard: {
     marginHorizontal: 24,
-    backgroundColor: '#A3B3A5',
     borderRadius: 28,
     padding: 24,
   },
-  statsCardTop: { marginBottom: 22 },
-  statsPhaseLabel: {
+  focusOverline: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.55)',
     letterSpacing: 1.5,
-    marginBottom: 4,
+    marginBottom: 6,
+    textTransform: 'uppercase',
   },
-  statsCardTitle: {
+  focusTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 24,
+    fontSize: 26,
     color: '#FFFFFF',
+    marginBottom: 8,
   },
-  statsRow: {
+  focusAdvice: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    lineHeight: 19,
+    marginBottom: 18,
+  },
+  focusFoodsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  focusFoodChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
   },
-  statBox: { flex: 1, alignItems: 'center' },
-  statVal: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 22,
+  focusFoodDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  focusFoodText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 12,
     color: '#FFFFFF',
-    lineHeight: 26,
-  },
-  statUnit: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.45)',
-    marginTop: 2,
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.3)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: 'rgba(255,255,255,0.12)',
   },
 
   // Section label
@@ -473,10 +562,32 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  // Meal cards
-  mealList: { gap: 28, paddingHorizontal: 20 },
-  mealCard: {},
+  // Meal slots
+  mealList: { gap: 32, paddingHorizontal: 20 },
+  mealSlot:  {},
 
+  mealTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  mealTimeText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 12,
+    color: colors.on_surface_variant,
+    opacity: 0.5,
+  },
+  mealTypeLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    letterSpacing: 1,
+    opacity: 0.7,
+  },
+
+  // Video card
   recipeCard: {
     borderRadius: 28,
     overflow: 'hidden',
@@ -498,7 +609,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  // Meal type + time badge on image top-left
   mealBadge: {
     position: 'absolute',
     top: 14,
@@ -523,7 +633,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
-  // Swap button on image top-right
   swapBtn: {
     position: 'absolute',
     top: 12,
@@ -574,21 +683,61 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
 
-  // Macro chips
-  macroRow: {
+  // Key ingredients
+  ingredientsBox: {
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  ingredientsLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 9,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    opacity: 0.45,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  ingredientChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    padding: 16,
   },
-  macroPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+  ingredientChip: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderLeftWidth: 3,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
   },
-  macroPillText: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
+  ingredientChipText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 12,
+    color: colors.on_surface,
+  },
+
+  // Empty slot
+  emptyMealCard: {
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: '#DEDBD3',
+    paddingVertical: 32,
+    alignItems: 'center',
+    backgroundColor: '#FAFAF6',
+  },
+  emptyMealText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    color: colors.on_surface_variant,
+    opacity: 0.55,
+    marginBottom: 4,
+  },
+  emptyMealSub: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 12,
+    color: colors.primary,
+    opacity: 0.8,
   },
 
   // Shortcuts
@@ -706,12 +855,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.primary,
     marginBottom: 4,
-  },
-  altMacros: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 11,
-    color: colors.on_surface_variant,
-    opacity: 0.7,
   },
   selectAltBadge: {
     width: 36,

@@ -551,7 +551,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
         case 'dailyLog':
           return <DailyLogScreen onBack={goBack} onNavigate={navigateTo} {...sharedScreenProps} />;
         case 'periodCalculator':
-          return <PeriodCalculatorScreen onBack={goBack} />;
+          return <PeriodCalculatorScreen onBack={goBack} onSave={handleProfileSave} cycleProfile={cycleProfile} />;
         case 'notifications':
           return <NotificationsScreen onBack={goBack} onNavigate={navigateTo} {...sharedScreenProps} />;
         case 'settings':

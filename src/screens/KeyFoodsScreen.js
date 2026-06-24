@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   Image,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
@@ -72,6 +71,9 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user })
             <Text style={styles.title}>{t('key_foods.title')}</Text>
           </View>
         </View>
+
+        {/* Phase context description */}
+        <Text style={styles.phaseDesc}>{t(`key_foods.phase_desc.${selectedPhase}`)}</Text>
 
         {/* Phase filter pills */}
         <ScrollView
@@ -202,6 +204,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: colors.on_surface,
     lineHeight: 32,
+  },
+  phaseDesc: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+    lineHeight: 18,
+    marginBottom: 20,
   },
   filterRow: {
     marginBottom: 28,
