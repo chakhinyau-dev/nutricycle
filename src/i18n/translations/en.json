@@ -72,6 +72,9 @@
     "security_title": "Security & Data",
     "biometrics": "Biometrics",
     "biometrics_sub": "App lock",
+    "plan_label": "YOUR PLAN",
+    "plan_premium": "Balance · Active",
+    "plan_basic": "Basic · Upgrade",
     "export": "Export Data",
     "export_sub": "Download your history",
     "help": "Help",
@@ -94,6 +97,7 @@
     "password_update_failed": "Unable to update the password.",
     "new_password_placeholder": "New Password",
     "confirm_password_placeholder": "Confirm Password",
+    "gallery_permission": "Permission to access the gallery is required.",
     "profile_image_updated": "Profile photo updated successfully!",
     "profile_image_error": "Unable to update the profile photo. Please try again.",
     "export_desc": "Export Data generates a detailed report of your cycle logs, symptoms, and health metrics. You can use this file for your own records or share it with your healthcare professional.",
@@ -105,6 +109,14 @@
     "greeting_morning": "Good morning, {{name}}",
     "greeting_afternoon": "Good afternoon, {{name}}",
     "greeting_evening": "Good evening, {{name}}",
+    "goal_context": {
+      "acne": "Supporting your skin with hormonal nutrition",
+      "pcos": "Balancing your cycle with targeted nutrition",
+      "periods": "Easing your cycle with anti-inflammatory foods",
+      "digestion": "Nourishing your gut through each phase",
+      "energy": "Fueling your energy with cycle-synced meals",
+      "balance": "Syncing your nutrition with your cycle"
+    },
     "cycle_today": "Your cycle\ntoday",
     "day": "DAY",
     "days_to_period": "Days to period",
@@ -159,10 +171,13 @@
     "log_action": "Log Info",
     "log_feel": "Log how I feel",
     "suggested_recipe": "Suggested Recipe of the Day",
+    "featured_video": "Featured Video for Today",
     "tracker_energy": "ENERGY",
     "tracker_mood": "MOOD",
     "tracker_drive": "DRIVE",
-    "view_full_tracker": "VIEW FULL TRACKER"
+    "view_full_tracker": "VIEW FULL TRACKER",
+    "cycle_day_prefix": "Cycle Day",
+    "period_in_days": "Period in {{days}} days"
   },
   "phase_menstrual_msg": "Your body is resting.\nToday focus on iron-rich foods and quiet moments.",
     "phase_follicular_msg": "Your energy is gently rising.\nThis is a good time for fresh ideas and light movement.",
@@ -279,19 +294,13 @@
       "recipe": "Recipe",
       "educational": "Hormonal Education",
       "wellness": "Wellness & Tips",
-      "fitness": "Movement & Workout"
+      "fitness": "Movement",
+      "tips": "Tips"
     },
     "title": "Videos for\nyour phase",
     "overline": "NUTRICYCLE VIDEO LIBRARY",
     "audio_session": "Audio session",
     "category_prefix": "Phase {{phase}} • {{meal}}",
-    "types": {
-      "recipe": "Recipe",
-      "educational": "Hormonal Education",
-      "wellness": "Wellness",
-      "fitness": "Movement",
-      "tips": "Tips"
-    },
     "featured": "FEATURED FOR {{phase}}",
     "recommended": "RECOMMENDED VIDEOS",
     "youtube_integrated": "YouTube Integrated",
@@ -304,13 +313,7 @@
     "phase": "Phase",
     "category": "Category",
     "duration": "Duration (e.g. 5:00)",
-    "submit": "Submit Video",
-    "types": {
-      "recipe": "Recipe",
-      "educational": "Hormonal Education",
-      "wellness": "Wellness Tips",
-      "fitness": "Fitness"
-    }
+    "submit": "Submit Video"
   },
   "recipes": {
     "overline": "RECIPES BY PHASE",
@@ -454,6 +457,11 @@
     "new_recipe": "New Recipe",
     "editing_video": "Editing: {{title}}",
     "editing_recipe": "Editing: {{title}}",
+    "thumbnail_preview": "Thumbnail Preview",
+    "change_thumbnail": "Change Thumbnail",
+    "upload_progress": "{{pct}}% uploaded",
+    "calories_invalid": "Enter a valid calorie amount.",
+    "time_invalid": "Enter a valid preparation time.",
     "video_required": "Title or video file/URL is required",
     "recipe_required": "Recipe title is required",
     "video_updated": "Video updated!",
@@ -643,6 +651,9 @@
 
   "shopping": {
     "title": "Shopping List",
+    "overline": "SMART SHOPPING",
+    "progress": "{{checked}} of {{total}} items",
+    "videos_for_phase": "Videos for this phase",
     "days_cook": "1. Which days will you cook?",
     "select_days_desc": "Select days to generate your shopping list:",
     "clear_all": "Clear all",
@@ -675,6 +686,14 @@
   "key_foods": {
     "title": "Key Foods",
     "select_phase": "Select Cycle Phase",
+    "no_foods": "No foods available for this phase.",
+    "add_to_list": "Added to list",
+    "hormone_tags": {
+      "estrogen": "Estrogen Support",
+      "progesterone": "Progesterone Support",
+      "antiinflammatory": "Anti-inflammatory",
+      "energy": "Energy & Adrenal"
+    },
     "categories": {
       "proteins": "Proteins",
       "fats": "Healthy Fats",
@@ -724,6 +743,7 @@
     "meals_of_day": "MEALS OF THE DAY",
     "fat_label": "fat",
     "recipes_shortcut": "Recipes",
+    "videos_shortcut": "Videos",
     "shopping_shortcut": "Shopping",
     "swap_title": "Swap Meal",
     "swap_subtitle": "Options for {{phase}} phase:",

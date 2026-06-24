@@ -9,7 +9,7 @@ export const loadUserProfile = async (getToken, clerkUserId) => {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('clerk_user_id, full_name, email, current_phase, cycle_length, period_length, last_period_start, is_premium')
+    .select('clerk_user_id, full_name, email, current_phase, cycle_length, period_length, last_period_start, is_premium, main_goal')
     .eq('clerk_user_id', clerkUserId)
     .maybeSingle();
 
@@ -43,13 +43,14 @@ export const saveUserProfile = async (getToken, profile) => {
     period_length: profile.period_length,
     last_period_start: profile.last_period_start,
     is_premium: profile.is_premium ?? false,
+    main_goal: profile.goal || profile.main_goal || 'balance',
     updated_at: new Date().toISOString(),
   };
 
   const { data, error } = await supabase
     .from('profiles')
     .upsert(payload, { onConflict: 'clerk_user_id' })
-    .select('clerk_user_id, full_name, email, current_phase, cycle_length, period_length, last_period_start, is_premium')
+    .select('clerk_user_id, full_name, email, current_phase, cycle_length, period_length, last_period_start, is_premium, main_goal')
     .single();
 
   if (error) {

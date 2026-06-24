@@ -64,7 +64,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('settings.error'), 'Permission to access gallery is required.');
+        Alert.alert(t('settings.error'), t('settings.gallery_permission'));
         return;
       }
 
@@ -212,12 +212,11 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
               <ChevronLeft size={24} color={colors.on_surface} />
             </Pressable>
             <Pressable style={styles.navRight} onPress={() => onNavigate('subscription')}>
+              <Text style={styles.planLabel}>{t('settings.plan_label')}</Text>
               <View style={[styles.premiumPill, !isPremium && styles.basicPill, isPremium && styles.premiumPillActive]}>
                 <Crown size={14} color={isPremium ? "#B8860B" : colors.on_surface_variant} fill={isPremium ? "#FFD700" : "none"} />
                 <Text style={[styles.premiumText, !isPremium && styles.basicText]}>
-                  {isPremium
-                    ? (isSpanish ? 'Plan Balance · Activo' : 'Balance Plan · Active')
-                    : (isSpanish ? 'Plan Básico · Mejorar' : 'Basic Plan · Upgrade')}
+                  {isPremium ? t('settings.plan_premium') : t('settings.plan_basic')}
                 </Text>
               </View>
             </Pressable>
@@ -242,12 +241,12 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
         <View style={styles.mainGroup}>
           <View style={styles.summaryContainer}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>{t('profile.today') || 'Hoy'}</Text>
+              <Text style={styles.summaryLabel}>{t('profile.today')}</Text>
               <Text style={styles.summaryValue}>{t('common.day')} {cycleInfo?.cycleDay || 1}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>{t('profile.next_period') || 'Para tu próximo periodo'}</Text>
+              <Text style={styles.summaryLabel}>{t('profile.next_period')}</Text>
               <Text style={styles.summaryValue}>{cycleInfo?.daysUntilNextPeriod ?? 0} {t('common.days')}</Text>
             </View>
             <View style={styles.summaryDivider} />
@@ -383,7 +382,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navRight: {
-    flexDirection: 'row',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  planLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 9,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    opacity: 0.5,
+    textTransform: 'uppercase',
   },
   premiumPill: {
     flexDirection: 'row',

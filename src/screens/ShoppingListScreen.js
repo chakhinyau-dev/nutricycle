@@ -6,140 +6,76 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Dimensions,
   Alert,
+  Image,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Plus, Trash2, CheckSquare, Square, RefreshCw } from 'lucide-react-native';
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Play } from 'lucide-react-native';
 import { colors } from '../theme/colors';
-import { getRecipesForDayAndPhase } from '../utils/recipeHelper';
+import { FOODS_BY_PHASE } from '../utils/foodsData';
 
 const { width } = Dimensions.get('window');
 
-const DAYS_OF_WEEK = [
-  { id: 0, key: 'mon', label: 'Lunes' },
-  { id: 1, key: 'tue', label: 'Martes' },
-  { id: 2, key: 'wed', label: 'Miércoles' },
-  { id: 3, key: 'thu', label: 'Jueves' },
-  { id: 4, key: 'fri', label: 'Viernes' },
-  { id: 5, key: 'sat', label: 'Sábado' },
-  { id: 6, key: 'sun', label: 'Domingo' }
-];
+const CATEGORY_COLORS = {
+  proteins: '#E8845A',
+  fats: '#D4A853',
+  carbs: '#8B9DC3',
+  veg_fruits: '#6EA87B',
+};
 
-export const ShoppingListScreen = ({ onBack, recipes, currentPhaseKey = 'follicular', user }) => {
+export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', user, videos = [], onNavigate }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
   const phaseKey = currentPhaseKey || 'follicular';
+  const phaseFoods = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
 
-  const [selectedDays, setSelectedDays] = useState([true, true, true, false, false, false, false]); // Mon, Tue, Wed default true
-  const [swaps, setSwaps] = useState({});
-  const [consolidatedList, setConsolidatedList] = useState([]);
+  // Videos for the current phase
+  const phaseVideos = videos.filter(v => v.phaseKey === phaseKey).slice(0, 4);
+
   const [checkedItems, setCheckedItems] = useState({});
   const [customItems, setCustomItems] = useState([]);
   const [newCustomItem, setNewCustomItem] = useState('');
+  const [expandedItem, setExpandedItem] = useState(null);
 
-  // Load selected days, swaps and custom items from AsyncStorage
   useEffect(() => {
-    const loadSavedData = async () => {
+    const load = async () => {
       try {
-        const savedDays = await AsyncStorage.getItem(`@nutricycle_shopping_days_${userId}`);
-        if (savedDays) setSelectedDays(JSON.parse(savedDays));
-
-        const savedSwaps = await AsyncStorage.getItem(`@nutricycle_swaps_${userId}`);
-        if (savedSwaps) setSwaps(JSON.parse(savedSwaps));
-
+        const savedChecks = await AsyncStorage.getItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`);
+        if (savedChecks) setCheckedItems(JSON.parse(savedChecks));
         const savedCustoms = await AsyncStorage.getItem(`@nutricycle_custom_items_${userId}`);
         if (savedCustoms) setCustomItems(JSON.parse(savedCustoms));
-
-        const savedChecks = await AsyncStorage.getItem(`@nutricycle_checked_items_${userId}`);
-        if (savedChecks) setCheckedItems(JSON.parse(savedChecks));
-      } catch (e) {
-        console.error('Failed to load shopping list data', e);
-      }
+      } catch (e) {}
     };
-    loadSavedData();
-  }, [userId]);
+    load();
+  }, [userId, phaseKey]);
 
-  // Consolidate list based on selected days and swaps
-  useEffect(() => {
-    generateConsolidatedList();
-  }, [selectedDays, swaps, recipes, phaseKey]);
-
-  const saveSelectedDays = async (newDays) => {
-    setSelectedDays(newDays);
+  const toggleCheck = async (key) => {
+    const updated = { ...checkedItems, [key]: !checkedItems[key] };
+    setCheckedItems(updated);
     try {
-      await AsyncStorage.setItem(`@nutricycle_shopping_days_${userId}`, JSON.stringify(newDays));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const toggleDay = (index) => {
-    const newDays = [...selectedDays];
-    newDays[index] = !newDays[index];
-    saveSelectedDays(newDays);
-  };
-
-  const generateConsolidatedList = () => {
-    const list = {};
-
-    selectedDays.forEach((isChecked, dayIdx) => {
-      if (!isChecked) return;
-
-      const dailyMeals = getRecipesForDayAndPhase(recipes, phaseKey, dayIdx, swaps);
-      dailyMeals.forEach(meal => {
-        const recipe = meal.recipe;
-        if (!recipe || !recipe.structuredIngredients) return;
-
-        recipe.structuredIngredients.forEach(ing => {
-          const key = `${ing.name.toLowerCase().trim()}_${ing.unit.toLowerCase().trim()}`;
-          
-          if (list[key]) {
-            list[key].quantity += ing.quantity;
-          } else {
-            list[key] = {
-              name: ing.name,
-              quantity: ing.quantity,
-              unit: ing.unit,
-              category: ing.category || 'Pantry'
-            };
-          }
-        });
-      });
-    });
-
-    // Convert to array and group by category
-    const itemsArray = Object.values(list);
-    setConsolidatedList(itemsArray);
-  };
-
-  const toggleCheckItem = async (itemName) => {
-    const newChecks = { ...checkedItems };
-    newChecks[itemName] = !newChecks[itemName];
-    setCheckedItems(newChecks);
-    try {
-      await AsyncStorage.setItem(`@nutricycle_checked_items_${userId}`, JSON.stringify(newChecks));
-    } catch (e) {
-      console.error(e);
-    }
+      await AsyncStorage.setItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`, JSON.stringify(updated));
+    } catch (e) {}
   };
 
   const handleAddCustomItem = async () => {
     if (!newCustomItem.trim()) return;
-    const item = {
-      id: Date.now().toString(),
-      name: newCustomItem.trim(),
-      category: 'Otros'
-    };
+    const item = { id: Date.now().toString(), name: newCustomItem.trim() };
     const updated = [...customItems, item];
     setCustomItems(updated);
     setNewCustomItem('');
     try {
       await AsyncStorage.setItem(`@nutricycle_custom_items_${userId}`, JSON.stringify(updated));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
+  };
+
+  const removeCustomItem = async (id) => {
+    const updated = customItems.filter(i => i.id !== id);
+    setCustomItems(updated);
+    try {
+      await AsyncStorage.setItem(`@nutricycle_custom_items_${userId}`, JSON.stringify(updated));
+    } catch (e) {}
   };
 
   const handleClearList = () => {
@@ -149,146 +85,166 @@ export const ShoppingListScreen = ({ onBack, recipes, currentPhaseKey = 'follicu
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t('common.delete', { defaultValue: 'Limpiar' }),
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             setCheckedItems({});
             setCustomItems([]);
-            saveSelectedDays([false, false, false, false, false, false, false]);
             try {
-              await AsyncStorage.removeItem(`@nutricycle_checked_items_${userId}`);
+              await AsyncStorage.removeItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`);
               await AsyncStorage.removeItem(`@nutricycle_custom_items_${userId}`);
-            } catch (e) {
-              console.error(e);
-            }
+            } catch (e) {}
           }
         }
       ]
     );
   };
 
-  // Group consolidated ingredients by category
-  const categories = ['Proteins', 'Vegetables', 'Fruits', 'Dairy', 'Grains', 'Pantry', 'Otros'];
-  const categoryLabels = {
-    Proteins: t('shopping.categories.proteins'),
-    Vegetables: t('shopping.categories.vegetables'),
-    Fruits: t('shopping.categories.fruits'),
-    Dairy: t('shopping.categories.dairy'),
-    Grains: t('shopping.categories.grains'),
-    Pantry: t('shopping.categories.pantry'),
-    Otros: t('shopping.categories.other')
-  };
-
-  const getCategorizedItems = (cat) => {
-    if (cat === 'Otros') return customItems;
-    return consolidatedList.filter(item => {
-      const itemCat = item.category || 'Pantry';
-      return itemCat.toLowerCase() === cat.toLowerCase();
-    });
-  };
+  const totalItems = phaseFoods.reduce((sum, cat) => sum + cat.items.length, 0) + customItems.length;
+  const checkedCount = Object.values(checkedItems).filter(Boolean).length;
+  const progress = totalItems > 0 ? checkedCount / totalItems : 0;
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={onBack} style={styles.backButton}>
             <ChevronLeft size={24} color={colors.on_surface} />
           </Pressable>
-          <Text style={styles.title}>{t('shopping.title')}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.overline}>{t('shopping.overline', { defaultValue: 'SMART SHOPPING' })}</Text>
+            <Text style={styles.title}>{t('shopping.title')}</Text>
+          </View>
+          <Pressable onPress={handleClearList} style={styles.clearBtn}>
+            <Trash2 size={18} color="#EB5757" />
+          </Pressable>
         </View>
 
-        {/* Day selection segment */}
-        <View style={styles.daysCard}>
-          <Text style={styles.sectionTitle}>{t('shopping.days_cook')}</Text>
-          <Text style={styles.sectionSubtitle}>{t('shopping.select_days_desc')}</Text>
-          
-          <View style={styles.daysGrid}>
-            {DAYS_OF_WEEK.map(day => {
-              const isSelected = selectedDays[day.id];
-              return (
-                <Pressable
-                  key={day.id}
-                  style={[styles.dayButton, isSelected && styles.dayButtonActive]}
-                  onPress={() => toggleDay(day.id)}
-                >
-                  <Text style={[styles.dayButtonText, isSelected && styles.dayButtonTextActive]}>
-                    {t(`shopping.days.${day.key}.full`).substring(0, 3)}
-                  </Text>
-                </Pressable>
-              );
-            })}
+        {/* Phase badge */}
+        <View style={styles.phaseBadge}>
+          <Text style={styles.phaseBadgeText}>{t(`phases.${phaseKey}`).toUpperCase()}</Text>
+        </View>
+
+        {/* Progress bar */}
+        <View style={styles.progressSection}>
+          <Text style={styles.progressLabel}>
+            {t('shopping.progress', { checked: checkedCount, total: totalItems, defaultValue: `${checkedCount} of ${totalItems} items` })}
+          </Text>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
           </View>
         </View>
 
-        {/* Action Bar */}
-        {(consolidatedList.length > 0 || customItems.length > 0) && (
-          <View style={styles.actionBar}>
-            <Pressable style={styles.actionClearBtn} onPress={handleClearList}>
-              <Trash2 size={18} color="#EB5757" />
-              <Text style={styles.actionClearText}>{t('shopping.clear_all')}</Text>
-            </Pressable>
-            
-            <Pressable style={styles.actionRegenBtn} onPress={generateConsolidatedList}>
-              <RefreshCw size={16} color={colors.primary} />
-              <Text style={styles.actionRegenText}>{t('shopping.regenerate')}</Text>
-            </Pressable>
+        {/* Phase videos */}
+        {phaseVideos.length > 0 && (
+          <View style={styles.videosSection}>
+            <Text style={styles.videosSectionTitle}>{t('shopping.videos_for_phase', { defaultValue: 'Videos for this phase' })}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.videosRow}>
+              {phaseVideos.map(video => (
+                <Pressable
+                  key={video.id}
+                  style={styles.videoCard}
+                  onPress={() => onNavigate && onNavigate('videos')}
+                >
+                  <View style={styles.videoThumbWrap}>
+                    {video.thumbnailUrl ? (
+                      <Image source={{ uri: video.thumbnailUrl }} style={styles.videoThumb} resizeMode="cover" />
+                    ) : (
+                      <View style={[styles.videoThumb, { backgroundColor: '#E8E4DC' }]} />
+                    )}
+                    <View style={styles.playBadge}>
+                      <Play size={10} color="#FFF" fill="#FFF" />
+                    </View>
+                    {video.duration ? (
+                      <View style={styles.durationBadge}>
+                        <Text style={styles.durationText}>{video.duration}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
+                  <Text style={styles.videoMeal}>{t(`dailylog.meal_types.${video.mealType}`, { defaultValue: video.mealType })}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         )}
 
-        {/* List ingredients grouped by category */}
-        <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>{t('shopping.consolidated_list')}</Text>
-          
-          {consolidatedList.length === 0 && customItems.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>{t('shopping.empty_placeholder')}</Text>
+        {/* Phase food categories */}
+        {phaseFoods.map(cat => {
+          const catColor = CATEGORY_COLORS[cat.categoryKey] || colors.primary;
+          return (
+            <View key={cat.categoryKey} style={styles.categorySection}>
+              <View style={styles.categoryHeader}>
+                <View style={[styles.categoryDot, { backgroundColor: catColor }]} />
+                <Text style={styles.categoryTitle}>{t(`key_foods.categories.${cat.categoryKey}`)}</Text>
+              </View>
+
+              {cat.items.map(item => {
+                const isChecked = !!checkedItems[item.key];
+                const isExpanded = expandedItem === item.key;
+                return (
+                  <Pressable
+                    key={item.key}
+                    style={[styles.foodCard, isChecked && styles.foodCardChecked]}
+                    onPress={() => toggleCheck(item.key)}
+                    onLongPress={() => setExpandedItem(isExpanded ? null : item.key)}
+                  >
+                    <View style={styles.checkCol}>
+                      {isChecked
+                        ? <CheckCircle2 size={22} color={colors.primary} />
+                        : <Circle size={22} color="#CBD5E1" />
+                      }
+                    </View>
+                    <View style={styles.foodContent}>
+                      <Text style={[styles.foodName, isChecked && styles.foodNameChecked]}>
+                        {t(`key_foods.items.${item.key}.name`)}
+                      </Text>
+                      <Text
+                        style={[styles.foodBenefit, isChecked && styles.foodBenefitChecked]}
+                        numberOfLines={isExpanded ? 0 : 2}
+                      >
+                        {t(`key_foods.items.${item.key}.benefit`)}
+                      </Text>
+                    </View>
+                    <View style={[styles.catPill, { backgroundColor: `${catColor}20` }]}>
+                      <View style={[styles.catPillDot, { backgroundColor: catColor }]} />
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
-          ) : (
-            categories.map(cat => {
-              const items = getCategorizedItems(cat);
-              if (items.length === 0) return null;
+          );
+        })}
 
-              return (
-                <View key={cat} style={styles.categoryGroup}>
-                  <Text style={styles.categoryHeader}>{categoryLabels[cat]}</Text>
-                  <View style={styles.categoryCard}>
-                    {items.map(item => {
-                      const isChecked = !!checkedItems[item.name];
-                      const qtyDisplay = item.quantity ? `${Number(item.quantity.toFixed(1))} ${item.unit}` : '';
+        {/* Custom items */}
+        {customItems.length > 0 && (
+          <View style={styles.categorySection}>
+            <View style={styles.categoryHeader}>
+              <View style={[styles.categoryDot, { backgroundColor: '#94A3B8' }]} />
+              <Text style={styles.categoryTitle}>{t('shopping.categories.other')}</Text>
+            </View>
+            {customItems.map(item => (
+              <View key={item.id} style={styles.foodCard}>
+                <Pressable onPress={() => toggleCheck(`custom_${item.id}`)} style={styles.checkCol}>
+                  {checkedItems[`custom_${item.id}`]
+                    ? <CheckCircle2 size={22} color={colors.primary} />
+                    : <Circle size={22} color="#CBD5E1" />
+                  }
+                </Pressable>
+                <Text style={[styles.foodName, { flex: 1 }, checkedItems[`custom_${item.id}`] && styles.foodNameChecked]}>
+                  {item.name}
+                </Text>
+                <Pressable onPress={() => removeCustomItem(item.id)} style={{ padding: 8 }}>
+                  <Trash2 size={16} color="#EB5757" />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        )}
 
-                      return (
-                        <Pressable
-                          key={item.name || item.id}
-                          style={styles.itemRow}
-                          onPress={() => toggleCheckItem(item.name)}
-                        >
-                          <View style={styles.checkIcon}>
-                            {isChecked ? (
-                              <CheckSquare size={22} color={colors.primary} />
-                            ) : (
-                              <Square size={22} color="#CBD5E1" />
-                            )}
-                          </View>
-                          <Text style={[styles.itemName, isChecked && styles.itemNameChecked]}>
-                            {item.name}
-                          </Text>
-                          {qtyDisplay ? (
-                            <Text style={[styles.itemQty, isChecked && styles.itemNameChecked]}>
-                              {qtyDisplay}
-                            </Text>
-                          ) : null}
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
-
-        {/* Add Custom Item */}
+        {/* Add custom item */}
         <View style={styles.addCustomCard}>
           <Text style={styles.addCustomTitle}>{t('shopping.add_custom')}</Text>
           <View style={styles.addInputRow}>
@@ -298,6 +254,8 @@ export const ShoppingListScreen = ({ onBack, recipes, currentPhaseKey = 'follicu
               placeholderTextColor={colors.placeholder}
               value={newCustomItem}
               onChangeText={setNewCustomItem}
+              onSubmitEditing={handleAddCustomItem}
+              returnKeyType="done"
             />
             <Pressable style={styles.addBtn} onPress={handleAddCustomItem}>
               <Plus size={22} color="#FFF" />
@@ -317,13 +275,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9F9F2',
   },
   scrollContent: {
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     paddingTop: 60,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    gap: 12,
+    marginBottom: 20,
   },
   backButton: {
     width: 44,
@@ -332,200 +291,248 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
     borderWidth: 1,
     borderColor: '#EFEDE4',
+  },
+  overline: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    opacity: 0.5,
+    textTransform: 'uppercase',
   },
   title: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 32,
+    fontSize: 28,
     color: colors.on_surface,
+    lineHeight: 32,
   },
-  sectionTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 22,
-    color: colors.on_surface,
-    marginBottom: 8,
-  },
-  sectionSubtitle: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 13,
-    color: colors.on_surface_variant,
-    marginBottom: 16,
-    opacity: 0.8,
-  },
-  daysCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    marginBottom: 24,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'space-between',
-  },
-  dayButton: {
-    width: (width - 120) / 4,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#FAF9F6',
+  clearBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FEF2F2',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
   },
-  dayButtonActive: {
-    backgroundColor: colors.secondary, // Mist Purple (#968DA1)
-    borderColor: colors.secondary,
-  },
-  dayButtonText: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 12,
-    color: colors.on_surface_variant,
-  },
-  dayButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  actionBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  actionClearBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  actionClearText: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 13,
-    color: '#EB5757',
-  },
-  actionRegenBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  phaseBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.secondary_container,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginBottom: 20,
   },
-  actionRegenText: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 12,
-    color: colors.primary,
-  },
-  listSection: {
-    marginBottom: 32,
-  },
-  emptyState: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 32,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    borderStyle: 'dashed',
-    marginTop: 12,
-  },
-  emptyText: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 14,
-    color: colors.on_surface_variant,
-    textAlign: 'center',
-    lineHeight: 22,
-    opacity: 0.7,
-  },
-  categoryGroup: {
-    marginTop: 24,
-  },
-  categoryHeader: {
+  phaseBadgeText: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 11,
+    color: colors.secondary,
+    letterSpacing: 1.2,
+  },
+  progressSection: {
+    marginBottom: 28,
+  },
+  progressLabel: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
     color: colors.on_surface_variant,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    opacity: 0.6,
-    marginLeft: 4,
+    marginBottom: 8,
+    opacity: 0.7,
   },
-  categoryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+  progressTrack: {
+    height: 6,
+    backgroundColor: '#E8E5DC',
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  itemRow: {
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 3,
+  },
+  categorySection: {
+    marginBottom: 24,
+  },
+  categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F1E8',
+    gap: 10,
+    marginBottom: 12,
   },
-  checkIcon: {
-    marginRight: 14,
+  categoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  itemName: {
+  categoryTitle: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 12,
+    color: colors.on_surface_variant,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  foodCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    gap: 12,
+  },
+  foodCardChecked: {
+    opacity: 0.55,
+    backgroundColor: '#F8F8F4',
+  },
+  checkCol: {
+    paddingTop: 1,
+  },
+  foodContent: {
     flex: 1,
+  },
+  foodName: {
     fontFamily: 'Outfit_600SemiBold',
     fontSize: 15,
     color: colors.on_surface,
+    marginBottom: 4,
   },
-  itemNameChecked: {
+  foodNameChecked: {
     textDecorationLine: 'line-through',
     color: colors.on_surface_variant,
-    opacity: 0.5,
   },
-  itemQty: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 13,
-    color: colors.secondary,
+  foodBenefit: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 12,
+    color: colors.on_surface_variant,
+    lineHeight: 17,
+    opacity: 0.75,
+  },
+  foodBenefitChecked: {
+    opacity: 0.4,
+  },
+  catPill: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 1,
+  },
+  catPillDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   addCustomCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 24,
+    borderRadius: 24,
+    padding: 20,
     borderWidth: 1,
     borderColor: '#EFEDE4',
+    marginTop: 8,
   },
   addCustomTitle: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 13,
     color: colors.on_surface,
-    marginBottom: 14,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   addInputRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    alignItems: 'center',
   },
   customInput: {
     flex: 1,
-    height: 52,
+    backgroundColor: '#F9F9F2',
     borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 14,
+    color: colors.on_surface,
     borderWidth: 1,
     borderColor: '#EFEDE4',
-    paddingHorizontal: 16,
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 15,
-    backgroundColor: '#FAF9F6',
-    color: colors.on_surface,
   },
   addBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
+  videosSection: {
+    marginBottom: 28,
+  },
+  videosSectionTitle: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 12,
+    color: colors.on_surface_variant,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
+  videosRow: {
+    gap: 12,
+    paddingRight: 4,
+  },
+  videoCard: {
+    width: (width - 72) / 2,
+  },
+  videoThumbWrap: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 8,
+  },
+  videoThumb: {
+    width: '100%',
+    height: 90,
+    borderRadius: 12,
+  },
+  playBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  durationBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  durationText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 10,
+    color: '#FFF',
+  },
+  videoTitle: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: colors.on_surface,
+    lineHeight: 17,
+    marginBottom: 2,
+  },
+  videoMeal: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+    textTransform: 'capitalize',
+  },
 });

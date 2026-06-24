@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import {
@@ -35,7 +35,8 @@ import { loadDailyLogs, saveDailyLog, deleteDailyLog } from '../services/dailyLo
 const { width } = Dimensions.get('window');
 
 export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language?.startsWith('es') ? es : enUS;
   const { getToken } = useAuth();
   const { user } = useUser();
   const [mood, setMood] = useState('excelente');
@@ -190,7 +191,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
           </Pressable>
           <View style={styles.calendarTag}>
             <CalendarDays size={14} color={colors.primary} />
-            <Text style={styles.tagLabel}>{format(new Date(), "dd MMM", { locale: es }).toUpperCase()}</Text>
+            <Text style={styles.tagLabel}>{format(new Date(), "dd MMM", { locale }).toUpperCase()}</Text>
           </View>
         </View>
         <Text style={styles.title}>{t('dailylog.title')}</Text>
@@ -278,7 +279,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
             <View key={item.id} style={styles.historyCard}>
               <View style={styles.historyCardMain}>
                 <View style={styles.historyCardHeader}>
-                  <Text style={styles.historyDate}>{format(new Date(item.logged_at), 'dd MMMM, yyyy', { locale: es })}</Text>
+                  <Text style={styles.historyDate}>{format(new Date(item.logged_at), 'dd MMMM, yyyy', { locale })}</Text>
                   <View style={styles.historyActions}>
                     <Pressable onPress={() => handleEditLog(item)} style={styles.actionBtn}>
                       <Edit2 size={16} color={colors.primary} />

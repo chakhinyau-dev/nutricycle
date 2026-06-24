@@ -35,10 +35,9 @@ const Stepper = ({ value, onDecrement, onIncrement, min = 1, max = 99 }) => (
 );
 
 // ── Calendar Picker Modal ──────────────────────────────────────────────────
-const DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-
 const CalendarPicker = ({ visible, selectedDate, onSelect, onClose, locale }) => {
   const { t } = useTranslation();
+  const DOW = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => t(`shopping.days.${d}.short`));
   const [viewMonth, setViewMonth] = useState(
     selectedDate
       ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)

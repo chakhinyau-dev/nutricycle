@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path, Line, Circle } from 'react-native-svg';
+import Svg, { Path, Line, Circle, Text as SvgText } from 'react-native-svg';
 import { Utensils, Leaf, Play, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../theme/colors';
-import { getRecipeVideoThumbnail } from '../services/recipeService';
 
 
 const { width } = Dimensions.get('window');
@@ -16,7 +15,7 @@ export const DashboardScreen = ({
   currentPhaseKey = 'follicular',
   cycleInfo,
   cycleProfile,
-  recipes = [],
+  videos = [],
 }) => {
   const { t } = useTranslation();
   const phaseKey = currentPhaseKey || 'follicular';
@@ -35,17 +34,19 @@ export const DashboardScreen = ({
   // --- SVG HORMONE CHART MATHEMATICS ---
   const cycleLength = cycleProfile?.cycleLength || 28;
   const cycleDay = cycleInfo?.cycleDay || 1;
-  const chartWidth = width - 48; // Full width minus container padding
-  const chartHeight = 110;
+  const daysUntilPeriod = cycleInfo?.daysUntilNextPeriod || 0;
+  const chartWidth = width - 32;
+  const chartHeight = 200;
+  const CHART_TOP_PAD = 36;
+  const CHART_BOTTOM_PAD = 28;
+  const baselineY = chartHeight - CHART_BOTTOM_PAD;
 
-  const { estrogenPath, progesteronePath, testosteronePath, currentDayX, curEstrogenY, curProgesteroneY, curTestosteroneY } = useMemo(() => {
-    let ePoints = [];
-    let pPoints = [];
-    let tPoints = [];
-    let curE_Y = chartHeight / 2;
-    let curP_Y = chartHeight / 2;
-    let curT_Y = chartHeight / 2;
+  const { estrogenPath, progesteronePath, testosteronePath, estrogenFilledPath, progesteroneFilledPath, testosteroneFilledPath, currentDayX } = useMemo(() => {
+    const pts_e = [];
+    const pts_p = [];
+    const pts_t = [];
     let curX = 0;
+    const plotHeight = baselineY - CHART_TOP_PAD;
 
     for (let i = 1; i <= cycleLength; i++) {
       const x = ((i - 1) / (cycleLength - 1)) * chartWidth;
@@ -55,38 +56,47 @@ export const DashboardScreen = ({
       const pVal = 0.05 + 0.7 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
       const tVal = 0.1 + 0.55 * Math.exp(-Math.pow((ratio - 0.42) / 0.13, 2));
 
-      const yE = chartHeight - 15 - eVal * (chartHeight - 30);
-      const yP = chartHeight - 15 - pVal * (chartHeight - 30);
-      const yT = chartHeight - 15 - tVal * (chartHeight - 30);
+      pts_e.push([x, baselineY - eVal * plotHeight]);
+      pts_p.push([x, baselineY - pVal * plotHeight]);
+      pts_t.push([x, baselineY - tVal * plotHeight]);
 
-      ePoints.push(`${x},${yE}`);
-      pPoints.push(`${x},${yP}`);
-      tPoints.push(`${x},${yT}`);
-
-      if (i === cycleDay) {
-        curX = x;
-        curE_Y = yE;
-        curP_Y = yP;
-        curT_Y = yT;
-      }
+      if (i === cycleDay) curX = x;
     }
 
-    return {
-      estrogenPath: `M ${ePoints.join(' L ')}`,
-      progesteronePath: `M ${pPoints.join(' L ')}`,
-      testosteronePath: `M ${tPoints.join(' L ')}`,
-      currentDayX: curX,
-      curEstrogenY: curE_Y,
-      curProgesteroneY: curP_Y,
-      curTestosteroneY: curT_Y,
+    const toSmoothPath = (pts) => {
+      if (pts.length < 2) return '';
+      let d = `M ${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+      for (let i = 1; i < pts.length - 1; i++) {
+        const midX = ((pts[i][0] + pts[i + 1][0]) / 2).toFixed(1);
+        const midY = ((pts[i][1] + pts[i + 1][1]) / 2).toFixed(1);
+        d += ` Q ${pts[i][0].toFixed(1)},${pts[i][1].toFixed(1)} ${midX},${midY}`;
+      }
+      d += ` L ${pts[pts.length - 1][0].toFixed(1)},${pts[pts.length - 1][1].toFixed(1)}`;
+      return d;
     };
-  }, [cycleLength, cycleDay, chartWidth, chartHeight]);
 
-  // --- SUGGESTED RECIPE LOGIC ---
-  const suggestedRecipe = useMemo(() => {
-    if (!recipes || recipes.length === 0) return null;
+    const toFilledPath = (pts, strokePath) =>
+      `${strokePath} L ${pts[pts.length - 1][0].toFixed(1)},${baselineY} L ${pts[0][0].toFixed(1)},${baselineY} Z`;
 
-    // Determine meal time based on current hour
+    const ePath = toSmoothPath(pts_e);
+    const pPath = toSmoothPath(pts_p);
+    const tPath = toSmoothPath(pts_t);
+
+    return {
+      estrogenPath: ePath,
+      progesteronePath: pPath,
+      testosteronePath: tPath,
+      estrogenFilledPath: toFilledPath(pts_e, ePath),
+      progesteroneFilledPath: toFilledPath(pts_p, pPath),
+      testosteroneFilledPath: toFilledPath(pts_t, tPath),
+      currentDayX: curX,
+    };
+  }, [cycleLength, cycleDay, chartWidth, baselineY, CHART_TOP_PAD]);
+
+  // --- FEATURED VIDEO LOGIC ---
+  const featuredVideo = useMemo(() => {
+    if (!videos || videos.length === 0) return null;
+
     const hour = new Date().getHours();
     let mealType = 'lunch';
     if (hour >= 5 && hour < 12) mealType = 'breakfast';
@@ -94,28 +104,18 @@ export const DashboardScreen = ({
     else if (hour >= 18 && hour < 22) mealType = 'dinner';
     else mealType = 'snack';
 
-    // Find recipes for this phase and meal time
-    let matches = recipes.filter(r => r.phaseKey === phaseKey && r.mealType === mealType);
-    
-    // Fallback: any recipe of this phase
-    if (matches.length === 0) {
-      matches = recipes.filter(r => r.phaseKey === phaseKey);
-    }
-    
-    // Fallback 2: any recipe
-    if (matches.length === 0) {
-      matches = recipes;
-    }
-
-    // Sort matching recipes to prioritize user's onboarding goal
-    const sorted = [...matches].sort((a, b) => {
-      const aGoal = a.goals?.includes(userGoal) ? 1 : 0;
-      const bGoal = b.goals?.includes(userGoal) ? 1 : 0;
-      return bGoal - aGoal; // Put matching goal recipes first
+    const sortByGoal = (list) => [...list].sort((a, b) => {
+      const aMatch = a.goals?.includes(userGoal) ? 1 : 0;
+      const bMatch = b.goals?.includes(userGoal) ? 1 : 0;
+      return bMatch - aMatch;
     });
 
-    return sorted[0];
-  }, [recipes, phaseKey, userGoal]);
+    let matches = videos.filter(v => v.phaseKey === phaseKey && v.mealType === mealType);
+    if (matches.length === 0) matches = videos.filter(v => v.phaseKey === phaseKey);
+    if (matches.length === 0) matches = videos;
+
+    return sortByGoal(matches)[0] || null;
+  }, [videos, phaseKey, userGoal]);
 
   const trackerData = useMemo(() => {
     const data = {
@@ -135,8 +135,11 @@ export const DashboardScreen = ({
     >
       {/* 1. Header */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.greetingText}>{getTimeBasedGreeting()}</Text>
+          <Text style={styles.goalContextText}>
+            {t(`dashboard.goal_context.${userGoal}`, { defaultValue: t('dashboard.goal_context.balance') })}
+          </Text>
         </View>
         <Pressable onPress={() => onNavigate('settings')}>
            <Image source={{ uri: user?.imageUrl || fallbackAvatar }} style={styles.avatar} />
@@ -170,52 +173,84 @@ export const DashboardScreen = ({
       <View style={{ marginBottom: 24 }} />
 
       {/* 4. Hormone curve chart section */}
-      <View style={styles.chartCard}>
-        <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>{t('dashboard.hormone_map', { defaultValue: 'Tu mapa hormonal' })}</Text>
-          <View style={styles.legendContainer}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#C9605A' }]} />
-              <Text style={styles.legendLabel}>{t('dashboard.estrogen')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#6EA87B' }]} />
-              <Text style={styles.legendLabel}>{t('dashboard.progesterone')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#D4897E' }]} />
-              <Text style={styles.legendLabel}>{t('dashboard.testosterone', { defaultValue: 'Testosterona' })}</Text>
-            </View>
-          </View>
+      <View style={styles.cycleDayRow}>
+        <Text style={styles.cycleDayTitle}>
+          {t('dashboard.cycle_day_prefix', { defaultValue: 'Día del ciclo' })} {cycleDay}
+        </Text>
+        {daysUntilPeriod > 0 && (
+          <Text style={styles.cycleDaySubtitle}>
+            {t('dashboard.period_in_days', { days: daysUntilPeriod, defaultValue: `Regla en ${daysUntilPeriod} días` })}
+          </Text>
+        )}
+      </View>
+
+      {/* Legend row */}
+      <View style={styles.legendRow}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#C9605A' }]} />
+          <Text style={styles.legendLabel}>{t('dashboard.estrogen')}</Text>
         </View>
-
-        <View style={styles.chartWrapper}>
-          <Svg width={chartWidth} height={chartHeight}>
-            {/* Estrogen Curve */}
-            <Path d={estrogenPath} fill="none" stroke="#C9605A" strokeWidth={1.5} />
-            {/* Progesterone Curve */}
-            <Path d={progesteronePath} fill="none" stroke="#6EA87B" strokeWidth={1.5} />
-            {/* Testosterone Curve */}
-            <Path d={testosteronePath} fill="none" stroke="#D4897E" strokeWidth={1.5} />
-
-            {/* Current day indicator line */}
-            <Line
-              x1={currentDayX} y1={5} x2={currentDayX} y2={chartHeight - 5}
-              stroke="#64748B" strokeWidth={1} strokeDasharray="4 4"
-            />
-
-            {/* Intersection dots */}
-            <Circle cx={currentDayX} cy={curEstrogenY} r={4} fill="#C9605A" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={currentDayX} cy={curProgesteroneY} r={4} fill="#6EA87B" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={currentDayX} cy={curTestosteroneY} r={4} fill="#D4897E" stroke="#FFFFFF" strokeWidth={1.5} />
-          </Svg>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#6EA87B' }]} />
+          <Text style={styles.legendLabel}>{t('dashboard.progesterone')}</Text>
         </View>
-
-        <View style={styles.chartFooter}>
-          <Text style={styles.chartFooterText}>{t('common.day')} 1</Text>
-          <Text style={[styles.chartFooterText, { fontWeight: '700', color: colors.on_surface }]}>{t('common.day')} {cycleDay} ({t('dashboard.today_label')})</Text>
-          <Text style={styles.chartFooterText}>{t('common.day')} {cycleLength}</Text>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#D4897E' }]} />
+          <Text style={styles.legendLabel}>{t('dashboard.testosterone', { defaultValue: 'Testosterone' })}</Text>
         </View>
+      </View>
+
+      <View style={styles.chartWrapper}>
+        <Svg width={chartWidth} height={chartHeight}>
+          {/* Filled areas — testosterone first (bottom), then progesterone, estrogen on top */}
+          <Path d={testosteroneFilledPath} fill="rgba(212,137,126,0.18)" />
+          <Path d={progesteroneFilledPath} fill="rgba(100,110,200,0.18)" />
+          <Path d={estrogenFilledPath} fill="rgba(210,100,70,0.22)" />
+
+          {/* Stroke curves */}
+          <Path d={testosteronePath} fill="none" stroke="#D4897E" strokeWidth={2} />
+          <Path d={progesteronePath} fill="none" stroke="#6EA87B" strokeWidth={2} />
+          <Path d={estrogenPath} fill="none" stroke="#C9605A" strokeWidth={2.5} />
+
+          {/* Current day dashed vertical line */}
+          <Line
+            x1={currentDayX} y1={CHART_TOP_PAD}
+            x2={currentDayX} y2={baselineY}
+            stroke="rgba(90,90,180,0.45)"
+            strokeWidth={1.5}
+            strokeDasharray="3 3"
+          />
+
+          {/* Day number badge at top of line */}
+          <Circle cx={currentDayX} cy={18} r={14} fill="#7B8DC8" />
+          <SvgText
+            x={currentDayX}
+            y={23}
+            textAnchor="middle"
+            fill="white"
+            fontSize="11"
+            fontWeight="bold"
+          >{String(cycleDay)}</SvgText>
+
+          {/* Bottom axis tick marks */}
+          {[0, 7, 14, 21, 28].filter(d => d < cycleLength).map((d) => {
+            const tickX = d === 0 ? 0 : (d / (cycleLength - 1)) * chartWidth;
+            return (
+              <Line key={d} x1={tickX} y1={baselineY} x2={tickX} y2={baselineY + 5} stroke="#B0A8C0" strokeWidth={1} />
+            );
+          })}
+
+          {/* Phase label centered at bottom */}
+          <SvgText
+            x={chartWidth / 2}
+            y={chartHeight - 7}
+            textAnchor="middle"
+            fill="#968DA1"
+            fontSize="9"
+            fontWeight="bold"
+            letterSpacing="2"
+          >{t(`phases.${phaseKey}`, { defaultValue: phaseKey }).toUpperCase()}</SvgText>
+        </Svg>
       </View>
 
       <View style={{ marginBottom: 32 }} />
@@ -256,41 +291,35 @@ export const DashboardScreen = ({
 
       <View style={{ marginBottom: 36 }} />
 
-      {/* 6. Suggested Recipe of the Day */}
-      {suggestedRecipe && (
+      {/* 6. Featured Video of the Day */}
+      {featuredVideo && (
         <View style={styles.suggestedSection}>
-          <Text style={styles.suggestedTitle}>{t('dashboard.suggested_recipe')}</Text>
-          <Pressable 
+          <Text style={styles.suggestedTitle}>{t('dashboard.featured_video')}</Text>
+          <Pressable
             style={styles.recipeCard}
-            onPress={() => onNavigate('recipeDetail', suggestedRecipe)}
+            onPress={() => onNavigate('videos')}
           >
-            {(() => {
-                const thumb = getRecipeVideoThumbnail(suggestedRecipe);
-                const src = thumb ? { uri: thumb } : suggestedRecipe.image;
-                return (
-                  <View style={styles.recipeCardImageWrap}>
-                    <Image source={src} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                    {thumb && (
-                      <View style={styles.recipeCardPlayOverlay}>
-                        <View style={styles.recipeCardPlayBtn}>
-                          <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                        </View>
-                      </View>
-                    )}
-                  </View>
-                );
-              })()}
+            <View style={styles.recipeCardImageWrap}>
+              <Image
+                source={{ uri: featuredVideo.thumbnail }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
+              <View style={styles.recipeCardPlayOverlay}>
+                <View style={styles.recipeCardPlayBtn}>
+                  <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
+                </View>
+              </View>
+            </View>
             <View style={styles.recipeCardContent}>
               <View style={styles.recipeCardTags}>
                 <View style={styles.recipeBadge}>
-                  <Text style={styles.recipeBadgeText}>{t(`phases.${suggestedRecipe.phaseKey}`)}</Text>
+                  <Text style={styles.recipeBadgeText}>{t(`phases.${featuredVideo.phaseKey}`)}</Text>
                 </View>
-                <Text style={styles.recipeTime}>{suggestedRecipe.time} min</Text>
+                <Text style={styles.recipeTime}>{featuredVideo.duration}</Text>
               </View>
-              <Text style={styles.recipeTitle}>{suggestedRecipe.title}</Text>
-              <Text style={styles.recipeMacros}>
-                {suggestedRecipe.calories} kcal • {t('recipe_detail.high_protein')}
-              </Text>
+              <Text style={styles.recipeTitle}>{featuredVideo.title}</Text>
+              <Text style={styles.recipeMacros}>{featuredVideo.description}</Text>
             </View>
           </Pressable>
         </View>
@@ -319,6 +348,13 @@ const styles = StyleSheet.create({
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 28,
     color: colors.on_surface,
+  },
+  goalContextText: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+    marginTop: 4,
+    opacity: 0.8,
   },
   avatar: {
     width: 44,
@@ -382,24 +418,28 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 1,
   },
-  chartCard: {
-    paddingVertical: 4,
-    paddingHorizontal: 4,
+  cycleDayRow: {
+    paddingHorizontal: 24,
+    marginBottom: 12,
   },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  chartTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 18,
+  cycleDayTitle: {
+    fontFamily: 'InstrumentSerif_400Regular_Italic',
+    fontSize: 28,
     color: colors.on_surface,
   },
-  legendContainer: {
+  cycleDaySubtitle: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 14,
+    color: colors.on_surface_variant,
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  legendRow: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 24,
+    marginBottom: 12,
   },
   legendItem: {
     flexDirection: 'row',
@@ -412,25 +452,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   legendLabel: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 10,
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 12,
     color: colors.on_surface_variant,
+    opacity: 0.85,
   },
   chartWrapper: {
-    alignItems: 'center',
+    paddingHorizontal: 16,
     marginVertical: 4,
-  },
-  chartFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingHorizontal: 2,
-  },
-  chartFooterText: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 11,
-    color: colors.on_surface_variant,
-    opacity: 0.7,
   },
   logFeelBtn: {
     flexDirection: 'row',

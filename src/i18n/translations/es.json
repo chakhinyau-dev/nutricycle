@@ -16,6 +16,7 @@
     "year": "año",
     "check_this": "Mira esto",
     "user_fallback": "bella",
+    "shared_success": "Compartido exitosamente",
     "error_generic": "Algo salió mal. Por favor intenta de nuevo.",
     "focus": "FOCO DEL DÍA",
     "unit_min": "min",
@@ -74,6 +75,9 @@
     "security_title": "Seguridad y Datos",
     "biometrics": "Biometría",
     "biometrics_sub": "Bloqueo de app",
+    "plan_label": "TU PLAN",
+    "plan_premium": "Balance · Activo",
+    "plan_basic": "Básico · Mejorar",
     "export": "Exportar Datos",
     "export_sub": "Descarga tu historial",
     "help": "Ayuda",
@@ -96,6 +100,7 @@
     "password_update_failed": "No se pudo actualizar la contraseña.",
     "new_password_placeholder": "Nueva Contraseña",
     "confirm_password_placeholder": "Confirmar Contraseña",
+    "gallery_permission": "Se requiere permiso para acceder a la galería.",
     "profile_image_updated": "¡Foto de perfil actualizada con éxito!",
     "profile_image_error": "No se pudo actualizar la foto de perfil. Inténtalo de nuevo.",
     "export_desc": "Exportar Datos genera un informe detallado de tus registros de ciclo, síntomas y métricas de salud. Puedes usar este archivo para tus propios registros o compartirlo con tu profesional de la salud.",
@@ -110,6 +115,14 @@
     "greeting_morning": "Buenos días, {{name}}",
     "greeting_afternoon": "Buenas tardes, {{name}}",
     "greeting_evening": "Buenas noches, {{name}}",
+    "goal_context": {
+      "acne": "Apoyando tu piel con nutrición hormonal",
+      "pcos": "Equilibrando tu ciclo con nutrición específica",
+      "periods": "Aliviando tu ciclo con alimentos antiinflamatorios",
+      "digestion": "Nutriendo tu intestino en cada fase",
+      "energy": "Potenciando tu energía con comidas sincronizadas",
+      "balance": "Sincronizando tu nutrición con tu ciclo"
+    },
     "main_action": "Registrar cómo te sientes",
     "cycle_day": "Día {{day}} de tu ciclo",
     "next_period": "Próxima menstruación en {{days}} días",
@@ -162,10 +175,13 @@
     "log_action": "Registrar",
     "log_feel": "Registrar cómo me siento",
     "suggested_recipe": "Receta Sugerida del Día",
+    "featured_video": "Video Destacado de Hoy",
     "tracker_energy": "ENERGÍA",
     "tracker_mood": "ÁNIMO",
     "tracker_drive": "IMPULSO",
-    "view_full_tracker": "VER TRACKER COMPLETO"
+    "view_full_tracker": "VER TRACKER COMPLETO",
+    "cycle_day_prefix": "Día del ciclo",
+    "period_in_days": "Regla en {{days}} días"
   },
   "phase_menstrual_msg": "Tu cuerpo está descansando.\nHoy prioriza alimentos ricos en hierro y momentos de calma",
   "phase_follicular_msg": "Tu energía está subiendo.\nEs un buen momento para nuevos proyectos y movimiento suave.",
@@ -280,7 +296,8 @@
       "recipe": "Receta",
       "educational": "Educación Hormonal",
       "wellness": "Consejos y Bienestar",
-      "fitness": "Movimiento y Ejercicio"
+      "fitness": "Movimiento",
+      "tips": "Consejos"
     },
     "title": "Videos para\ntu fase",
     "overline": "BIBLIOTECA DE VIDEOS NUTRICYCLE",
@@ -291,18 +308,14 @@
     "upload_video": "Subir Video",
     "select_video": "Seleccionar Video de Galería",
     "enter_youtube_url": "Ingresar URL de YouTube",
+    "audio_session": "Sesión de audio",
+    "category_prefix": "Fase {{phase}} • {{meal}}",
     "video_title": "Título del Video",
     "description": "Descripción",
     "phase": "Fase",
     "category": "Categoría",
     "duration": "Duración (ej: 5:00)",
-    "submit": "Enviar Video",
-    "types": {
-      "recipe": "Receta",
-      "educational": "Educación Hormonal",
-      "wellness": "Consejos de Bienestar",
-      "fitness": "Entrenamiento"
-    }
+    "submit": "Enviar Video"
   },
   "recipes": {
     "overline": "RECETAS POR FASE",
@@ -495,7 +508,14 @@
     "instructions": "Instrucciones (una por linea)",
     "save_recipe": "Guardar Receta",
     "cancel_edit": "Cancelar Edicion",
-    "existing_recipes": "Recetas Existentes"
+    "existing_recipes": "Recetas Existentes",
+    "editing_video": "Editando: {{title}}",
+    "editing_recipe": "Editando: {{title}}",
+    "thumbnail_preview": "Vista previa de miniatura",
+    "change_thumbnail": "Cambiar miniatura",
+    "upload_progress": "{{pct}}% subido",
+    "calories_invalid": "Ingresa una cantidad de calorías válida.",
+    "time_invalid": "Ingresa un tiempo de preparación válido."
   },
   "ai": {
     "title": "Predictor IA",
@@ -616,6 +636,9 @@
 
   "shopping": {
     "title": "Lista de Compras",
+    "overline": "COMPRAS INTELIGENTES",
+    "progress": "{{checked}} de {{total}} artículos",
+    "videos_for_phase": "Videos para esta fase",
     "days_cook": "1. ¿Qué días cocinarás?",
     "select_days_desc": "Selecciona los días para generar tus ingredientes:",
     "clear_all": "Limpiar todo",
@@ -648,6 +671,14 @@
   "key_foods": {
     "title": "Alimentos Clave",
     "select_phase": "Seleccionar Fase del Ciclo",
+    "no_foods": "No hay alimentos disponibles para esta fase.",
+    "add_to_list": "Añadido a la lista",
+    "hormone_tags": {
+      "estrogen": "Apoyo al Estrógeno",
+      "progesterone": "Apoyo a la Progesterona",
+      "antiinflammatory": "Antiinflamatorio",
+      "energy": "Energía & Suprarrenal"
+    },
     "categories": {
       "proteins": "Proteínas",
       "fats": "Grasas",
@@ -697,6 +728,7 @@
     "meals_of_day": "COMIDAS DEL DÍA",
     "fat_label": "grasa",
     "recipes_shortcut": "Recetas",
+    "videos_shortcut": "Videos",
     "shopping_shortcut": "Compras",
     "swap_title": "Intercambiar comida",
     "swap_subtitle": "Alternativas para la fase {{phase}}:",

@@ -538,10 +538,10 @@ export const AdminScreen = ({
 
                 {newVideo.thumbnail ? (
                   <View style={styles.thumbnailPreviewContainer}>
-                    <Text style={styles.label}>Thumbnail Preview</Text>
+                    <Text style={styles.label}>{t('admin.thumbnail_preview')}</Text>
                     <Image source={{ uri: newVideo.thumbnail }} style={styles.thumbnailPreview} />
                     <Pressable onPress={handlePickCustomThumbnail} style={styles.changeThumbBtn}>
-                      <Text style={styles.changeThumbText}>Change Thumbnail</Text>
+                      <Text style={styles.changeThumbText}>{t('admin.change_thumbnail')}</Text>
                     </Pressable>
                   </View>
                 ) : null}
@@ -629,7 +629,7 @@ export const AdminScreen = ({
                     {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{editingVideoId ? t('admin.update_video') : t('admin.save_video')}</Text>}
                 </Pressable>
                 {isSaving && videoUploadProgress > 0 ? (
-                  <Text style={styles.uploadProgressText}>{Math.round(videoUploadProgress)}% uploaded</Text>
+                  <Text style={styles.uploadProgressText}>{t('admin.upload_progress', { pct: Math.round(videoUploadProgress) })}</Text>
                 ) : null}
                 {editingVideoId && (
                     <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetVideoForm}>

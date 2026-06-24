@@ -22,6 +22,7 @@ export const VIDEO_LIBRARY = [
     category: 'Fase folicular',
     contentType: 'recipe',
     mealType: 'snack',
+    goals: ['acne', 'energy', 'balance'],
     title: 'Receta corta para fase folicular',
     description:
       'Una idea rápida para acompañar la etapa de energía ascendente con ingredientes frescos y saciantes.',
@@ -35,6 +36,7 @@ export const VIDEO_LIBRARY = [
     category: 'Ciclo y nutrición',
     contentType: 'educational',
     mealType: 'dinner',
+    goals: ['balance', 'digestion', 'pcos'],
     title: 'Cómo conectar tu fase con tus comidas',
     description:
       'Explica de forma simple por qué las recomendaciones cambian según el momento de tu ciclo.',
@@ -48,6 +50,7 @@ export const VIDEO_LIBRARY = [
     category: 'Bienestar menstrual',
     contentType: 'wellness',
     mealType: 'breakfast',
+    goals: ['periods', 'balance', 'energy'],
     title: 'Pausa suave para días menstruales',
     description:
       'Una propuesta de respiración y descanso para acompañar la menstruación con más calma y confort.',
@@ -61,6 +64,7 @@ export const VIDEO_LIBRARY = [
     category: 'Fertilidad y energía',
     contentType: 'fitness',
     mealType: 'lunch',
+    goals: ['energy', 'pcos', 'balance'],
     title: 'Movimiento consciente para ovulación',
     description:
       'Contenido pensado para los días de mayor vitalidad, con foco en energía, ligereza y equilibrio.',

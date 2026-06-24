@@ -11,10 +11,9 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, RefreshCw, Play, BookOpen, ShoppingBag, Clock, Plus, X } from 'lucide-react-native';
+import { ChevronLeft, RefreshCw, Play, ShoppingBag, Plus, X } from 'lucide-react-native';
 import { colors } from '../theme/colors';
-import { getRecipesForDayAndPhase } from '../utils/recipeHelper';
-import { getRecipeVideoThumbnail } from '../services/recipeService';
+import { getVideosForDayAndPhase } from '../utils/recipeHelper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -33,14 +32,16 @@ const GRADIENT_STEPS = [0, 0.04, 0.1, 0.2, 0.35, 0.52, 0.68];
 export const NutritionScreen = ({
   onBack,
   onNavigate,
-  recipes = [],
+  videos = [],
   currentPhaseKey = 'follicular',
   cycleDay,
   user,
+  cycleProfile = {},
 }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
   const phaseKey = currentPhaseKey || 'follicular';
+  const userGoal = cycleProfile?.goal || 'balance';
 
   const defaultDay = useMemo(() => {
     const day = new Date().getDay();
@@ -85,38 +86,23 @@ export const NutritionScreen = ({
     } catch (e) {}
   };
 
-  const dailyMeals = useMemo(
-    () => getRecipesForDayAndPhase(recipes, phaseKey, selectedDay, swaps),
-    [recipes, phaseKey, selectedDay, swaps]
+  const dailyVideos = useMemo(
+    () => getVideosForDayAndPhase(videos, phaseKey, selectedDay, swaps, userGoal),
+    [videos, phaseKey, selectedDay, swaps, userGoal]
   );
 
-  const stats = useMemo(() => {
-    let totalCalories = 0, totalProtein = 0, totalTime = 0;
-    dailyMeals.forEach(({ recipe }) => {
-      if (recipe) {
-        totalCalories += Number(recipe.calories || 0);
-        totalProtein += Number(recipe.protein || Math.round(Number(recipe.calories) * 0.08));
-        totalTime += Number(recipe.time || 0);
-      }
-    });
-    return { calories: totalCalories, protein: totalProtein, mealsCount: dailyMeals.length, time: totalTime };
-  }, [dailyMeals]);
+  const stats = useMemo(() => ({
+    videosCount: dailyVideos.length,
+    mealsCount: dailyVideos.length,
+  }), [dailyVideos]);
 
   const alternatives = useMemo(() => {
-    if (!activeSwapMeal || !recipes?.length) return [];
-    const { mealType, currentRecipe } = activeSwapMeal;
-    return recipes
-      .filter(r => r.phaseKey === phaseKey && r.mealType === mealType && r.id !== currentRecipe.id)
+    if (!activeSwapMeal || !videos?.length) return [];
+    const { mealType, currentVideo } = activeSwapMeal;
+    return videos
+      .filter(v => v.phaseKey === phaseKey && v.mealType === mealType && v.id !== currentVideo?.id)
       .slice(0, 3);
-  }, [recipes, phaseKey, activeSwapMeal]);
-
-  const getMacros = (recipe) => {
-    const cal = Number(recipe.calories || 0);
-    const prot = recipe.protein || Math.max(10, Math.round(cal * 0.08));
-    const fat = recipe.fat || Math.max(5, Math.round(cal * 0.035));
-    const carbs = recipe.carbs || Math.max(15, Math.round((cal - prot * 4 - fat * 9) / 4));
-    return { cal, prot, fat, carbs };
-  };
+  }, [videos, phaseKey, activeSwapMeal]);
 
   return (
     <View style={styles.container}>
@@ -171,28 +157,17 @@ export const NutritionScreen = ({
         <View style={{ marginBottom: 28 }} />
 
         {/* ── Stats Card ── */}
-        {dailyMeals.length > 0 && (
+        {dailyVideos.length > 0 && (
           <View style={styles.statsCard}>
             <View style={styles.statsCardTop}>
               <Text style={styles.statsPhaseLabel}>{t(`phases.${phaseKey}`).toUpperCase()}</Text>
               <Text style={styles.statsCardTitle}>{t('nutrition.plan_today')}</Text>
             </View>
             <View style={styles.statsRow}>
-              {[
-                { val: `${stats.calories}`, unit: 'kcal', label: t('nutrition.calories_label') },
-                { val: `${stats.protein}g`, unit: '', label: t('nutrition.protein_label') },
-                { val: `${stats.mealsCount}`, unit: '', label: t('nutrition.meals_label') },
-                { val: `${stats.time}`, unit: 'min', label: t('nutrition.prep_label') },
-              ].map((s, i) => (
-                <React.Fragment key={i}>
-                  {i > 0 && <View style={styles.statDivider} />}
-                  <View style={styles.statBox}>
-                    <Text style={styles.statVal}>{s.val}</Text>
-                    {s.unit ? <Text style={styles.statUnit}>{s.unit}</Text> : null}
-                    <Text style={styles.statLabel}>{s.label}</Text>
-                  </View>
-                </React.Fragment>
-              ))}
+              <View style={styles.statBox}>
+                <Text style={styles.statVal}>{stats.videosCount}</Text>
+                <Text style={styles.statLabel}>{t('nutrition.meals_label')}</Text>
+              </View>
             </View>
           </View>
         )}
@@ -202,51 +177,42 @@ export const NutritionScreen = ({
         {/* ── Section label ── */}
         <Text style={styles.sectionLabel}>{t('nutrition.meals_of_day')}</Text>
 
-        {/* ── Meal Cards ── */}
+        {/* ── Video Meal Cards ── */}
         <View style={styles.mealList}>
-          {dailyMeals.map(({ time, recipe }) => {
-            if (!recipe) return null;
+          {dailyVideos.map(({ time, video }) => {
+            if (!video) return null;
             const timeLabel = t(`dailylog.meal_types.${time}`).toUpperCase();
-            const videoThumb = getRecipeVideoThumbnail(recipe);
-            const hasVideo = !!(recipe.videoUrl || recipe.youtubeUrl || videoThumb);
-            const { cal, prot, fat, carbs } = getMacros(recipe);
 
             return (
               <View key={time} style={styles.mealCard}>
                 <Pressable
                   style={styles.recipeCard}
-                  onPress={() => onNavigate('recipeDetail', recipe)}
+                  onPress={() => onNavigate('videos')}
                 >
-                  {/* Full-bleed image */}
                   <View style={styles.imageWrap}>
                     <Image
-                      source={videoThumb
-                        ? { uri: videoThumb }
-                        : typeof recipe.image === 'object' ? recipe.image : { uri: recipe.image }}
+                      source={{ uri: video.thumbnail }}
                       style={styles.recipeImage}
                       resizeMode="cover"
                     />
 
-                    {/* Meal type + time badge — top left */}
+                    {/* Meal type badge — top left */}
                     <View style={styles.mealBadge}>
                       <Text style={styles.mealBadgeText}>{timeLabel}</Text>
                       <View style={styles.mealBadgeDot} />
-                      <Clock size={10} color="#FFF" />
-                      <Text style={styles.mealBadgeText}>{recipe.time} min</Text>
+                      <Text style={styles.mealBadgeText}>{video.duration}</Text>
                     </View>
 
                     {/* Play button — center */}
-                    {hasVideo && (
-                      <View style={styles.playBtn}>
-                        <Play size={18} color="#FFF" fill="#FFF" />
-                      </View>
-                    )}
+                    <View style={styles.playBtn}>
+                      <Play size={18} color="#FFF" fill="#FFF" />
+                    </View>
 
                     {/* Swap button — top right */}
                     <Pressable
                       style={styles.swapBtn}
                       onPress={() => {
-                        setActiveSwapMeal({ mealType: time, currentRecipe: recipe });
+                        setActiveSwapMeal({ mealType: time, currentVideo: video });
                         setShowSwapModal(true);
                       }}
                     >
@@ -261,25 +227,7 @@ export const NutritionScreen = ({
                     </View>
                     <View style={styles.overlayTitle} pointerEvents="none">
                       <Text style={styles.recipeNameOverlay} numberOfLines={2}>
-                        {recipe.title}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Macro row below image */}
-                  <View style={styles.macroRow}>
-                    <View style={[styles.macroPill, { backgroundColor: '#FEF3C7' }]}>
-                      <Text style={[styles.macroPillText, { color: '#D97706' }]}>{cal} kcal</Text>
-                    </View>
-                    <View style={[styles.macroPill, { backgroundColor: '#DCFCE7' }]}>
-                      <Text style={[styles.macroPillText, { color: '#16A34A' }]}>{prot}g prot</Text>
-                    </View>
-                    <View style={[styles.macroPill, { backgroundColor: '#DBEAFE' }]}>
-                      <Text style={[styles.macroPillText, { color: '#2563EB' }]}>{carbs}g carb</Text>
-                    </View>
-                    <View style={[styles.macroPill, { backgroundColor: '#FCE7F3' }]}>
-                      <Text style={[styles.macroPillText, { color: '#DB2777' }]}>
-                        {fat}g {t('nutrition.fat_label')}
+                        {video.title}
                       </Text>
                     </View>
                   </View>
@@ -293,11 +241,11 @@ export const NutritionScreen = ({
         <View style={styles.shortcutsRow}>
           <Pressable
             style={[styles.shortcutCard, { backgroundColor: '#EBF2EB' }]}
-            onPress={() => onNavigate('recipes')}
+            onPress={() => onNavigate('videos')}
           >
-            <BookOpen size={20} color={colors.primary} />
+            <Play size={20} color={colors.primary} />
             <Text style={[styles.shortcutText, { color: colors.primary }]}>
-              {t('nutrition.recipes_shortcut')}
+              {t('nutrition.videos_shortcut')}
             </Text>
           </Pressable>
           <Pressable
@@ -345,34 +293,31 @@ export const NutritionScreen = ({
                   </Text>
                 </View>
               ) : (
-                alternatives.map((alt) => {
-                  const m = getMacros(alt);
-                  return (
-                    <Pressable
-                      key={alt.id}
-                      style={styles.altCard}
-                      onPress={() => handleSelectSwap(alt.id)}
-                    >
+                alternatives.map((alt) => (
+                  <Pressable
+                    key={alt.id}
+                    style={styles.altCard}
+                    onPress={() => handleSelectSwap(alt.id)}
+                  >
+                    <View style={{ position: 'relative' }}>
                       <Image
-                        source={typeof alt.image === 'object' ? alt.image : { uri: alt.image }}
+                        source={{ uri: alt.thumbnail }}
                         style={styles.altImage}
                         resizeMode="cover"
                       />
-                      <View style={styles.altInfo}>
-                        <Text style={styles.altTitle}>{alt.title}</Text>
-                        <Text style={styles.altTime}>{alt.time} min</Text>
-                        <Text style={styles.altMacros}>
-                          {isSpanish
-                            ? `${m.cal} kcal · ${m.prot}g prot · ${m.carbs}g carb`
-                            : `${m.cal} kcal · ${m.prot}g prot · ${m.carbs}g carb`}
-                        </Text>
+                      <View style={[styles.playBtn, { width: 28, height: 28, borderRadius: 14 }]}>
+                        <Play size={12} color="#FFF" fill="#FFF" />
                       </View>
-                      <View style={styles.selectAltBadge}>
-                        <Plus size={16} color={colors.primary} />
-                      </View>
-                    </Pressable>
-                  );
-                })
+                    </View>
+                    <View style={styles.altInfo}>
+                      <Text style={styles.altTitle}>{alt.title}</Text>
+                      <Text style={styles.altTime}>{alt.duration}</Text>
+                    </View>
+                    <View style={styles.selectAltBadge}>
+                      <Plus size={16} color={colors.primary} />
+                    </View>
+                  </Pressable>
+                ))
               )}
             </ScrollView>
           </View>
