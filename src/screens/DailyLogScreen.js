@@ -40,7 +40,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [mood, setMood] = useState('excelente');
-  const [symptoms, setSymptoms] = useState(['fatiga']);
+  const [symptoms, setSymptoms] = useState([]);
   const [notes, setNotes] = useState('');
   const [history, setHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -79,11 +79,21 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
       }
 
       setHistory(logs);
-      if (logs[0]) {
-        setMood(logs[0].mood || 'excelente');
-        setSymptoms(logs[0].symptoms || []);
-        setNotes(logs[0].notes || '');
+
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      const latest = logs[0];
+      const latestDate = latest?.logged_at
+        ? format(new Date(latest.logged_at), 'yyyy-MM-dd')
+        : latest?.log_date;
+
+      if (latest && latestDate === todayStr) {
+        // Today's entry already exists — pre-fill for editing
+        setMood(latest.mood || 'excelente');
+        setSymptoms(latest.symptoms || []);
+        setNotes(latest.notes || '');
+        setEditingLogDate(latest.log_date || latest.logged_at);
       }
+      // else: leave form at defaults for a brand-new entry
     };
 
     boot();
@@ -127,6 +137,9 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
         onRefreshAI();
       }
       
+      setMood('excelente');
+      setSymptoms([]);
+      setNotes('');
       setIsSaving(false);
       setIsDone(true);
       setEditingLogDate(null);

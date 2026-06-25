@@ -50,7 +50,7 @@ export const DashboardScreen = ({
   const cycleLength = cycleProfile?.cycleLength || 28;
   const cycleDay = cycleInfo?.cycleDay || 1;
   const daysUntilPeriod = cycleInfo?.daysUntilNextPeriod || 0;
-  const chartWidth = width - 32;
+  const chartWidth = width - 48;
   const chartHeight = 200;
   const CHART_TOP_PAD = 36;
   const CHART_BOTTOM_PAD = 28;
@@ -497,7 +497,6 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   chartWrapper: {
-    paddingHorizontal: 16,
     marginVertical: 4,
   },
   logFeelBtn: {

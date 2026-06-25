@@ -7,7 +7,6 @@ import {
   Pressable,
   Image,
   Modal,
-  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
@@ -15,8 +14,6 @@ import { ChevronLeft, RefreshCw, Play, ShoppingBag, Plus, X, Utensils } from 'lu
 import { colors } from '../theme/colors';
 import { getVideosForDayAndPhase, getMealKeyFoods } from '../utils/recipeHelper';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const DAYS = [
   { index: 0, key: 'mon' },
@@ -457,11 +454,11 @@ const styles = StyleSheet.create({
   daysStrip:  { paddingRight: 24, gap: 6 },
   dayPill: {
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingTop: 6,
     paddingBottom: 8,
     borderRadius: 22,
-    minWidth: 50,
+    minWidth: 44,
     overflow: 'hidden',
   },
   dayPillActive: { backgroundColor: '#A3B3A5' },
@@ -599,9 +596,10 @@ const styles = StyleSheet.create({
     elevation: 5,
     borderWidth: 1,
     borderColor: '#EFEDE4',
+    alignSelf: 'stretch',
   },
   imageWrap: {
-    width: SCREEN_WIDTH - 40,
+    width: '100%',
     height: 220,
     position: 'relative',
   },
