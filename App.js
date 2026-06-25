@@ -3,7 +3,7 @@ import './src/i18n';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, ActivityIndicator, Pressable, Text, Dimensions, Alert, Platform, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { ClerkProvider, SignedIn, SignedOut, useUser, useAuth, useClerk } from '@clerk/clerk-expo';
+import { ClerkProvider, useUser, useAuth, useClerk } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import {
   useFonts,
@@ -16,7 +16,7 @@ import {
   Outfit_600SemiBold,
   Outfit_700Bold,
 } from '@expo-google-fonts/outfit';
-import { Home, Calendar, ShoppingBag, User, Play, Utensils } from 'lucide-react-native';
+import { Home, Calendar, User, Play, Utensils } from 'lucide-react-native';
 
 import { StripeProvider } from './src/components/StripeWrapper';
 
@@ -24,7 +24,6 @@ import { colors } from './src/theme/colors';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
-import { RecipesScreen } from './src/screens/RecipesScreen';
 import { CalendarScreen } from './src/screens/CalendarScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { HydrationScreen } from './src/screens/HydrationScreen';
@@ -53,25 +52,22 @@ import {
   getOnboardingComplete,
   setLocalProfile,
   setOnboardingComplete,
-  getAIPrediction,
-  setAIPrediction,
   getCycleWizardSeen,
   setCycleWizardSeen,
 } from './src/services/appStorage';
 import { loadUserProfile, saveUserProfile } from './src/services/profileService';
 import { loadDailyLogs, deleteDailyLog } from './src/services/dailyLogService';
-import { getCyclePredictionAI } from './src/services/aiService';
 import { loadRecipes } from './src/services/recipeService';
 import { loadSavedRecipeIds, toggleSavedRecipeForUser } from './src/services/savedRecipeService';
 import { loadArticles } from './src/services/articleService';
 import { loadVideos } from './src/services/videoService';
-import { requestNotificationPermissions, sendAIReportNotification } from './src/services/notificationService';
+import { requestNotificationPermissions } from './src/services/notificationService';
 import { recordSubscription, loadUserSubscription } from './src/services/subscriptionService';
 import { finalizeSubscriptionSession } from './src/services/stripeService';
 
 const { width } = Dimensions.get('window');
 
-const mainTabs = ['today', 'calendar', 'nutrition', 'profile'];
+const mainTabs = ['today', 'calendar', 'nutrition', 'videos', 'profile'];
 
 const tokenCache = {
   async getToken(key) {
@@ -94,7 +90,7 @@ const tokenCache = {
 };
 
 const LoadingScreen = ({ label }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const displayLabel = label || t('loading.sys_init');
   return (
     <View style={styles.loadingContainer}>
