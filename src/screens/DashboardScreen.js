@@ -22,6 +22,7 @@ const CATEGORY_COLORS = {
 
 
 const { width } = Dimensions.get('window');
+const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200';
 
 export const DashboardScreen = ({
   onNavigate,
@@ -156,10 +157,10 @@ export const DashboardScreen = ({
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.greetingText}>{getTimeBasedGreeting()}</Text>
-          <Text style={styles.goalContextText}>
-            {t(`dashboard.goal_context.${userGoal}`, { defaultValue: t('dashboard.goal_context.balance') })}
-          </Text>
         </View>
+        <Pressable onPress={() => onNavigate('settings')}>
+          <Image source={{ uri: user?.imageUrl || fallbackAvatar }} style={styles.avatar} />
+        </Pressable>
       </View>
 
       <View style={{ marginBottom: 20 }} />
