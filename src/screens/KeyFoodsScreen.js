@@ -14,15 +14,15 @@ import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
 const CATEGORY_COLORS = {
-  proteins: '#E8845A',
-  fats: '#D4A853',
-  carbs: '#8B9DC3',
-  veg_fruits: '#6EA87B',
+  proteins:   '#E8A0A2',
+  fats:       '#D4A853',
+  carbs:      '#B0A0D4',
+  veg_fruits: '#94C49A',
 };
 
 const HORMONE_TAG_COLORS = {
-  estrogen:         { bg: '#EEF0FA', text: '#7B8DC8', dot: '#7B8DC8' },
-  progesterone:     { bg: '#EBF5ED', text: '#5A9E6A', dot: '#6EA87B' },
+  estrogen:         { bg: '#FAEEF0', text: '#C97577', dot: '#E8A0A2' },
+  progesterone:     { bg: '#EDF7EE', text: '#5A9A60', dot: '#94C49A' },
   antiinflammatory: { bg: '#FEF0EA', text: '#C96B44', dot: '#E8845A' },
   energy:           { bg: '#FDF5E4', text: '#B8882A', dot: '#D4A853' },
 };
@@ -67,13 +67,9 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user })
             <ChevronLeft size={24} color={colors.on_surface} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={styles.overline}>{t('dashboard.key_foods_title', { defaultValue: 'KEY FOODS' })}</Text>
             <Text style={styles.title}>{t('key_foods.title')}</Text>
           </View>
         </View>
-
-        {/* Phase context description */}
-        <Text style={styles.phaseDesc}>{t(`key_foods.phase_desc.${selectedPhase}`)}</Text>
 
         {/* Phase filter pills */}
         <ScrollView
