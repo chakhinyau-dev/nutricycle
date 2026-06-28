@@ -168,16 +168,16 @@ export const DashboardScreen = ({
       <View style={styles.trackerCard}>
         <View style={styles.trackerColumns}>
           <View style={styles.trackerColumn}>
-            <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'ENERGY' })}</Text>
             <Text style={styles.trackerValue}>{trackerData.energy}</Text>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'ENERGÍA' })}</Text>
           </View>
           <View style={[styles.trackerColumn, styles.trackerColumnCenter]}>
-            <Text style={styles.trackerLabel}>{t('dashboard.tracker_mood', { defaultValue: 'MOOD' })}</Text>
             <Text style={styles.trackerValue}>{trackerData.mood}</Text>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_mood', { defaultValue: 'ÁNIMO' })}</Text>
           </View>
           <View style={styles.trackerColumn}>
-            <Text style={styles.trackerLabel}>{t('dashboard.tracker_drive', { defaultValue: 'DRIVE' })}</Text>
             <Text style={styles.trackerValue}>{trackerData.drive}</Text>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_drive', { defaultValue: 'IMPULSO' })}</Text>
           </View>
         </View>
         <Pressable style={styles.trackerBtn} onPress={() => onNavigate('calendar')}>
@@ -428,11 +428,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255,255,255,0.75)',
     letterSpacing: 1,
-    marginBottom: 6,
+    marginTop: 4,
+    textTransform: 'uppercase',
   },
   trackerValue: {
     fontFamily: 'InstrumentSerif_400Regular_Italic',
-    fontSize: 20,
+    fontSize: 22,
     color: '#FFFFFF',
   },
   trackerBtn: {
