@@ -30,17 +30,17 @@ const ALL_MEAL_SLOTS = ['breakfast', 'lunch', 'snack', 'dinner'];
 const GRADIENT_STEPS = [0, 0.04, 0.1, 0.2, 0.35, 0.52, 0.68];
 
 const PHASE_COLORS = {
-  menstrual:  '#E07878',
-  follicular: '#6EA87B',
-  ovulation:  '#6BA8C9',
-  luteal:     '#C9A227',
+  menstrual:  '#F2C4C4',
+  follicular: '#B8D8BC',
+  ovulation:  '#F9E4B7',
+  luteal:     '#C8BCE0',
 };
 
 const CATEGORY_COLORS = {
-  proteins:   '#E8845A',
+  proteins:   '#E8A0A2',
   fats:       '#D4A853',
-  carbs:      '#8B9DC3',
-  veg_fruits: '#6EA87B',
+  carbs:      '#B0A0D4',
+  veg_fruits: '#94C49A',
 };
 
 export const NutritionScreen = ({
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
   focusOverline: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(74,68,83,0.55)',
     letterSpacing: 1.5,
     marginBottom: 6,
     textTransform: 'uppercase',
@@ -512,13 +512,13 @@ const styles = StyleSheet.create({
   focusTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 26,
-    color: '#FFFFFF',
+    color: '#4A4453',
     marginBottom: 8,
   },
   focusAdvice: {
     fontFamily: 'Outfit_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(74,68,83,0.70)',
     lineHeight: 19,
     marginBottom: 18,
   },
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
   focusFoodChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   focusFoodText: {
     fontFamily: 'Outfit_600SemiBold',
     fontSize: 12,
-    color: '#FFFFFF',
+    color: '#4A4453',
   },
 
   // Section label

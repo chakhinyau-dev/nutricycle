@@ -318,8 +318,8 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
           recentHistory.map((item) => {
             const moodData    = MOODS.find(m => m.id === item.mood);
             const phaseColors = {
-              menstrual: '#E07878', follicular: '#6EA87B',
-              ovulation: '#6BA8C9', luteal: '#C9A227',
+              menstrual: '#F2C4C4', follicular: '#B8D8BC',
+              ovulation: '#F9E4B7', luteal: '#C8BCE0',
             };
             const phaseColor = phaseColors[item.phase_key] || colors.primary;
             return (

@@ -7,22 +7,21 @@ import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
 const HORMONE_TAG_COLORS = {
-  estrogen:         { bg: '#EEF0FA', text: '#7B8DC8', dot: '#7B8DC8' },
-  progesterone:     { bg: '#EBF5ED', text: '#5A9E6A', dot: '#6EA87B' },
+  estrogen:         { bg: '#FAEEF0', text: '#C97577', dot: '#E8A0A2' },
+  progesterone:     { bg: '#EDF7EE', text: '#5A9A60', dot: '#94C49A' },
   antiinflammatory: { bg: '#FEF0EA', text: '#C96B44', dot: '#E8845A' },
   energy:           { bg: '#FDF5E4', text: '#B8882A', dot: '#D4A853' },
 };
 
 const CATEGORY_COLORS = {
-  proteins:   '#E8845A',
+  proteins:   '#E8A0A2',
   fats:       '#D4A853',
-  carbs:      '#8B9DC3',
-  veg_fruits: '#6EA87B',
+  carbs:      '#B0A0D4',
+  veg_fruits: '#94C49A',
 };
 
 
 const { width } = Dimensions.get('window');
-const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200';
 
 export const DashboardScreen = ({
   onNavigate,
@@ -161,9 +160,6 @@ export const DashboardScreen = ({
             {t(`dashboard.goal_context.${userGoal}`, { defaultValue: t('dashboard.goal_context.balance') })}
           </Text>
         </View>
-        <Pressable onPress={() => onNavigate('settings')}>
-           <Image source={{ uri: user?.imageUrl || fallbackAvatar }} style={styles.avatar} />
-        </Pressable>
       </View>
 
       <View style={{ marginBottom: 20 }} />
@@ -207,15 +203,15 @@ export const DashboardScreen = ({
       {/* Legend row */}
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#C9605A' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#E8A0A2' }]} />
           <Text style={styles.legendLabel}>{t('dashboard.estrogen')}</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#6EA87B' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#94C49A' }]} />
           <Text style={styles.legendLabel}>{t('dashboard.progesterone')}</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#D4897E' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#B0A0D4' }]} />
           <Text style={styles.legendLabel}>{t('dashboard.testosterone', { defaultValue: 'Testosterone' })}</Text>
         </View>
       </View>
@@ -223,14 +219,14 @@ export const DashboardScreen = ({
       <View style={styles.chartWrapper}>
         <Svg width={chartWidth} height={chartHeight}>
           {/* Filled areas — testosterone first (bottom), then progesterone, estrogen on top */}
-          <Path d={testosteroneFilledPath} fill="rgba(212,137,126,0.18)" />
-          <Path d={progesteroneFilledPath} fill="rgba(100,110,200,0.18)" />
-          <Path d={estrogenFilledPath} fill="rgba(210,100,70,0.22)" />
+          <Path d={testosteroneFilledPath} fill="rgba(176,160,212,0.18)" />
+          <Path d={progesteroneFilledPath} fill="rgba(148,196,154,0.18)" />
+          <Path d={estrogenFilledPath} fill="rgba(232,160,162,0.22)" />
 
           {/* Stroke curves */}
-          <Path d={testosteronePath} fill="none" stroke="#D4897E" strokeWidth={2} />
-          <Path d={progesteronePath} fill="none" stroke="#6EA87B" strokeWidth={2} />
-          <Path d={estrogenPath} fill="none" stroke="#C9605A" strokeWidth={2.5} />
+          <Path d={testosteronePath} fill="none" stroke="#B0A0D4" strokeWidth={2} />
+          <Path d={progesteronePath} fill="none" stroke="#94C49A" strokeWidth={2} />
+          <Path d={estrogenPath} fill="none" stroke="#E8A0A2" strokeWidth={2.5} />
 
           {/* Current day dashed vertical line */}
           <Line
@@ -242,7 +238,7 @@ export const DashboardScreen = ({
           />
 
           {/* Day number badge at top of line */}
-          <Circle cx={currentDayX} cy={18} r={14} fill="#7B8DC8" />
+          <Circle cx={currentDayX} cy={18} r={14} fill="#968DA1" />
           <SvgText
             x={currentDayX}
             y={23}

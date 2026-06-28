@@ -165,10 +165,10 @@ export const PeriodCalculatorScreen = ({ onBack, onSave, cycleProfile }) => {
     const fertileStart = Math.max(ovulationDay - 2, periodDuration + 1);
     const fertileEnd = Math.min(ovulationDay + 2, cycleLength - 1);
     const segs = [
-      { key: 'menstrual',  days: periodDuration,                  color: '#E07878' },
-      { key: 'follicular', days: Math.max(1, fertileStart - periodDuration), color: '#6EA87B' },
-      { key: 'ovulation',  days: fertileEnd - fertileStart + 1,   color: '#6BA8C9' },
-      { key: 'luteal',     days: Math.max(1, cycleLength - fertileEnd), color: '#C9A227' },
+      { key: 'menstrual',  days: periodDuration,                  color: '#F2C4C4' },
+      { key: 'follicular', days: Math.max(1, fertileStart - periodDuration), color: '#B8D8BC' },
+      { key: 'ovulation',  days: fertileEnd - fertileStart + 1,   color: '#F9E4B7' },
+      { key: 'luteal',     days: Math.max(1, cycleLength - fertileEnd), color: '#C8BCE0' },
     ];
     return segs.filter(s => s.days > 0);
   }, [cycleLength, periodDuration, ovulationDay]);

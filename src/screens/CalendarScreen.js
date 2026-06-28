@@ -18,10 +18,10 @@ const { width } = Dimensions.get('window');
 
 // Tracker Phase Colors
 const TRACKER_COLORS = {
-  menstrual: '#E07878',
-  follicular: '#6EA87B',
-  ovulation: '#6BA8C9',
-  luteal: '#C9A227',
+  menstrual:  '#F2C4C4',
+  follicular: '#B8D8BC',
+  ovulation:  '#F9E4B7',
+  luteal:     '#C8BCE0',
 };
 
 export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [], onDeleteLog }) => {
