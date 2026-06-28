@@ -35,9 +35,6 @@ export const DashboardScreen = ({
   const { t } = useTranslation();
   const phaseKey = currentPhaseKey || 'follicular';
 
-  // Obtain user's selected onboarding goal
-  const userGoal = cycleProfile?.goal || 'balance';
-
   const getTimeBasedGreeting = () => {
     const hours = new Date().getHours();
     const name = user?.firstName || t('common.user_fallback', { defaultValue: 'bonita' });
@@ -108,29 +105,6 @@ export const DashboardScreen = ({
     };
   }, [cycleLength, cycleDay, chartWidth, baselineY, CHART_TOP_PAD]);
 
-  // --- FEATURED VIDEO LOGIC ---
-  const featuredVideo = useMemo(() => {
-    if (!videos || videos.length === 0) return null;
-
-    const hour = new Date().getHours();
-    let mealType = 'lunch';
-    if (hour >= 5 && hour < 12) mealType = 'breakfast';
-    else if (hour >= 12 && hour < 18) mealType = 'lunch';
-    else if (hour >= 18 && hour < 22) mealType = 'dinner';
-    else mealType = 'snack';
-
-    const sortByGoal = (list) => [...list].sort((a, b) => {
-      const aMatch = a.goals?.includes(userGoal) ? 1 : 0;
-      const bMatch = b.goals?.includes(userGoal) ? 1 : 0;
-      return bMatch - aMatch;
-    });
-
-    let matches = videos.filter(v => v.phaseKey === phaseKey && v.mealType === mealType);
-    if (matches.length === 0) matches = videos.filter(v => v.phaseKey === phaseKey);
-    if (matches.length === 0) matches = videos;
-
-    return sortByGoal(matches)[0] || null;
-  }, [videos, phaseKey, userGoal]);
 
   const phaseKeyFoods = useMemo(() => {
     const cats = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
@@ -283,17 +257,12 @@ export const DashboardScreen = ({
       {/* 6. Key Foods for Your Phase */}
       <View style={styles.keyFoodsSection}>
         <View style={styles.keyFoodsSectionHeader}>
-          <View>
-            <Text style={styles.sectionOverline}>{t('dashboard.key_foods_overline', { defaultValue: 'KEY FOODS' })}</Text>
-            <Text style={styles.sectionTitle}>{t('dashboard.key_foods_section', { defaultValue: 'Foods for Your Phase' })}</Text>
-          </View>
+          <Text style={styles.sectionTitle}>{t('dashboard.key_foods_section', { defaultValue: 'Foods for your phase' })}</Text>
           <Pressable onPress={() => onNavigate('keyFoods')} style={styles.seeAllBtn}>
-            <Text style={styles.seeAllText}>{t('common.see_all', { defaultValue: 'See all' })}</Text>
+            <Text style={styles.seeAllText}>{t('common.see_all', { defaultValue: 'Ver todo' })}</Text>
             <ChevronRight size={14} color={colors.primary} />
           </Pressable>
         </View>
-
-        <Text style={styles.phaseDescText}>{t(`key_foods.phase_desc.${phaseKey}`)}</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.keyFoodsScroll}>
           {phaseKeyFoods.map(food => {
@@ -327,39 +296,42 @@ export const DashboardScreen = ({
 
       <View style={{ marginBottom: 36 }} />
 
-      {/* 7. Featured Video of the Day */}
-      {featuredVideo && (
-        <View style={styles.suggestedSection}>
-          <Text style={styles.suggestedTitle}>{t('dashboard.featured_video')}</Text>
-          <Pressable
-            style={styles.recipeCard}
-            onPress={() => onNavigate('videos')}
-          >
-            <View style={styles.recipeCardImageWrap}>
-              <Image
-                source={{ uri: featuredVideo.thumbnail }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-              />
-              <View style={styles.recipeCardPlayOverlay}>
-                <View style={styles.recipeCardPlayBtn}>
-                  <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
+      {/* 7. Today's Meals — 4 meal slots */}
+      <View style={styles.suggestedSection}>
+        <Text style={styles.suggestedTitle}>{t('dashboard.featured_video')}</Text>
+        {['breakfast', 'lunch', 'snack', 'dinner'].map(mealType => {
+          const video = videos.find(v => v.phaseKey === phaseKey && v.mealType === mealType)
+            || videos.find(v => v.mealType === mealType);
+          const timeLabel = t(`nutrition.meal_times.${mealType}`, { defaultValue: mealType });
+          const mealLabel = t(`nutrition.meal_slots.${mealType}`, { defaultValue: mealType }).toUpperCase();
+          return (
+            <Pressable key={mealType} style={styles.mealSlotCard} onPress={() => onNavigate('videos')}>
+              {video?.thumbnail ? (
+                <View style={styles.mealSlotThumb}>
+                  <Image source={{ uri: video.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  <View style={styles.mealSlotPlayOverlay}>
+                    <Play size={14} color="#FFFFFF" fill="#FFFFFF" />
+                  </View>
                 </View>
-              </View>
-            </View>
-            <View style={styles.recipeCardContent}>
-              <View style={styles.recipeCardTags}>
-                <View style={styles.recipeBadge}>
-                  <Text style={styles.recipeBadgeText}>{t(`phases.${featuredVideo.phaseKey}`)}</Text>
+              ) : (
+                <View style={[styles.mealSlotThumb, styles.mealSlotThumbEmpty]}>
+                  <Play size={14} color={colors.on_surface_variant} style={{ opacity: 0.3 }} />
                 </View>
-                <Text style={styles.recipeTime}>{featuredVideo.duration}</Text>
+              )}
+              <View style={styles.mealSlotInfo}>
+                <Text style={styles.mealSlotTime}>{timeLabel}</Text>
+                <Text style={styles.mealSlotName} numberOfLines={2}>
+                  {video ? video.title : t('nutrition.empty_meal', { defaultValue: 'Sin video planificado' })}
+                </Text>
+                <Text style={styles.mealSlotType}>{mealLabel}</Text>
               </View>
-              <Text style={styles.recipeTitle}>{featuredVideo.title}</Text>
-              <Text style={styles.recipeMacros}>{featuredVideo.description}</Text>
-            </View>
-          </Pressable>
-        </View>
-      )}
+              {video?.duration && (
+                <Text style={styles.mealSlotDuration}>{video.duration}</Text>
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
 
       <View style={{ height: 160 }} />
     </ScrollView>
@@ -706,5 +678,70 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.on_surface_variant,
     opacity: 0.7,
+  },
+  mealSlotCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    marginBottom: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    shadowColor: '#4A4453',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  mealSlotThumb: {
+    width: 72,
+    height: 72,
+    backgroundColor: '#A3B3A5',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mealSlotThumbEmpty: {
+    backgroundColor: '#F1F5F2',
+  },
+  mealSlotPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mealSlotInfo: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 2,
+  },
+  mealSlotTime: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+  },
+  mealSlotName: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: colors.on_surface,
+    lineHeight: 17,
+  },
+  mealSlotType: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.primary,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginTop: 2,
+  },
+  mealSlotDuration: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+    paddingRight: 14,
   },
 });
