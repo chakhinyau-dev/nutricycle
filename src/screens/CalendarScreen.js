@@ -11,7 +11,7 @@ import {
   eachDayOfInterval,
 } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, AlertCircle, Plus, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Leaf, Plus, Trash2 } from 'lucide-react-native';
 import { getCycleInsights, getPhaseForDate, isFertileDate, isPeriodDate, normalizeCycleProfile } from '../utils/cycle';
 
 const { width } = Dimensions.get('window');
@@ -431,10 +431,10 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
           </View>
         ) : (
           <Pressable style={styles.emptyLogCard} onPress={() => onNavigate?.('dailyLog')}>
-            <AlertCircle size={18} color={colors.on_surface_variant} opacity={0.4} style={{ marginBottom: 6 }} />
+            <Leaf size={18} color={colors.primary} opacity={0.5} style={{ marginBottom: 6 }} />
             <Text style={styles.emptyLogText}>{t('calendar.empty_state')}</Text>
             <View style={styles.logTodayBtn}>
-              <Text style={styles.logTodayBtnText}>{t('calendar.log_today_cta', { defaultValue: '+ Log today' })}</Text>
+              <Text style={styles.logTodayBtnText}>{t('calendar.log_today_cta', { defaultValue: '+ Registrar hoy' })}</Text>
             </View>
           </Pressable>
         )}
@@ -447,33 +447,25 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
         <View style={styles.chartHeader}>
           <Text style={styles.chartTitle}>
             {t('calendar.hormone_tides_prefix')}
-            <Text style={{ color: '#7BC8B8' }}>{t('calendar.hormone_tides_accent')}</Text>
+            <Text style={{ color: '#968DA1' }}>{t('calendar.hormone_tides_accent')}</Text>
           </Text>
-          <View style={styles.legendContainer}>
-            {[['#C9605A', 'dashboard.estrogen'], ['#6EA87B', 'dashboard.progesterone'], ['#D4897E', 'dashboard.testosterone']].map(([c, key]) => (
-              <View key={key} style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: c }]} />
-                <Text style={styles.legendLabel}>{t(key)}</Text>
-              </View>
-            ))}
-          </View>
         </View>
 
         <View style={styles.chartWrapper}>
           <Svg width={chartWidth} height={chartHeight}>
             {/* Filled areas */}
-            <Path d={tFilledPath} fill="#D4897E" opacity={0.08} />
-            <Path d={pFilledPath} fill="#6EA87B" opacity={0.12} />
-            <Path d={eFilledPath} fill="#C9605A" opacity={0.12} />
+            <Path d={tFilledPath} fill="#B0A0D4" opacity={0.10} />
+            <Path d={pFilledPath} fill="#94C49A" opacity={0.12} />
+            <Path d={eFilledPath} fill="#E8A0A2" opacity={0.14} />
             {/* Stroke curves */}
-            <Path d={testosteronePath} fill="none" stroke="#D4897E" strokeWidth={1.5} />
-            <Path d={progesteronePath} fill="none" stroke="#6EA87B" strokeWidth={2} />
-            <Path d={estrogenPath}     fill="none" stroke="#C9605A" strokeWidth={2} />
+            <Path d={testosteronePath} fill="none" stroke="#B0A0D4" strokeWidth={1.5} />
+            <Path d={progesteronePath} fill="none" stroke="#94C49A" strokeWidth={2} />
+            <Path d={estrogenPath}     fill="none" stroke="#E8A0A2" strokeWidth={2} />
             {/* Selected day marker */}
-            <Line x1={selectDayX} y1={4} x2={selectDayX} y2={chartHeight - 8} stroke="#64748B" strokeWidth={1} strokeDasharray="3 3" />
-            <Circle cx={selectDayX} cy={selectE_Y} r={4} fill="#C9605A" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={selectDayX} cy={selectP_Y} r={4} fill="#6EA87B" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={selectDayX} cy={selectT_Y} r={4} fill="#D4897E" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Line x1={selectDayX} y1={4} x2={selectDayX} y2={chartHeight - 8} stroke="#968DA1" strokeWidth={1} strokeDasharray="3 3" />
+            <Circle cx={selectDayX} cy={selectE_Y} r={4} fill="#E8A0A2" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectP_Y} r={4} fill="#94C49A" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectT_Y} r={4} fill="#B0A0D4" stroke="#FFFFFF" strokeWidth={1.5} />
           </Svg>
         </View>
 
@@ -483,6 +475,15 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
             {t('common.day')} {selectedCycleDay}
           </Text>
           <Text style={styles.chartFooterText}>{t('common.day')} {cycleLength}</Text>
+        </View>
+
+        <View style={styles.legendContainer}>
+          {[['#E8A0A2', 'dashboard.estrogen'], ['#94C49A', 'dashboard.progesterone'], ['#B0A0D4', 'dashboard.testosterone']].map(([c, key]) => (
+            <View key={key} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: c }]} />
+              <Text style={styles.legendLabel}>{t(key)}</Text>
+            </View>
+          ))}
         </View>
       </View>
 

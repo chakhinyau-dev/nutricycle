@@ -760,8 +760,12 @@
     "no_alternatives": "No hay recetas alternativas disponibles."
   },
   "period_calculator": {
-    "title": "Calculadora de Período",
+    "title": "Planifica tu ciclo",
+    "section_inputs": "Tus datos",
     "subtitle": "Registra tu período para ajustar tu ciclo y estimar tu próxima ovulación.",
+    "section_cycle": "Tus fases del ciclo",
+    "section_results": "Fechas estimadas",
+    "save_profile": "Guardar en mi perfil",
     "first_day": "Primer día de tu último período",
     "how_long": "¿Cuántos días duró?",
     "avg_cycle": "Duración del ciclo (días)",

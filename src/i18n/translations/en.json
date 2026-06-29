@@ -174,7 +174,6 @@
     "meals_today": "Today's meals",
     "log_action": "Log Info",
     "log_feel": "Log how I feel",
-    "suggested_recipe": "Suggested Recipe of the Day",
     "featured_video": "Today's meals",
     "tracker_energy": "ENERGY",
     "tracker_mood": "MOOD",
@@ -650,12 +649,6 @@
       "balance": "General hormonal balance"
     }
   },
-  "saved_recipes": {
-    "title": "Saved Recipes",
-    "intro_title": "Your Favorites",
-    "intro_sub": "These are your saved recipes in Supabase. They are kept synced across all your devices.",
-    "empty": "You have not saved anything yet."
-  },
 
   "shopping": {
     "title": "Shopping List",
@@ -775,8 +768,12 @@
     "no_alternatives": "No alternative recipes available."
   },
   "period_calculator": {
-    "title": "Period Calculator",
+    "title": "Plan your cycle",
+    "section_inputs": "Your data",
     "subtitle": "Log your period to adjust your cycle or estimate your next period and ovulation window.",
+    "section_cycle": "Your cycle phases",
+    "section_results": "Estimated dates",
+    "save_profile": "Save to my profile",
     "first_day": "First day of your last period",
     "how_long": "How many days did it last?",
     "avg_cycle": "Average cycle length (days)",

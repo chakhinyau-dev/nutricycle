@@ -203,7 +203,6 @@ export const PeriodCalculatorScreen = ({ onBack, onSave, cycleProfile }) => {
           <ChevronLeft size={22} color={colors.on_surface} />
         </Pressable>
         <View>
-          <Text style={styles.overline}>{t('period_calculator.overline', { defaultValue: 'CYCLE PLANNER' })}</Text>
           <Text style={styles.headerTitle}>{t('period_calculator.title')}</Text>
         </View>
       </View>
