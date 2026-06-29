@@ -340,12 +340,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
     
     const success = await deleteDailyLog(getToken, user.id, logId, logDate);
     if (!success) {
-      // Rollback on failure
       setDailyLogs(previousLogs);
-      Alert.alert('Error', 'Failed to delete log. Please try again.');
+      Alert.alert(t('common.error', { defaultValue: 'Error' }), t('dailylog.delete_error'));
     } else {
-       showToast('Log removed from bio-history', 'success');
-       refreshAIPredictionData();
+      showToast(t('dailylog.log_deleted'), 'success');
+      refreshAIPredictionData();
     }
   };
 

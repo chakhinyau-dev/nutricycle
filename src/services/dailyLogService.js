@@ -3,16 +3,20 @@ import { format } from 'date-fns';
 import { createClerkSupabaseClient } from '../lib/supabase';
 import { getLocalDailyLogs, setLocalDailyLogs } from './appStorage';
 
-const normalizeLog = (log) => ({
-  id: String(log.id || log.logged_at || Date.now()),
-  clerk_user_id: log.clerk_user_id,
-  mood: log.mood || 'neutral',
-  symptoms: Array.isArray(log.symptoms) ? log.symptoms : [],
-  notes: log.notes || '',
-  cycle_day: log.cycle_day || null,
-  phase_key: log.phase_key || 'follicular',
-  logged_at: log.logged_at || new Date().toISOString(),
-});
+const normalizeLog = (log) => {
+  const loggedAt = log.logged_at || new Date().toISOString();
+  return {
+    id: String(log.id || loggedAt || Date.now()),
+    clerk_user_id: log.clerk_user_id,
+    mood: log.mood || 'neutral',
+    symptoms: Array.isArray(log.symptoms) ? log.symptoms : [],
+    notes: log.notes || '',
+    cycle_day: log.cycle_day || null,
+    phase_key: log.phase_key || 'follicular',
+    logged_at: loggedAt,
+    log_date: log.log_date || format(new Date(loggedAt), 'yyyy-MM-dd'),
+  };
+};
 
 export const loadDailyLogs = async (getToken, clerkUserId) => {
   const localLogs = await getLocalDailyLogs(clerkUserId);

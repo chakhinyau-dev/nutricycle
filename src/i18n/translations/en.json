@@ -199,6 +199,8 @@
     "no_history": "You do not have any saved logs yet.",
     "delete_title": "Delete Log",
     "delete_confirm": "Are you sure you want to delete this entry?",
+    "delete_error": "Could not delete the log. Please try again.",
+    "log_deleted": "Log deleted",
     "editing_label": "Editing entry from",
     "save_btn": "Save Log",
     "success_title": "Log Saved",
@@ -294,7 +296,8 @@
     "log_btn": "Log Period",
     "cycle_title": "Your Cycle",
     "hormone_tides_prefix": "Hormone ",
-    "hormone_tides_accent": "Tides"
+    "hormone_tides_accent": "Tides",
+    "log_today_cta": "+ Log today"
   },
   "videos": {
     "types": {
@@ -760,6 +763,12 @@
       "lunch": "12–2 PM",
       "snack": "3–5 PM",
       "dinner": "6–8 PM"
+    },
+    "meal_slots": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "snack": "Snack",
+      "dinner": "Dinner"
     },
     "empty_meal": "No video planned",
     "empty_meal_sub": "Tap to explore phase videos",

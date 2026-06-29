@@ -284,6 +284,19 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
         </View>
       </View>
 
+      <View style={styles.footer}>
+        <Pressable style={[styles.saveButton, isSaving && { opacity: 0.8 }]} onPress={handleSave} disabled={isSaving}>
+          {isSaving ? (
+            <ActivityIndicator color={colors.on_primary} />
+          ) : (
+            <>
+              <Text style={styles.saveButtonText}>{t('dailylog.save_btn')}</Text>
+              <Check size={20} color={colors.on_primary} strokeWidth={3} />
+            </>
+          )}
+        </Pressable>
+      </View>
+
       {editingLogDate && (
         <View style={styles.editingBanner}>
           <Edit2 size={14} color="#B8882A" />
@@ -378,21 +391,8 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
         )}
       </View>
 
-      <View style={{ height: 200 }} />
+      <View style={{ height: 80 }} />
     </ScrollView>
-
-    <View style={styles.footer}>
-      <Pressable style={[styles.saveButton, isSaving && { opacity: 0.8 }]} onPress={handleSave} disabled={isSaving}>
-        {isSaving ? (
-          <ActivityIndicator color={colors.on_primary} />
-        ) : (
-          <>
-            <Text style={styles.saveButtonText}>{t('dailylog.save_btn')}</Text>
-            <Check size={20} color={colors.on_primary} strokeWidth={3} />
-          </>
-        )}
-      </Pressable>
-    </View>
   </View>
   );
 };
@@ -681,13 +681,8 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   footer: {
-    position: 'absolute',
-    bottom: 100,
-    left: 20,
-    right: 20,
-    backgroundColor: 'transparent',
-    paddingTop: 16,
-    paddingBottom: 20,
+    marginTop: 32,
+    marginBottom: 8,
   },
   // Editing banner
   editingBanner: {

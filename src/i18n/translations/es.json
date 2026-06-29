@@ -204,8 +204,10 @@
     "no_history": "Aún no tienes registros guardados.",
     "delete_title": "Eliminar Registro",
     "delete_confirm": "¿Estás segura de que quieres eliminar esta entrada?",
+    "delete_error": "No se pudo eliminar el registro. Inténtalo de nuevo.",
+    "log_deleted": "Registro eliminado",
     "editing_label": "Editando entrada del",
-    "save_btn": "Guardar Log del Día",
+    "save_btn": "Guardar registro del día",
     "success_title": "Registro Guardado",
     "success_sub": "Tu diario de bienestar ya está actualizado y conectado con tu fase actual.",
     "history_caption": "Últimos {{count}} registros guardados",
@@ -297,7 +299,8 @@
     "log_btn": "Registrar período",
     "cycle_title": "Tu ciclo",
     "hormone_tides_prefix": "Mareas ",
-    "hormone_tides_accent": "Hormonales"
+    "hormone_tides_accent": "Hormonales",
+    "log_today_cta": "+ Registrar hoy"
   },
   "videos": {
     "types": {
@@ -752,6 +755,12 @@
       "lunch": "12–14 h",
       "snack": "15–17 h",
       "dinner": "18–20 h"
+    },
+    "meal_slots": {
+      "breakfast": "Desayuno",
+      "lunch": "Almuerzo",
+      "snack": "Merienda",
+      "dinner": "Cena"
     },
     "empty_meal": "Sin video planificado",
     "empty_meal_sub": "Toca para explorar videos de la fase",
