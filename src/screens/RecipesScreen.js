@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 13, fontFamily: 'Outfit_700Bold', color: colors.on_surface_variant },
   filterTextActive: { color: '#FFF' },
   mealPill: { backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: '#F1F1E8' },
-  mealPillActive: { backgroundColor: '#968DA1', borderColor: '#968DA1' },
+  mealPillActive: { backgroundColor: '#A3B3A5', borderColor: '#A3B3A5' },
   mealText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: colors.on_surface_variant },
   mealTextActive: { color: '#FFF' },
   recipesList: { width: '100%' },

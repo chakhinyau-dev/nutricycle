@@ -420,8 +420,8 @@ const styles = StyleSheet.create({
     borderColor: '#F1F1E8',
   },
   mealPillActive: {
-    backgroundColor: '#968DA1',
-    borderColor: '#968DA1',
+    backgroundColor: '#A3B3A5',
+    borderColor: '#A3B3A5',
   },
   mealText: {
     fontFamily: 'Outfit_600SemiBold',

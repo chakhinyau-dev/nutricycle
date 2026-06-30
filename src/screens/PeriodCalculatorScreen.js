@@ -286,23 +286,23 @@ export const PeriodCalculatorScreen = ({ onBack, onSave, cycleProfile }) => {
 
         {/* Ovulation card */}
         <View style={[styles.resultCard, styles.resultCardOvulation]}>
-          <View style={styles.resultIconWrap}>
-            <Sun size={20} color="#6BA8C9" />
+          <View style={[styles.resultIconWrap, { backgroundColor: '#FEF8EC' }]}>
+            <Sun size={20} color="#C9A84C" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.resultLabel}>{t('period_calculator.ovul_label')}</Text>
-            <Text style={[styles.resultValue, { color: '#3D7A9E' }]}>{fmtDate(ovulationDate)}</Text>
+            <Text style={[styles.resultValue, { color: '#B8932A' }]}>{fmtDate(ovulationDate)}</Text>
           </View>
         </View>
 
         {/* Next period card */}
         <View style={[styles.resultCard, styles.resultCardPeriod]}>
-          <View style={styles.resultIconWrap}>
-            <Droplets size={20} color="#E07878" />
+          <View style={[styles.resultIconWrap, { backgroundColor: '#FDF0F0' }]}>
+            <Droplets size={20} color="#C97C7C" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.resultLabel}>{t('period_calculator.period_label')}</Text>
-            <Text style={[styles.resultValue, { color: '#B84C4C' }]}>{fmtRange(nextPeriodStart, nextPeriodEnd)}</Text>
+            <Text style={[styles.resultValue, { color: '#B86060' }]}>{fmtRange(nextPeriodStart, nextPeriodEnd)}</Text>
           </View>
         </View>
 
@@ -573,11 +573,11 @@ const styles = StyleSheet.create({
   },
   resultCardOvulation: {
     borderLeftWidth: 4,
-    borderLeftColor: '#6BA8C9',
+    borderLeftColor: '#F9E4B7',
   },
   resultCardPeriod: {
     borderLeftWidth: 4,
-    borderLeftColor: '#E07878',
+    borderLeftColor: '#F2C4C4',
   },
   resultIconWrap: {
     width: 44,

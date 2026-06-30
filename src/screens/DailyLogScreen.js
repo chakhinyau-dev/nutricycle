@@ -28,7 +28,7 @@ import {
   X,
   Trash2,
   Edit2,
-  AlertCircle,
+  Leaf,
 } from 'lucide-react-native';
 import { loadDailyLogs, saveDailyLog, deleteDailyLog } from '../services/dailyLogService';
 
@@ -284,19 +284,6 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
         </View>
       </View>
 
-      <View style={styles.footer}>
-        <Pressable style={[styles.saveButton, isSaving && { opacity: 0.8 }]} onPress={handleSave} disabled={isSaving}>
-          {isSaving ? (
-            <ActivityIndicator color={colors.on_primary} />
-          ) : (
-            <>
-              <Text style={styles.saveButtonText}>{t('dailylog.save_btn')}</Text>
-              <Check size={20} color={colors.on_primary} strokeWidth={3} />
-            </>
-          )}
-        </Pressable>
-      </View>
-
       {editingLogDate && (
         <View style={styles.editingBanner}>
           <Edit2 size={14} color={colors.primary} />
@@ -319,12 +306,15 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
       <View style={styles.historySection}>
         <View style={styles.historyPreview}>
           <History size={16} color={colors.primary} />
-          <Text style={styles.historySectionTitle}>{t('dailylog.history_title')}</Text>
+          <View style={{ marginLeft: 12 }}>
+            <Text style={styles.historySectionTitle}>{t('dailylog.history_title')}</Text>
+            <Text style={styles.historySectionSub}>{t('dailylog.history_sub')}</Text>
+          </View>
         </View>
 
         {recentHistory.length === 0 ? (
           <View style={styles.emptyHistory}>
-            <AlertCircle size={24} color="#CBD5E1" />
+            <Leaf size={24} color={colors.primary} style={{ opacity: 0.4 }} />
             <Text style={styles.emptyHistoryText}>{t('dailylog.no_history')}</Text>
           </View>
         ) : (
@@ -391,7 +381,18 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
         )}
       </View>
 
-      <View style={{ height: 80 }} />
+      <Pressable style={[styles.saveButton, isSaving && { opacity: 0.8 }]} onPress={handleSave} disabled={isSaving}>
+        {isSaving ? (
+          <ActivityIndicator color={colors.on_primary} />
+        ) : (
+          <>
+            <Text style={styles.saveButtonText}>{t('dailylog.save_btn')}</Text>
+            <Check size={20} color={colors.on_primary} strokeWidth={3} />
+          </>
+        )}
+      </Pressable>
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   </View>
   );
@@ -557,11 +558,14 @@ const styles = StyleSheet.create({
   },
   historySectionTitle: {
     fontFamily: 'Outfit_700Bold',
-    fontSize: 11,
-    color: '#64748B',
-    marginLeft: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+    fontSize: 15,
+    color: colors.on_surface,
+  },
+  historySectionSub: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 12,
+    color: colors.on_surface_variant,
+    marginTop: 1,
   },
   historyCardMain: {
     flex: 1,
@@ -673,16 +677,13 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 32,
   },
   saveButtonText: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 18,
     color: colors.on_primary,
     marginRight: 10,
-  },
-  footer: {
-    marginTop: 32,
-    marginBottom: 8,
   },
   // Editing banner
   editingBanner: {
