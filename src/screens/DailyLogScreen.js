@@ -299,7 +299,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
 
       {editingLogDate && (
         <View style={styles.editingBanner}>
-          <Edit2 size={14} color="#B8882A" />
+          <Edit2 size={14} color={colors.primary} />
           <Text style={styles.editingBannerText}>
             {t('dailylog.editing_label')} {format(new Date(editingLogDate), 'dd MMM yyyy', { locale })}
           </Text>
@@ -311,7 +311,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
               setNotes(history[0].notes || '');
             }
           }}>
-            <X size={14} color="#B8882A" />
+            <X size={14} color={colors.primary} />
           </Pressable>
         </View>
       )}
@@ -348,7 +348,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
                         <Edit2 size={15} color={colors.primary} />
                       </Pressable>
                       <Pressable onPress={() => handleDeleteLog(item)} style={[styles.actionBtn, { marginLeft: 10 }]}>
-                        <Trash2 size={15} color="#EB5757" />
+                        <Trash2 size={15} color={colors.on_surface_variant} />
                       </Pressable>
                     </View>
                   </View>
@@ -689,19 +689,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FDF5E4',
+    backgroundColor: '#EEF2EE',
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#E8C97A',
+    borderColor: '#C8D6C9',
   },
   editingBannerText: {
     flex: 1,
     fontFamily: 'Outfit_600SemiBold',
     fontSize: 13,
-    color: '#B8882A',
+    color: colors.primary,
   },
 
   // History card phase stripe
