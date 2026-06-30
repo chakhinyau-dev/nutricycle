@@ -8,17 +8,17 @@ const ONBOARDING_STEPS = [
   {
     titleKey: 'onboarding.step1_title',
     subtitleKey: 'onboarding.step1_subtitle',
-    image: require('../../assets/first.png'),
+    image: require('../../assets/first.jpg'),
   },
   {
     titleKey: 'onboarding.step2_title',
     subtitleKey: 'onboarding.step2_subtitle',
-    image: require('../../assets/second.png'),
+    image: require('../../assets/second.jpg'),
   },
   {
     titleKey: 'onboarding.step3_title',
     subtitleKey: 'onboarding.step3_subtitle',
-    image: require('../../assets/third.png'),
+    image: require('../../assets/third.jpg'),
   },
 ];
 
