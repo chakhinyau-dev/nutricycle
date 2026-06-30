@@ -16,7 +16,7 @@ import {
   Outfit_600SemiBold,
   Outfit_700Bold,
 } from '@expo-google-fonts/outfit';
-import { Home, Calendar, User, Play, Utensils } from 'lucide-react-native';
+import { Home, CircleDot, User, PlaySquare, Coffee } from 'lucide-react-native';
 
 import { StripeProvider } from './src/components/StripeWrapper';
 
@@ -715,31 +715,31 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
             <View style={styles.tabBar}>
               <Pressable onPress={() => handleTabPress('today')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'today' && styles.activeIndicatorActive]}>
-                  <Home size={22} color={activeTab === 'today' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'today' ? 2.5 : 2} />
+                  <Home size={22} color={activeTab === 'today' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'today' ? 2 : 1.5} />
                 </View>
                 <Text style={[styles.tabLabel, activeTab === 'today' && styles.activeTabLabel]}>{t('nav.today')}</Text>
               </Pressable>
               <Pressable onPress={() => handleTabPress('calendar')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'calendar' && styles.activeIndicatorActive]}>
-                  <Calendar size={22} color={activeTab === 'calendar' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'calendar' ? 2.5 : 2} />
+                  <CircleDot size={22} color={activeTab === 'calendar' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'calendar' ? 2 : 1.5} />
                 </View>
                 <Text style={[styles.tabLabel, activeTab === 'calendar' && styles.activeTabLabel]}>{t('nav.cycle')}</Text>
               </Pressable>
               <Pressable onPress={() => handleTabPress('videos')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'videos' && styles.activeIndicatorActive]}>
-                  <Play size={22} color={activeTab === 'videos' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'videos' ? 2.5 : 2} />
+                  <PlaySquare size={22} color={activeTab === 'videos' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'videos' ? 2 : 1.5} />
                 </View>
                 <Text style={[styles.tabLabel, activeTab === 'videos' && styles.activeTabLabel]}>{t('nav.videos')}</Text>
               </Pressable>
               <Pressable onPress={() => handleTabPress('nutrition')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'nutrition' && styles.activeIndicatorActive]}>
-                  <Utensils size={22} color={activeTab === 'nutrition' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'nutrition' ? 2.5 : 2} />
+                  <Coffee size={22} color={activeTab === 'nutrition' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'nutrition' ? 2 : 1.5} />
                 </View>
                 <Text style={[styles.tabLabel, activeTab === 'nutrition' && styles.activeTabLabel]}>{t('nav.nutrition')}</Text>
               </Pressable>
               <Pressable onPress={() => handleTabPress('profile')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'profile' && styles.activeIndicatorActive]}>
-                  <User size={22} color={activeTab === 'profile' ? '#FFFFFF' : '#64748B'} strokeWidth={activeTab === 'profile' ? 2.5 : 2} />
+                  <User size={22} color={activeTab === 'profile' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'profile' ? 2 : 1.5} />
                 </View>
                 <Text style={[styles.tabLabel, activeTab === 'profile' && styles.activeTabLabel]}>{t('nav.profile')}</Text>
               </Pressable>
@@ -899,23 +899,25 @@ const styles = StyleSheet.create({
   activeIndicator: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
   activeIndicatorActive: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#A3B3A5',
   },
   tabLabel: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
-    color: '#64748B',
+    color: '#9B9589',
     marginTop: 2,
     letterSpacing: 0.5,
   },
   activeTabLabel: {
-    color: '#1A1A1A',
+    color: '#A3B3A5',
   },
   toastContainer: {
     position: 'absolute',
