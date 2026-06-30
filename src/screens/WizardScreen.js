@@ -13,8 +13,6 @@ import {
 import {
   ChevronRight,
   Calendar,
-  Droplets,
-  MoonStar,
   Sparkles,
   Activity,
   AlertCircle,
@@ -39,19 +37,9 @@ const getWizardSteps = (t) => [
     subtitle: t('wizard.step1_sub'),
   },
   {
-    icon: Droplets,
-    title: t('wizard.step2_title'),
-    subtitle: t('wizard.step2_sub'),
-  },
-  {
     icon: Heart,
     title: t('wizard.step3_title'),
     subtitle: t('wizard.step3_sub'),
-  },
-  {
-    icon: MoonStar,
-    title: t('wizard.step4_title'),
-    subtitle: t('wizard.step4_sub'),
   },
 ];
 
@@ -63,22 +51,11 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
 
   const [step, setStep] = useState(0);
   const [displayDate, setDisplayDate] = useState(formatLastPeriodForDisplay(defaults.lastPeriodStart));
-  const [cycleLength, setCycleLength] = useState(String(defaults.cycleLength));
-  const [periodLength, setPeriodLength] = useState(String(defaults.periodLength));
+  const [cycleLength, setCycleLength] = useState(defaults.cycleLength || 28);
+  const [periodLength, setPeriodLength] = useState(defaults.periodLength || 5);
   const [goal, setGoal] = useState(defaults.goal || 'balance');
 
   const lastPeriodStart = useMemo(() => parseDisplayLastPeriodToISO(displayDate), [displayDate]);
-
-  const preview = useMemo(
-    () =>
-      getCycleInsights({
-        lastPeriodStart,
-        cycleLength,
-        periodLength,
-        goal,
-      }),
-    [cycleLength, lastPeriodStart, periodLength, goal]
-  );
 
   const handleNext = () => {
     if (step < WIZARD_STEPS.length - 1) {
@@ -86,14 +63,25 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
       return;
     }
 
+    const preview = getCycleInsights({
+      lastPeriodStart,
+      cycleLength: String(cycleLength),
+      periodLength: String(periodLength),
+      goal,
+    });
     onFinish({
       lastPeriodStart,
-      cycleLength,
-      periodLength,
+      cycleLength: String(cycleLength),
+      periodLength: String(periodLength),
       currentPhase: preview.currentPhaseKey,
       goal,
     });
   };
+
+  const incrementCycle  = () => setCycleLength(prev => Math.min(45, prev + 1));
+  const decrementCycle  = () => setCycleLength(prev => Math.max(21, prev - 1));
+  const incrementPeriod = () => setPeriodLength(prev => Math.min(10, prev + 1));
+  const decrementPeriod = () => setPeriodLength(prev => Math.max(1,  prev - 1));
 
   const current = WIZARD_STEPS[step];
   const Icon = current.icon;
@@ -153,40 +141,47 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                         keyboardType="numbers-and-punctuation"
                       />
                     </View>
-                  </View>
-                )}
 
-                {step === 1 && (
-                  <View style={styles.formCard}>
-                    <View style={styles.row}>
-                      <View style={[styles.inputGroup, styles.halfInput]}>
+                    <View style={styles.sectionDivider} />
+                    <Text style={styles.adjustLabel}>{t('wizard.adjust_cycle_label')}</Text>
+
+                    <View style={styles.stepperRow}>
+                      <View style={styles.stepperGroup}>
                         <Text style={styles.label}>{t('wizard.cycle_length_label')}</Text>
-                        <TextInput
-                          value={cycleLength}
-                          onChangeText={setCycleLength}
-                          style={styles.input}
-                          keyboardType="number-pad"
-                          placeholder="28"
-                          placeholderTextColor={colors.placeholder}
-                        />
+                        <View style={styles.stepper}>
+                          <Pressable style={styles.stepBtn} onPress={decrementCycle}>
+                            <Text style={styles.stepBtnText}>−</Text>
+                          </Pressable>
+                          <View style={styles.stepValueWrap}>
+                            <Text style={styles.stepNum}>{cycleLength}</Text>
+                            <Text style={styles.stepUnit}>{t('wizard.days_unit')}</Text>
+                          </View>
+                          <Pressable style={styles.stepBtn} onPress={incrementCycle}>
+                            <Text style={styles.stepBtnText}>+</Text>
+                          </Pressable>
+                        </View>
                       </View>
 
-                      <View style={[styles.inputGroup, styles.halfInput]}>
+                      <View style={styles.stepperGroup}>
                         <Text style={styles.label}>{t('wizard.period_days_label')}</Text>
-                        <TextInput
-                          value={periodLength}
-                          onChangeText={setPeriodLength}
-                          style={styles.input}
-                          keyboardType="number-pad"
-                          placeholder="5"
-                          placeholderTextColor={colors.placeholder}
-                        />
+                        <View style={styles.stepper}>
+                          <Pressable style={styles.stepBtn} onPress={decrementPeriod}>
+                            <Text style={styles.stepBtnText}>−</Text>
+                          </Pressable>
+                          <View style={styles.stepValueWrap}>
+                            <Text style={styles.stepNum}>{periodLength}</Text>
+                            <Text style={styles.stepUnit}>{t('wizard.days_unit')}</Text>
+                          </View>
+                          <Pressable style={styles.stepBtn} onPress={incrementPeriod}>
+                            <Text style={styles.stepBtnText}>+</Text>
+                          </Pressable>
+                        </View>
                       </View>
                     </View>
                   </View>
                 )}
 
-                {step === 2 && (
+                {step === 1 && (
                   <View style={styles.goalSection}>
                     <View style={styles.goalsGrid}>
                       {[
@@ -202,10 +197,7 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                         return (
                           <Pressable
                             key={item.id}
-                            style={[
-                              styles.goalCard,
-                              isSelected && styles.goalCardActive
-                            ]}
+                            style={[styles.goalCard, isSelected && styles.goalCardActive]}
                             onPress={() => setGoal(item.id)}
                           >
                             <View style={[styles.goalIconCircle, isSelected && styles.goalIconActive]}>
@@ -218,25 +210,6 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                         );
                       })}
                     </View>
-                  </View>
-                )}
-
-                {step === 3 && (
-                  <View style={styles.previewCard}>
-                    <View style={styles.previewBadge}>
-                      <MoonStar size={16} color={colors.secondary} />
-                      <Text style={styles.previewBadgeText}>{t('wizard.current_phase_label')}</Text>
-                    </View>
-                    <Text style={styles.previewPhase}>{t(`phases.${preview.currentPhaseKey}`)}</Text>
-                    <Text style={styles.previewText}>
-                      {t('wizard.cycle_day_preview', { day: preview.cycleDay })}
-                    </Text>
-                    <Text style={styles.previewSubtext}>
-                      {t('wizard.next_period_preview', {
-                        days: preview.daysUntilNextPeriod,
-                        label: preview.fertileWindowLabel,
-                      })}
-                    </Text>
                   </View>
                 )}
               </View>
@@ -324,12 +297,63 @@ const styles = StyleSheet.create({
   inputGroup: {
     width: '100%',
   },
-  row: {
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#EFEDE4',
+    marginVertical: 4,
+  },
+  adjustLabel: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  stepperRow: {
     flexDirection: 'row',
     gap: 12,
   },
-  halfInput: {
+  stepperGroup: {
     flex: 1,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FBFBF7',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#EEE8DE',
+    paddingHorizontal: 8,
+    height: 60,
+  },
+  stepBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFEDE4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepBtnText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 18,
+    color: colors.on_surface,
+    lineHeight: 22,
+  },
+  stepValueWrap: {
+    alignItems: 'center',
+  },
+  stepNum: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 20,
+    color: colors.on_surface,
+    lineHeight: 24,
+  },
+  stepUnit: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 11,
+    color: colors.on_surface_variant,
   },
   label: {
     fontFamily: 'Outfit_700Bold',
