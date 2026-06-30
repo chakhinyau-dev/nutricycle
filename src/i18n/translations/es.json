@@ -761,7 +761,7 @@
     "meal_slots": {
       "breakfast": "Desayuno",
       "lunch": "Almuerzo",
-      "snack": "Merienda",
+      "snack": "Snack",
       "dinner": "Cena"
     },
     "empty_meal": "Sin video planificado",

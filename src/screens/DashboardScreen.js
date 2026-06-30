@@ -257,7 +257,7 @@ export const DashboardScreen = ({
       {/* 6. Key Foods for Your Phase */}
       <View style={styles.keyFoodsSection}>
         <View style={styles.keyFoodsSectionHeader}>
-          <Text style={styles.sectionTitle}>{t('dashboard.key_foods_section', { defaultValue: 'Foods for your phase' })}</Text>
+          <Text style={styles.sectionTitle} numberOfLines={2}>{t('dashboard.key_foods_section', { defaultValue: 'Foods for your phase' })}</Text>
           <Pressable onPress={() => onNavigate('keyFoods')} style={styles.seeAllBtn}>
             <Text style={styles.seeAllText}>{t('common.see_all', { defaultValue: 'Ver todo' })}</Text>
             <ChevronRight size={14} color={colors.primary} />
@@ -509,6 +509,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: colors.on_surface,
     lineHeight: 26,
+    flex: 1,
+    marginRight: 8,
   },
   seeAllBtn: {
     flexDirection: 'row',
