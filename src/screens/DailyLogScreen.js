@@ -21,14 +21,17 @@ import {
   Smile,
   Frown,
   Meh,
+  Laugh,
   History,
   CalendarDays,
   CheckCircle2,
-  Star,
   X,
   Trash2,
   Edit2,
   Leaf,
+  BatteryLow,
+  BatteryMedium,
+  Zap,
 } from 'lucide-react-native';
 import { loadDailyLogs, saveDailyLog, deleteDailyLog } from '../services/dailyLogService';
 
@@ -40,18 +43,19 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [mood, setMood] = useState('excelente');
+  const [energyLevel, setEnergyLevel] = useState('media');
   const [symptoms, setSymptoms] = useState([]);
   const [notes, setNotes] = useState('');
   const [history, setHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDone, setIsDone] = useState(false);
-  const [editingLogDate, setEditingLogDate] = useState(null); // Track if we are editing a past log
+  const [editingLogDate, setEditingLogDate] = useState(null);
 
   const MOODS = [
     { id: 'triste', label: t('dailylog.moods.triste'), icon: <Frown size={24} />, color: '#94A3B8' },
     { id: 'neutral', label: t('dailylog.moods.neutral'), icon: <Meh size={24} />, color: '#CBD5E1' },
     { id: 'feliz', label: t('dailylog.moods.feliz'), icon: <Smile size={24} />, color: '#A3B3A5' },
-    { id: 'excelente', label: t('dailylog.moods.excelente'), icon: <Star size={24} />, color: colors.primary },
+    { id: 'excelente', label: t('dailylog.moods.excelente'), icon: <Laugh size={24} />, color: colors.primary },
   ];
 
   const SYMPTOMS = [
@@ -63,6 +67,19 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
     { id: 'insomnio', label: t('dailylog.symptoms.insomnio') },
     { id: 'inflamacion', label: t('dailylog.symptoms.inflamacion') },
   ];
+
+  const ENERGY_LEVELS = [
+    { id: 'baja', label: t('dailylog.energy.baja'), icon: <BatteryLow size={20} /> },
+    { id: 'media', label: t('dailylog.energy.media'), icon: <BatteryMedium size={20} /> },
+    { id: 'alta', label: t('dailylog.energy.alta'), icon: <Zap size={20} /> },
+  ];
+
+  const PHASE_COLORS = {
+    menstrual: '#F2C4C4',
+    follicular: '#B8D8BC',
+    ovulation: '#F9E4B7',
+    luteal: '#C8BCE0',
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -122,6 +139,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
     try {
       await saveDailyLog(getToken, user.id, {
         mood,
+        energy_level: energyLevel,
         symptoms,
         notes,
         cycle_day: cycleInfo?.cycleDay,
@@ -213,6 +231,18 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
           </View>
         </View>
         <Text style={styles.title}>{t('dailylog.title')}</Text>
+        <View style={styles.headerMeta}>
+          {cycleInfo?.cycleDay != null && (
+            <Text style={styles.cycleDayText}>
+              {t('common.day')} {cycleInfo.cycleDay} del ciclo
+            </Text>
+          )}
+          {cycleInfo?.currentPhaseKey && (
+            <View style={[styles.phaseBadge, { backgroundColor: PHASE_COLORS[cycleInfo.currentPhaseKey] || '#E8EDE9' }]}>
+              <Text style={styles.phaseBadgeText}>{t(`phases.${cycleInfo.currentPhaseKey}`)}</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.card}>
@@ -236,6 +266,33 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
               <Text style={[styles.moodLabel, mood === m.id && { color: m.color }]}>{m.label}</Text>
             </Pressable>
           ))}
+        </View>
+      </View>
+
+      <View style={[styles.card, { marginTop: 24 }]}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{t('dailylog.energy_title')}</Text>
+          <Text style={styles.cardSubtitle}>{t('dailylog.energy_sub')}</Text>
+        </View>
+        <View style={styles.energyRow}>
+          {ENERGY_LEVELS.map((e) => {
+            const isActive = energyLevel === e.id;
+            return (
+              <Pressable
+                key={e.id}
+                style={[styles.energyBtn, isActive && styles.energyBtnActive]}
+                onPress={() => setEnergyLevel(e.id)}
+              >
+                {React.cloneElement(e.icon, {
+                  color: isActive ? colors.on_primary : colors.on_surface_variant,
+                  strokeWidth: isActive ? 2.5 : 1.5,
+                })}
+                <Text style={[styles.energyBtnText, isActive && styles.energyBtnTextActive]}>
+                  {e.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -446,6 +503,56 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: colors.on_surface,
     lineHeight: 38,
+  },
+  headerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 12,
+  },
+  cycleDayText: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+  },
+  phaseBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  phaseBadgeText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 11,
+    color: colors.on_surface,
+    letterSpacing: 0.3,
+  },
+  energyRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  energyBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F1F1E8',
+    backgroundColor: '#FAFAFA',
+    alignItems: 'center',
+    gap: 8,
+  },
+  energyBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  energyBtnText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  energyBtnTextActive: {
+    color: colors.on_primary,
   },
   card: {
     backgroundColor: '#FFFFFF',

@@ -7,34 +7,37 @@ import {
   Pressable,
   TextInput,
   Alert,
-  Image,
-  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Play } from 'lucide-react-native';
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
-const { width } = Dimensions.get('window');
-
 const CATEGORY_COLORS = {
-  proteins: '#E8845A',
-  fats: '#D4A853',
-  carbs: '#8B9DC3',
-  veg_fruits: '#6EA87B',
+  proteins: '#C97C7C',
+  fats: '#C9A84C',
+  carbs: '#9B8EC0',
+  veg_fruits: '#7BAE8A',
 };
 
-export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', user, videos = [], onNavigate }) => {
+const PHASE_COLORS = {
+  menstrual: '#F2C4C4',
+  follicular: '#B8D8BC',
+  ovulation: '#F9E4B7',
+  luteal: '#C8BCE0',
+};
+
+export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', user, recipes = [] }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
   const phaseKey = currentPhaseKey || 'follicular';
   const phaseFoods = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
 
-  // Videos for the current phase
-  const phaseVideos = videos.filter(v => v.phaseKey === phaseKey).slice(0, 4);
+  const phaseRecipes = recipes.filter(r => (r.phaseKey || r.phase_key) === phaseKey).slice(0, 6);
 
   const [checkedItems, setCheckedItems] = useState({});
+  const [checkedRecipes, setCheckedRecipes] = useState({});
   const [customItems, setCustomItems] = useState([]);
   const [newCustomItem, setNewCustomItem] = useState('');
   const [expandedItem, setExpandedItem] = useState(null);
@@ -57,6 +60,10 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
     try {
       await AsyncStorage.setItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`, JSON.stringify(updated));
     } catch (e) {}
+  };
+
+  const toggleRecipe = (id) => {
+    setCheckedRecipes(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleAddCustomItem = async () => {
@@ -89,6 +96,7 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
           style: 'destructive',
           onPress: async () => {
             setCheckedItems({});
+            setCheckedRecipes({});
             setCustomItems([]);
             try {
               await AsyncStorage.removeItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`);
@@ -114,17 +122,16 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
             <ChevronLeft size={24} color={colors.on_surface} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={styles.overline}>{t('shopping.overline', { defaultValue: 'SMART SHOPPING' })}</Text>
             <Text style={styles.title}>{t('shopping.title')}</Text>
           </View>
           <Pressable onPress={handleClearList} style={styles.clearBtn}>
-            <Trash2 size={18} color="#EB5757" />
+            <Trash2 size={18} color={colors.on_surface_variant} />
           </Pressable>
         </View>
 
         {/* Phase badge */}
-        <View style={styles.phaseBadge}>
-          <Text style={styles.phaseBadgeText}>{t(`phases.${phaseKey}`).toUpperCase()}</Text>
+        <View style={[styles.phaseBadge, { backgroundColor: PHASE_COLORS[phaseKey] || '#E8EDE9' }]}>
+          <Text style={styles.phaseBadgeText}>{t(`phases.${phaseKey}`)}</Text>
         </View>
 
         {/* Progress bar */}
@@ -137,37 +144,36 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
           </View>
         </View>
 
-        {/* Phase videos */}
-        {phaseVideos.length > 0 && (
-          <View style={styles.videosSection}>
-            <Text style={styles.videosSectionTitle}>{t('shopping.videos_for_phase', { defaultValue: 'Videos for this phase' })}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.videosRow}>
-              {phaseVideos.map(video => (
+        {/* Phase recipes */}
+        {phaseRecipes.length > 0 && (
+          <View style={styles.recipesSection}>
+            <Text style={styles.recipesSectionTitle}>{t('shopping.recipes_section', { defaultValue: 'RECETAS DE ESTA SEMANA' })}</Text>
+            {phaseRecipes.map(recipe => {
+              const rid = recipe.id;
+              const isChecked = !!checkedRecipes[rid];
+              const recipePhase = recipe.phaseKey || recipe.phase_key || phaseKey;
+              const badgeBg = PHASE_COLORS[recipePhase] || '#E8EDE9';
+              return (
                 <Pressable
-                  key={video.id}
-                  style={styles.videoCard}
-                  onPress={() => onNavigate && onNavigate('videos')}
+                  key={rid}
+                  style={[styles.recipeRow, isChecked && styles.recipeRowChecked]}
+                  onPress={() => toggleRecipe(rid)}
                 >
-                  <View style={styles.videoThumbWrap}>
-                    {video.thumbnailUrl ? (
-                      <Image source={{ uri: video.thumbnailUrl }} style={styles.videoThumb} resizeMode="cover" />
-                    ) : (
-                      <View style={[styles.videoThumb, { backgroundColor: '#E8E4DC' }]} />
-                    )}
-                    <View style={styles.playBadge}>
-                      <Play size={10} color="#FFF" fill="#FFF" />
-                    </View>
-                    {video.duration ? (
-                      <View style={styles.durationBadge}>
-                        <Text style={styles.durationText}>{video.duration}</Text>
-                      </View>
-                    ) : null}
+                  <View style={styles.checkCol}>
+                    {isChecked
+                      ? <CheckCircle2 size={20} color={colors.primary} />
+                      : <Circle size={20} color="#CBD5E1" />
+                    }
                   </View>
-                  <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-                  <Text style={styles.videoMeal}>{t(`dailylog.meal_types.${video.mealType}`, { defaultValue: video.mealType })}</Text>
+                  <Text style={[styles.recipeName, isChecked && styles.recipeNameChecked]} numberOfLines={1}>
+                    {recipe.title}
+                  </Text>
+                  <View style={[styles.recipePhaseTag, { backgroundColor: badgeBg }]}>
+                    <Text style={styles.recipePhaseText}>{t(`phases.${recipePhase}`)}</Text>
+                  </View>
                 </Pressable>
-              ))}
-            </ScrollView>
+              );
+            })}
           </View>
         )}
 
@@ -237,7 +243,7 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
                   {item.name}
                 </Text>
                 <Pressable onPress={() => removeCustomItem(item.id)} style={{ padding: 8 }}>
-                  <Trash2 size={16} color="#EB5757" />
+                  <Trash2 size={16} color={colors.on_surface_variant} />
                 </Pressable>
               </View>
             ))}
@@ -312,13 +318,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#F4F4EE',
     justifyContent: 'center',
     alignItems: 'center',
   },
   phaseBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.secondary_container,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -327,8 +332,8 @@ const styles = StyleSheet.create({
   phaseBadgeText: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 11,
-    color: colors.secondary,
-    letterSpacing: 1.2,
+    color: colors.on_surface,
+    letterSpacing: 0.5,
   },
   progressSection: {
     marginBottom: 28,
@@ -467,72 +472,52 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  videosSection: {
+  recipesSection: {
     marginBottom: 28,
   },
-  videosSectionTitle: {
+  recipesSectionTitle: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 12,
     color: colors.on_surface_variant,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 12,
-  },
-  videosRow: {
-    gap: 12,
-    paddingRight: 4,
-  },
-  videoCard: {
-    width: (width - 72) / 2,
-  },
-  videoThumbWrap: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 8,
-  },
-  videoThumb: {
-    width: '100%',
-    height: 90,
-    borderRadius: 12,
-  },
-  playBadge: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  durationBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  durationText: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 10,
-    color: '#FFF',
-  },
-  videoTitle: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 13,
-    color: colors.on_surface,
-    lineHeight: 17,
-    marginBottom: 2,
-  },
-  videoMeal: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 11,
-    color: colors.on_surface_variant,
     opacity: 0.7,
-    textTransform: 'capitalize',
+  },
+  recipeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    gap: 12,
+  },
+  recipeRowChecked: {
+    opacity: 0.5,
+    backgroundColor: '#F8F8F4',
+  },
+  recipeName: {
+    flex: 1,
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    color: colors.on_surface,
+  },
+  recipeNameChecked: {
+    textDecorationLine: 'line-through',
+    color: colors.on_surface_variant,
+  },
+  recipePhaseTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  recipePhaseText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+    color: colors.on_surface,
+    letterSpacing: 0.3,
   },
 });

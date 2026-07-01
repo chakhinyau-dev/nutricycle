@@ -192,9 +192,9 @@
   "phase_ovulation_msg": "Estás en tu punto más alto.\nBrilla, conecta y disfruta de tu vitalidad natural",
   "phase_luteal_msg": "El cuerpo pide bajar el ritmo.\nPrioriza el autocuidado y alimentos reconfortantes",
   "dailylog": {
-    "title": "Registro de\nsíntomas",
+    "title": "¿Cómo estás\nhoy?",
     "mood_title": "Estado de Ánimo",
-    "mood_sub": "¿Cómo va tu energía hoy?",
+    "mood_sub": "¿Cómo te sentís hoy?",
     "symptoms_title": "Síntomas",
     "symptoms_sub": "Identifica tus señales corporales",
     "notes_title": "Notas personales",
@@ -232,6 +232,13 @@
       "lunch": "Almuerzo",
       "snack": "Snack",
       "dinner": "Cena"
+    },
+    "energy_title": "Energía",
+    "energy_sub": "¿Cuánta energía tenés?",
+    "energy": {
+      "baja": "Baja",
+      "media": "Media",
+      "alta": "Alta"
     }
   },
   "hydration": {
@@ -660,6 +667,7 @@
     "consolidated_list": "2. Tu Lista Consolidada",
     "empty_placeholder": "Selecciona al menos un día arriba para rellenar la lista de compras.",
     "add_custom": "+ Agregar a mi lista",
+    "recipes_section": "RECETAS DE ESTA SEMANA",
     "add_placeholder": "Ej: Servilletas, sal de mar...",
     "clear_confirm_title": "Limpiar Lista",
     "clear_confirm_desc": "¿Estás seguro de que deseas limpiar y regenerar la lista de compras?",

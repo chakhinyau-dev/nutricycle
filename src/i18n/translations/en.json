@@ -187,9 +187,9 @@
   "phase_ovulation_msg": "You are at your peak.\nShine, connect, and enjoy your natural vitality.",
   "phase_luteal_msg": "Your body wants a slower rhythm.\nPrioritize self-care and comforting foods.",
   "dailylog": {
-    "title": "Symptom\nLog",
+    "title": "How are\nyou today?",
     "mood_title": "Mood",
-    "mood_sub": "How is your energy today?",
+    "mood_sub": "How are you feeling today?",
     "symptoms_title": "Symptoms",
     "symptoms_sub": "Identify your body signals",
     "notes_title": "Daily Story",
@@ -227,6 +227,13 @@
       "lunch": "Lunch",
       "snack": "Snack",
       "dinner": "Dinner"
+    },
+    "energy_title": "Energy",
+    "energy_sub": "How much energy do you have?",
+    "energy": {
+      "baja": "Low",
+      "media": "Medium",
+      "alta": "High"
     }
   },
   "hydration": {
@@ -668,6 +675,7 @@
     "consolidated_list": "2. Your Consolidated List",
     "empty_placeholder": "Select at least one day above to populate the shopping list.",
     "add_custom": "+ Add to my list",
+    "recipes_section": "THIS WEEK'S RECIPES",
     "add_placeholder": "E.g., Napkins, sea salt...",
     "clear_confirm_title": "Clear List",
     "clear_confirm_desc": "Are you sure you want to clear and regenerate the shopping list?",
