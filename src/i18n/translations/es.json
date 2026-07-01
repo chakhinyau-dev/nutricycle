@@ -746,7 +746,7 @@
     }
   },
   "nutrition": {
-    "title": "Nutrición",
+    "title": "Come hoy\nsegún tu fase",
     "day_label": "Día",
     "plan_today": "Plan de hoy",
     "calories_label": "Calorías",
@@ -775,6 +775,7 @@
     },
     "empty_meal": "Sin video planificado",
     "empty_meal_sub": "Toca para explorar videos de la fase",
+    "total_day": "TOTAL DEL DÍA",
     "swap_title": "Intercambiar comida",
     "swap_subtitle": "Alternativas para la fase {{phase}}:",
     "no_alternatives": "No hay recetas alternativas disponibles."

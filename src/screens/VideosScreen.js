@@ -20,6 +20,12 @@ import { translateContent } from '../services/translationService';
 const { width } = Dimensions.get('window');
 /** Standard 16:9 for YouTube videos */
 const YOUTUBE_HEIGHT = Math.round(width * (9 / 16));
+
+const computeMacros = (calories) => ({
+  p: Math.round((calories * 0.24) / 4),
+  c: Math.round((calories * 0.46) / 4),
+  g: Math.round((calories * 0.30) / 9),
+});
 /** Taller area for direct/uploaded video files */
 const VIDEO_AREA_HEIGHT = width * 1.2;
 /** Space below scroll content so tab bar / home indicator doesn’t cover title/description */
@@ -159,6 +165,12 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
     const recipeInstructions = videoInstructions || linkedRecipe?.instructions || [];
     const hasRecipeContent = !!(recipeIngredients.length || recipeInstructions.length);
 
+    const videoCals = linkedRecipe?.calories || activeVideo?.calories || 0;
+    const videoMacros = computeMacros(videoCals);
+    const macroLine = videoCals > 0
+      ? `${videoCals} kcal · P ${videoMacros.p}g · C ${videoMacros.c}g · G ${videoMacros.g}g`
+      : null;
+
     const isAudioOnly =
       activeVideo?.contentType === 'wellness' ||
       activeVideo?.category?.toLowerCase().includes('meditación') ||
@@ -234,18 +246,16 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                 allowsFullscreen
               />
             )}
+
+            {macroLine && (
+              <View style={styles.videoMacroOverlay}>
+                <Text style={styles.videoMacroText}>{macroLine}</Text>
+              </View>
+            )}
           </View>
 
           {/* Details flow seamlessly under the video */}
           <View style={styles.detailsSection}>
-            <View style={styles.tagRow}>
-              <View style={styles.phaseTag}>
-                <Text style={styles.tagText}>
-                  {getLocalizedVideoLabel(activeVideo)}
-                </Text>
-              </View>
-              <Text style={styles.durationDetail}>{activeVideo?.duration}</Text>
-            </View>
             <Text style={styles.detailTitle}>{activeVideo?.title}</Text>
             {!hasRecipeContent && (
               <Text style={styles.detailDesc}>{activeVideo?.description}</Text>
@@ -453,8 +463,22 @@ const styles = StyleSheet.create({
   },
   backCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginRight: 16, borderWidth: 1, borderColor: '#F1F1E8' },
   playerNavTitle: { flex: 1, fontSize: 16, fontFamily: 'InstrumentSerif_400Regular', color: colors.on_surface },
-  videoArea: { width: '100%', height: VIDEO_AREA_HEIGHT },
-  detailsSection: { paddingHorizontal: 28, paddingTop: 16, paddingBottom: 8 },
+  videoArea: { width: '100%', height: VIDEO_AREA_HEIGHT, position: 'relative' },
+  videoMacroOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  videoMacroText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  detailsSection: { paddingHorizontal: 28, paddingTop: 20, paddingBottom: 8 },
   tagRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   phaseTag: { backgroundColor: '#A3B3A520', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 12 },
   tagText: { color: '#A3B3A5', fontSize: 11, fontFamily: 'Outfit_700Bold', textTransform: 'uppercase' },

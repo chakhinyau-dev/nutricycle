@@ -143,16 +143,16 @@ export const DashboardScreen = ({
       <View style={styles.trackerCard}>
         <View style={styles.trackerColumns}>
           <View style={styles.trackerColumn}>
-            <Text style={styles.trackerValue}>{trackerData.energy}</Text>
             <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'ENERGÍA' })}</Text>
+            <Text style={styles.trackerValue}>{trackerData.energy}</Text>
           </View>
           <View style={[styles.trackerColumn, styles.trackerColumnCenter]}>
-            <Text style={styles.trackerValue}>{trackerData.mood}</Text>
             <Text style={styles.trackerLabel}>{t('dashboard.tracker_mood', { defaultValue: 'ÁNIMO' })}</Text>
+            <Text style={styles.trackerValue}>{trackerData.mood}</Text>
           </View>
           <View style={styles.trackerColumn}>
-            <Text style={styles.trackerValue}>{trackerData.drive}</Text>
             <Text style={styles.trackerLabel}>{t('dashboard.tracker_drive', { defaultValue: 'IMPULSO' })}</Text>
+            <Text style={styles.trackerValue}>{trackerData.drive}</Text>
           </View>
         </View>
         <Pressable style={styles.trackerBtn} onPress={() => onNavigate('calendar')}>
