@@ -31,6 +31,7 @@ const normalizeVideo = (video) => {
     duration: video.duration || '5:00',
     thumbnail: video.thumbnail || (youtubeUrl ? `https://img.youtube.com/vi/${extractYouTubeId(youtubeUrl)}/hqdefault.jpg` : ''),
     mealType: video.meal_type || video.mealType || 'none',
+    calories: video.calories || 0,
     youtubeId: extractYouTubeId(youtubeUrl),
     ingredients: Array.isArray(video.ingredients)
       ? video.ingredients
@@ -91,6 +92,7 @@ export const saveVideo = async (getToken, videoData) => {
     instructions: Array.isArray(videoData.instructions)
       ? videoData.instructions
       : (videoData.instructions ? String(videoData.instructions).split('\n').filter(Boolean) : []),
+    calories: parseInt(videoData.calories) || 0,
   };
 
   console.log('[Supabase Video Save] Payload:', JSON.stringify(payload, null, 2));

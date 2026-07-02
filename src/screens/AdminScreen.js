@@ -107,6 +107,7 @@ export const AdminScreen = ({
     youtubeUrl: '',
     videoUrl: '',
     duration: '5:00',
+    calories: '',
     thumbnail: '',
     ingredients: '',
     instructions: '',
@@ -138,6 +139,7 @@ export const AdminScreen = ({
       youtubeUrl: '',
       videoUrl: '',
       duration: '5:00',
+      calories: '',
       thumbnail: '',
       ingredients: '',
       instructions: '',
@@ -233,6 +235,7 @@ export const AdminScreen = ({
       youtubeUrl: vid.youtubeUrl || vid.youtube_url || '',
       videoUrl: vid.videoUrl || vid.video_url || '',
       duration: vid.duration,
+      calories: vid.calories ? String(vid.calories) : '',
       thumbnail: vid.thumbnail || '',
       ingredients: Array.isArray(vid.ingredients) ? vid.ingredients.join('\n') : '',
       instructions: Array.isArray(vid.instructions) ? vid.instructions.join('\n') : '',
@@ -301,6 +304,7 @@ export const AdminScreen = ({
         phase_key: newVideo.phaseKey,
         meal_type: newVideo.mealType,
         duration: newVideo.duration,
+        calories: parseInt(newVideo.calories) || 0,
         thumbnail: finalThumbnail,
         is_youtube: isYoutube,
         updated_at: new Date().toISOString(),
@@ -576,11 +580,24 @@ export const AdminScreen = ({
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.label}>{t('videos.duration')}</Text>
-                        <TextInput 
-                           style={styles.input} 
-                           value={newVideo.duration} 
+                        <TextInput
+                           style={styles.input}
+                           value={newVideo.duration}
                            placeholder="5:00"
                            onChangeText={t => setNewVideo({...newVideo, duration: t})}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.row}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.label}>{t('admin.calories', { defaultValue: 'Calorías (kcal)' })}</Text>
+                        <TextInput
+                           style={styles.input}
+                           value={newVideo.calories}
+                           placeholder="320"
+                           keyboardType="numeric"
+                           onChangeText={v => setNewVideo({...newVideo, calories: v.replace(/[^0-9]/g, '')})}
                         />
                     </View>
                 </View>

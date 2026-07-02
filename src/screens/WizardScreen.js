@@ -125,7 +125,6 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                 </View>
 
                 <Text style={styles.title}>{current.title}</Text>
-                <Text style={styles.subtitle}>{current.subtitle}</Text>
 
                 {step === 0 && (
                   <View style={styles.formCard}>
@@ -212,6 +211,8 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                     </View>
                   </View>
                 )}
+
+                <Text style={styles.subtitle}>{current.subtitle}</Text>
               </View>
             </View>
 
@@ -283,6 +284,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 26,
     paddingHorizontal: 12,
+    marginTop: 24,
   },
   formCard: {
     marginTop: 36,
