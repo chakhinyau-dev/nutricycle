@@ -192,9 +192,9 @@
   "phase_ovulation_msg": "Estás en tu punto más alto.\nBrilla, conecta y disfruta de tu vitalidad natural",
   "phase_luteal_msg": "El cuerpo pide bajar el ritmo.\nPrioriza el autocuidado y alimentos reconfortantes",
   "dailylog": {
-    "title": "¿Cómo estás\nhoy?",
+    "title": "¿Cómo estás hoy?",
     "mood_title": "Estado de Ánimo",
-    "mood_sub": "¿Cómo te sentís hoy?",
+    "mood_sub": "¿Cómo te sientes?",
     "symptoms_title": "Síntomas",
     "symptoms_sub": "Identifica tus señales corporales",
     "notes_title": "Notas personales",
@@ -231,10 +231,11 @@
       "breakfast": "Desayuno",
       "lunch": "Almuerzo",
       "snack": "Snack",
-      "dinner": "Cena"
+      "dinner": "Cena",
+      "prep": "Prep"
     },
     "energy_title": "Energía",
-    "energy_sub": "¿Cuánta energía tenés?",
+    "energy_sub": "¿Cuánta energía tienes?",
     "energy": {
       "baja": "Baja",
       "media": "Media",
@@ -318,7 +319,7 @@
       "fitness": "Movimiento",
       "tips": "Consejos"
     },
-    "title": "Come según\ntu fase",
+    "title": "Recetas por fase",
     "overline": "BIBLIOTECA DE VIDEOS NUTRICYCLE",
     "featured": "DESTACADO PARA {{phase}}",
     "recommended": "VIDEOS RECOMENDADOS",
@@ -746,7 +747,7 @@
     }
   },
   "nutrition": {
-    "title": "Come hoy\nsegún tu fase",
+    "title": "Come hoy",
     "day_label": "Día",
     "plan_today": "Plan de hoy",
     "calories_label": "Calorías",

@@ -22,6 +22,7 @@ const getMealTypes = (t) => [
   { id: 'lunch', name: t('dailylog.meal_types.lunch') },
   { id: 'snack', name: t('dailylog.meal_types.snack') },
   { id: 'dinner', name: t('dailylog.meal_types.dinner') },
+  { id: 'prep', name: t('dailylog.meal_types.prep') },
 ];
 
 export const RecipesScreen = ({
@@ -76,7 +77,8 @@ export const RecipesScreen = ({
       const vidPhase = recipe.phaseKey || recipe.phase_key || '';
       const vidMeal = recipe.mealType || recipe.meal_type || '';
       const matchesSearch = !query || recipe.title.toLowerCase().includes(query);
-      const matchesCategory = activeTab === 'all' || vidPhase === activeTab;
+      const isPrep = vidMeal === 'prep';
+      const matchesCategory = activeTab === 'all' || isPrep || vidPhase === activeTab;
       const matchesMealType = activeMealType === 'all' || vidMeal === activeMealType;
       return matchesSearch && matchesCategory && matchesMealType;
     });

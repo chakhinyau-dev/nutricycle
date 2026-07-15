@@ -45,6 +45,7 @@ const getMealTypes = (t) => [
   { id: 'lunch', name: t('dailylog.meal_types.lunch') },
   { id: 'snack', name: t('dailylog.meal_types.snack') },
   { id: 'dinner', name: t('dailylog.meal_types.dinner') },
+  { id: 'prep', name: t('dailylog.meal_types.prep') },
 ];
 
 
@@ -131,11 +132,13 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
       const vidPhase = video.phaseKey || video.phase_key || '';
       const vidMeal = video.mealType || video.meal_type || '';
       
-      const matchesPhase = activeFilterId === 'all' || 
+      const isPrep = vidMeal === 'prep';
+      const matchesPhase = activeFilterId === 'all' ||
+                         isPrep ||
                          vidPhase === activeFilterId ||
                          (activeFilterId !== 'all' && video.category?.toLowerCase().includes(activeFilterId.toLowerCase()));
 
-      const matchesMealType = activeMealType === 'all' || 
+      const matchesMealType = activeMealType === 'all' ||
                             vidMeal === activeMealType;
 
       return matchesPhase && matchesMealType;

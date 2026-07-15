@@ -314,6 +314,7 @@ const styles = StyleSheet.create({
   stepperRow: {
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'flex-end',
   },
   stepperGroup: {
     flex: 1,
@@ -341,7 +342,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_700Bold',
     fontSize: 18,
     color: colors.on_surface,
-    lineHeight: 22,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   stepValueWrap: {
     alignItems: 'center',

@@ -609,10 +609,11 @@ export const AdminScreen = ({
                       { id: 'breakfast', icon: Coffee, label: t('dailylog.meal_types.breakfast') },
                       { id: 'lunch', icon: Utensils, label: t('dailylog.meal_types.lunch') },
                       { id: 'snack', icon: Apple, label: t('dailylog.meal_types.snack') },
-                      { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') }
+                      { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') },
+                      { id: 'prep', icon: ChefHat, label: t('dailylog.meal_types.prep') }
                     ].map(m => (
-                        <Pressable 
-                            key={m.id} 
+                        <Pressable
+                            key={m.id}
                             onPress={() => setNewVideo({...newVideo, mealType: m.id})}
                             style={[styles.mealBtn, newVideo.mealType === m.id && styles.mealBtnActive]}
                         >
@@ -710,10 +711,11 @@ export const AdminScreen = ({
                       { id: 'breakfast', icon: Coffee, label: t('dailylog.meal_types.breakfast') },
                       { id: 'lunch', icon: Utensils, label: t('dailylog.meal_types.lunch') },
                       { id: 'snack', icon: Apple, label: t('dailylog.meal_types.snack') },
-                      { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') }
+                      { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') },
+                      { id: 'prep', icon: ChefHat, label: t('dailylog.meal_types.prep') }
                     ].map(m => (
-                        <Pressable 
-                            key={m.id} 
+                        <Pressable
+                            key={m.id}
                             onPress={() => setNewRecipe({...newRecipe, mealType: m.id})}
                             style={[styles.mealBtn, newRecipe.mealType === m.id && styles.mealBtnActive]}
                         >

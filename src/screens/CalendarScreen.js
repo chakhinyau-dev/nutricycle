@@ -454,18 +454,18 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
         <View style={styles.chartWrapper}>
           <Svg width={chartWidth} height={chartHeight}>
             {/* Filled areas */}
-            <Path d={tFilledPath} fill="#B0A0D4" opacity={0.10} />
-            <Path d={pFilledPath} fill="#94C49A" opacity={0.12} />
-            <Path d={eFilledPath} fill="#E8A0A2" opacity={0.14} />
+            <Path d={tFilledPath} fill="#C9A84C" opacity={0.10} />
+            <Path d={pFilledPath} fill="#968DA1" opacity={0.12} />
+            <Path d={eFilledPath} fill="#A3B3A5" opacity={0.14} />
             {/* Stroke curves */}
-            <Path d={testosteronePath} fill="none" stroke="#B0A0D4" strokeWidth={1.5} />
-            <Path d={progesteronePath} fill="none" stroke="#94C49A" strokeWidth={2} />
-            <Path d={estrogenPath}     fill="none" stroke="#E8A0A2" strokeWidth={2} />
+            <Path d={testosteronePath} fill="none" stroke="#C9A84C" strokeWidth={1.5} />
+            <Path d={progesteronePath} fill="none" stroke="#968DA1" strokeWidth={2} />
+            <Path d={estrogenPath}     fill="none" stroke="#A3B3A5" strokeWidth={2} />
             {/* Selected day marker */}
             <Line x1={selectDayX} y1={4} x2={selectDayX} y2={chartHeight - 8} stroke="#968DA1" strokeWidth={1} strokeDasharray="3 3" />
-            <Circle cx={selectDayX} cy={selectE_Y} r={4} fill="#E8A0A2" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={selectDayX} cy={selectP_Y} r={4} fill="#94C49A" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={selectDayX} cy={selectT_Y} r={4} fill="#B0A0D4" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectE_Y} r={4} fill="#A3B3A5" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectP_Y} r={4} fill="#968DA1" stroke="#FFFFFF" strokeWidth={1.5} />
+            <Circle cx={selectDayX} cy={selectT_Y} r={4} fill="#C9A84C" stroke="#FFFFFF" strokeWidth={1.5} />
           </Svg>
         </View>
 
@@ -478,7 +478,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
         </View>
 
         <View style={styles.legendContainer}>
-          {[['#E8A0A2', 'dashboard.estrogen'], ['#94C49A', 'dashboard.progesterone'], ['#B0A0D4', 'dashboard.testosterone']].map(([c, key]) => (
+          {[['#A3B3A5', 'dashboard.estrogen'], ['#968DA1', 'dashboard.progesterone'], ['#C9A84C', 'dashboard.testosterone']].map(([c, key]) => (
             <View key={key} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: c }]} />
               <Text style={styles.legendLabel}>{t(key)}</Text>

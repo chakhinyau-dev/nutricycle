@@ -187,9 +187,9 @@
   "phase_ovulation_msg": "You are at your peak.\nShine, connect, and enjoy your natural vitality.",
   "phase_luteal_msg": "Your body wants a slower rhythm.\nPrioritize self-care and comforting foods.",
   "dailylog": {
-    "title": "How are\nyou today?",
+    "title": "How are you today?",
     "mood_title": "Mood",
-    "mood_sub": "How are you feeling today?",
+    "mood_sub": "How are you feeling?",
     "symptoms_title": "Symptoms",
     "symptoms_sub": "Identify your body signals",
     "notes_title": "Daily Story",
@@ -226,7 +226,8 @@
       "breakfast": "Breakfast",
       "lunch": "Lunch",
       "snack": "Snack",
-      "dinner": "Dinner"
+      "dinner": "Dinner",
+      "prep": "Prep"
     },
     "energy_title": "Energy",
     "energy_sub": "How much energy do you have?",
@@ -315,7 +316,7 @@
       "fitness": "Movement",
       "tips": "Tips"
     },
-    "title": "Videos for\nyour phase",
+    "title": "Recipes by phase",
     "overline": "NUTRICYCLE VIDEO LIBRARY",
     "audio_session": "Audio session",
     "category_prefix": "Phase {{phase}} • {{meal}}",
@@ -754,7 +755,7 @@
     }
   },
   "nutrition": {
-    "title": "Nutrition",
+    "title": "Eat today",
     "day_label": "Day",
     "plan_today": "Today's Plan",
     "calories_label": "Calories",

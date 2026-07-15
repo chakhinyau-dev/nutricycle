@@ -541,6 +541,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 1,
+    overflow: 'hidden',
   },
   timelineLegendDot: {
     width: 6,

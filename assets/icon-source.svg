@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#4A4453"/>
+
+  <!-- Left circle — #968DA1 (purple) -->
+  <circle
+    cx="430"
+    cy="512"
+    r="200"
+    fill="none"
+    stroke="#968DA1"
+    stroke-width="28"
+  />
+
+  <!-- Right circle — #A3B3A5 (sage green) -->
+  <circle
+    cx="594"
+    cy="512"
+    r="200"
+    fill="none"
+    stroke="#A3B3A5"
+    stroke-width="28"
+  />
+</svg>

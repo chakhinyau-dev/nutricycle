@@ -235,6 +235,9 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
             </View>
             <Text style={styles.masterName}>{fullName}</Text>
             <Text style={styles.masterEmail}>{email}</Text>
+            <View style={styles.masterPhaseBadge}>
+              <Text style={styles.masterPhaseText}>{t(`phases.${currentPhaseKey || 'follicular'}`)}</Text>
+            </View>
           </View>
         </View>
 
@@ -473,6 +476,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_500Medium',
     fontSize: 14,
     color: colors.on_surface_variant,
+    marginBottom: 10,
+  },
+  masterPhaseBadge: {
+    backgroundColor: colors.primary_container,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 2,
+  },
+  masterPhaseText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: colors.primary,
   },
   mainGroup: {
     marginTop: -40,

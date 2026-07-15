@@ -143,15 +143,15 @@ export const DashboardScreen = ({
       <View style={styles.trackerCard}>
         <View style={styles.trackerColumns}>
           <View style={styles.trackerColumn}>
-            <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'ENERGÍA' })}</Text>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'Energía' })}</Text>
             <Text style={styles.trackerValue}>{trackerData.energy}</Text>
           </View>
           <View style={[styles.trackerColumn, styles.trackerColumnCenter]}>
-            <Text style={styles.trackerLabel}>{t('dashboard.tracker_mood', { defaultValue: 'ÁNIMO' })}</Text>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_mood', { defaultValue: 'Ánimo' })}</Text>
             <Text style={styles.trackerValue}>{trackerData.mood}</Text>
           </View>
           <View style={styles.trackerColumn}>
-            <Text style={styles.trackerLabel}>{t('dashboard.tracker_drive', { defaultValue: 'IMPULSO' })}</Text>
+            <Text style={styles.trackerLabel}>{t('dashboard.tracker_drive', { defaultValue: 'Impulso' })}</Text>
             <Text style={styles.trackerValue}>{trackerData.drive}</Text>
           </View>
         </View>
@@ -397,17 +397,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.3)',
   },
   trackerLabel: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 20,
+    color: '#FFFFFF',
+    lineHeight: 24,
+  },
+  trackerValue: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 10,
     color: 'rgba(255,255,255,0.75)',
     letterSpacing: 1,
     marginTop: 4,
     textTransform: 'uppercase',
-  },
-  trackerValue: {
-    fontFamily: 'InstrumentSerif_400Regular_Italic',
-    fontSize: 22,
-    color: '#FFFFFF',
   },
   trackerBtn: {
     backgroundColor: 'rgba(255,255,255,0.22)',
