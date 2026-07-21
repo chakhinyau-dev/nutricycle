@@ -44,6 +44,7 @@ import {
 } from '../services/videoService';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { saveRecipe, deleteRecipe, uploadRecipeImage, getRecipeImageSource } from '../services/recipeService';
+import { saveKeyFood, deleteKeyFood } from '../services/keyFoodsService';
 
 const { width } = Dimensions.get('window');
 
@@ -77,19 +78,22 @@ const generateWebThumbnail = (fileUri) => {
   });
 };
 
-export const AdminScreen = ({ 
-  onBack, 
-  videos = [], 
-  recipes = [], 
-  onRefresh, 
+export const AdminScreen = ({
+  onBack,
+  videos = [],
+  recipes = [],
+  keyFoods = {},
+  onRefresh,
   isAdmin,
   user,
   isPremium,
   onTogglePremium,
-  showToast
+  showToast,
+  getToken: getTokenProp,
 }) => {
   const { t } = useTranslation();
-  const { getToken } = useAuth();
+  const { getToken: getTokenAuth } = useAuth();
+  const getToken = getTokenProp || getTokenAuth;
   const scrollViewRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState('videos');
@@ -146,6 +150,77 @@ export const AdminScreen = ({
     });
     setLocalVideoFile(null);
     setEditingVideoId(null);
+  };
+
+  // Food State
+  const [editingFoodId, setEditingFoodId] = useState(null);
+  const [newFood, setNewFood] = useState({
+    name: '',
+    phaseKey: 'follicular',
+    categoryKey: 'proteins',
+    hormoneTag: 'energy',
+    mealType: 'lunch',
+    imageUrl: '',
+  });
+
+  const resetFoodForm = () => {
+    setEditingFoodId(null);
+    setNewFood({ name: '', phaseKey: 'follicular', categoryKey: 'proteins', hormoneTag: 'energy', mealType: 'lunch', imageUrl: '' });
+  };
+
+  const handleEditFood = (food) => {
+    setEditingFoodId(food.id || food.key);
+    setNewFood({
+      name:        food.name || food.key || '',
+      phaseKey:    food.phaseKey    || 'follicular',
+      categoryKey: food.categoryKey || 'proteins',
+      hormoneTag:  food.hormoneTag  || 'energy',
+      mealType:    food.mealType    || 'lunch',
+      imageUrl:    food.imageUrl || food.image || '',
+    });
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const handleSaveFood = async () => {
+    if (!newFood.name?.trim()) {
+      if (showToast) showToast('El nombre del alimento es obligatorio', 'error');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const result = await saveKeyFood(getToken, { ...newFood, id: editingFoodId });
+      if (result) {
+        if (showToast) showToast(editingFoodId ? 'Alimento actualizado' : 'Alimento guardado');
+        resetFoodForm();
+        if (onRefresh) onRefresh();
+      }
+    } catch (err) {
+      if (showToast) showToast('Error al guardar', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteFood = (foodId) => {
+    const performDelete = async () => {
+      try {
+        setIsSaving(true);
+        const ok = await deleteKeyFood(getToken, foodId);
+        if (ok) {
+          if (showToast) showToast('Alimento eliminado');
+          if (onRefresh) onRefresh();
+        }
+      } catch (err) {
+        if (showToast) showToast('Error al eliminar', 'error');
+      } finally {
+        setIsSaving(false);
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('¿Eliminar este alimento?')) performDelete();
+    } else {
+      Alert.alert('Eliminar', '¿Eliminar este alimento?', [{ text: 'Cancelar' }, { text: 'Eliminar', onPress: performDelete }]);
+    }
   };
 
   const resetRecipeForm = () => {
@@ -505,17 +580,24 @@ export const AdminScreen = ({
           <Play size={18} color={activeTab === 'videos' ? colors.primary : '#64748B'} />
           <Text style={[styles.tabText, activeTab === 'videos' && styles.tabTextActive]}>{t('nav.videos')}</Text>
         </Pressable>
-        <Pressable 
-          onPress={() => setActiveTab('recipes')} 
+        <Pressable
+          onPress={() => setActiveTab('recipes')}
           style={[styles.tab, activeTab === 'recipes' && styles.tabActive]}
         >
           <ChefHat size={18} color={activeTab === 'recipes' ? colors.primary : '#64748B'} />
           <Text style={[styles.tabText, activeTab === 'recipes' && styles.tabTextActive]}>{t('nav.recipes')}</Text>
         </Pressable>
+        <Pressable
+          onPress={() => setActiveTab('foods')}
+          style={[styles.tab, activeTab === 'foods' && styles.tabActive]}
+        >
+          <Apple size={18} color={activeTab === 'foods' ? colors.primary : '#64748B'} />
+          <Text style={[styles.tabText, activeTab === 'foods' && styles.tabTextActive]}>Alimentos</Text>
+        </Pressable>
       </View>
 
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollContent}>
-        {activeTab === 'videos' ? (
+        {activeTab === 'videos' && (
           <View>
             <View style={styles.formCard}>
                 <Text style={styles.formTitle}>{editingVideoId ? t('admin.edit_video') : t('admin.add_video')}</Text>
@@ -674,7 +756,9 @@ export const AdminScreen = ({
                 </View>
             ))}
           </View>
-        ) : (
+        )}
+
+        {activeTab === 'recipes' && (
           <View>
             <View style={styles.formCard}>
                 <Text style={styles.formTitle}>{editingRecipeId ? t('admin.edit_recipe') : t('admin.add_recipe')}</Text>
@@ -771,6 +855,154 @@ export const AdminScreen = ({
             ))}
           </View>
         )}
+
+        {activeTab === 'foods' && (
+
+          <View>
+            <View style={styles.formCard}>
+              <Text style={styles.sectionTitle}>Agregar alimento</Text>
+
+              <Text style={styles.label}>Nombre del alimento *</Text>
+              <TextInput
+                style={styles.input}
+                value={newFood.name}
+                placeholder="Ej: Espinacas, Salmón, Lentejas..."
+                onChangeText={v => setNewFood({ ...newFood, name: v })}
+              />
+
+              <Text style={styles.label}>Fase</Text>
+              <View style={styles.phaseSelector}>
+                {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
+                  <Pressable
+                    key={p}
+                    onPress={() => setNewFood({ ...newFood, phaseKey: p })}
+                    style={[styles.phaseBtn, newFood.phaseKey === p && { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={[styles.phaseBtnText, newFood.phaseKey === p && { color: '#FFF' }]}>
+                      {p.charAt(0).toUpperCase()}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Categoría</Text>
+              <View style={styles.mealTypeSelector}>
+                {[
+                  { id: 'proteins',   label: 'Proteínas' },
+                  { id: 'fats',       label: 'Grasas' },
+                  { id: 'carbs',      label: 'Carbos' },
+                  { id: 'veg_fruits', label: 'Veg/Fruta' },
+                ].map(c => (
+                  <Pressable
+                    key={c.id}
+                    onPress={() => setNewFood({ ...newFood, categoryKey: c.id })}
+                    style={[styles.mealBtn, newFood.categoryKey === c.id && styles.mealBtnActive]}
+                  >
+                    <Text style={[styles.mealBtnText, newFood.categoryKey === c.id && styles.mealBtnTextActive]}>
+                      {c.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Beneficio hormonal</Text>
+              <View style={styles.mealTypeSelector}>
+                {[
+                  { id: 'estrogen',         label: 'Estrógeno' },
+                  { id: 'progesterone',     label: 'Progesterona' },
+                  { id: 'antiinflammatory', label: 'Antiinflamatorio' },
+                  { id: 'energy',           label: 'Energía' },
+                ].map(h => (
+                  <Pressable
+                    key={h.id}
+                    onPress={() => setNewFood({ ...newFood, hormoneTag: h.id })}
+                    style={[styles.mealBtn, newFood.hormoneTag === h.id && styles.mealBtnActive]}
+                  >
+                    <Text style={[styles.mealBtnText, newFood.hormoneTag === h.id && styles.mealBtnTextActive]}>
+                      {h.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Tipo de comida</Text>
+              <View style={styles.mealTypeSelector}>
+                {[
+                  { id: 'breakfast', label: 'Desayuno' },
+                  { id: 'lunch',     label: 'Almuerzo' },
+                  { id: 'snack',     label: 'Snack' },
+                  { id: 'dinner',    label: 'Cena' },
+                ].map(m => (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => setNewFood({ ...newFood, mealType: m.id })}
+                    style={[styles.mealBtn, newFood.mealType === m.id && styles.mealBtnActive]}
+                  >
+                    <Text style={[styles.mealBtnText, newFood.mealType === m.id && styles.mealBtnTextActive]}>
+                      {m.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.label}>URL de imagen (opcional)</Text>
+              <TextInput
+                style={styles.input}
+                value={newFood.imageUrl}
+                placeholder="https://..."
+                autoCapitalize="none"
+                onChangeText={v => setNewFood({ ...newFood, imageUrl: v })}
+              />
+
+              <Pressable style={styles.saveBtn} onPress={handleSaveFood} disabled={isSaving}>
+                {isSaving
+                  ? <ActivityIndicator color="#FFF" />
+                  : <Text style={styles.saveBtnText}>{editingFoodId ? 'Actualizar alimento' : 'Guardar alimento'}</Text>}
+              </Pressable>
+              {editingFoodId && (
+                <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetFoodForm}>
+                  <Text style={{ color: '#475569' }}>Cancelar</Text>
+                </Pressable>
+              )}
+            </View>
+
+            <Text style={styles.sectionTitle}>Alimentos guardados</Text>
+            {Object.keys(keyFoods).length === 0 ? (
+              <Text style={{ color: '#94A3B8', textAlign: 'center', marginTop: 16 }}>
+                Aún no hay alimentos. Agrega el primero arriba.
+              </Text>
+            ) : (
+              ['menstrual', 'follicular', 'ovulation', 'luteal'].map(phase =>
+                (keyFoods[phase] || []).map(cat =>
+                  cat.items.map(food => (
+                    <View key={food.key} style={styles.itemCard}>
+                      {food.image ? (
+                        <Image source={{ uri: food.image }} style={styles.itemThumb} />
+                      ) : (
+                        <View style={[styles.itemThumb, { backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }]}>
+                          <Apple size={20} color="#CBD5E1" />
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.itemTitle}>{food.name || food.key}</Text>
+                        <Text style={styles.itemSub}>{phase} · {cat.categoryKey}</Text>
+                      </View>
+                      <View style={styles.itemActions}>
+                        <Pressable onPress={() => handleEditFood({ ...food, phaseKey: phase, categoryKey: cat.categoryKey, imageUrl: food.image })} style={styles.itemActionBtn}>
+                          <Pencil size={18} color={colors.primary} />
+                        </Pressable>
+                        <Pressable onPress={() => handleDeleteFood(food.key)} style={styles.itemActionBtn}>
+                          <Trash2 size={18} color="#EB5757" />
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))
+                )
+              )
+            )}
+          </View>
+        )}
+
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>

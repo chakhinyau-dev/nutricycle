@@ -224,6 +224,14 @@ export const LoginScreen = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../assets/Final Logo (1).png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
           <View style={styles.titleContainer}>
             <Text style={styles.title}>
               {isLogin ? t('auth.welcome') : needsVerification ? t('auth.verify_email') : t('auth.create_account')}
@@ -417,8 +425,17 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: 48,
+    marginBottom: 8,
+  },
+  logo: {
+    width: 160,
+    height: 100,
+  },
   titleContainer: {
-    marginTop: 40,
+    marginTop: 8,
     marginBottom: 40,
   },
   title: {

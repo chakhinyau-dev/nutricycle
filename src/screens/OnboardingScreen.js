@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Pressable, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ImageBackground, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { ChevronRight } from 'lucide-react-native';
@@ -40,7 +40,15 @@ export const OnboardingScreen = ({ onFinish }) => {
     <View style={styles.container}>
       <ImageBackground source={current.image} style={styles.backgroundImage}>
         <View style={styles.overlay} />
-        
+
+        <View style={styles.logoHeader}>
+          <Image
+            source={require('../../assets/Final Logo (1).png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+
         <View style={styles.content}>
           <View style={styles.textGroup}>
             <Text style={styles.stepIndicator}>
@@ -81,13 +89,18 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  header: {
-    paddingTop: 60,
+  logoHeader: {
+    position: 'absolute',
+    top: 56,
+    left: 0,
+    right: 0,
     alignItems: 'center',
+    zIndex: 10,
   },
   logo: {
-    width: 140,
+    width: 130,
     height: 80,
+    tintColor: '#FFFFFF',
   },
   content: {
     flex: 1,

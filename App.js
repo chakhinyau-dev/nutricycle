@@ -58,6 +58,7 @@ import {
 import { loadUserProfile, saveUserProfile } from './src/services/profileService';
 import { loadDailyLogs, deleteDailyLog } from './src/services/dailyLogService';
 import { loadRecipes } from './src/services/recipeService';
+import { loadKeyFoods } from './src/services/keyFoodsService';
 import { loadSavedRecipeIds, toggleSavedRecipeForUser } from './src/services/savedRecipeService';
 import { loadArticles } from './src/services/articleService';
 import { loadVideos } from './src/services/videoService';
@@ -163,6 +164,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
   const [savedRecipeIds, setSavedRecipeIds] = useState([]);
   const [articles, setArticles] = useState(ARTICLE_LIBRARY);
   const [videos, setVideos] = useState(VIDEO_LIBRARY);
+  const [keyFoods, setKeyFoods] = useState({});
   const [dailyLogs, setDailyLogs] = useState([]);
   const [subscription, setSubscription] = useState(null);
 
@@ -234,7 +236,11 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
         loadUserSubscription(getToken, user.id)
       ]);
 
-      const [articlesResult, videosResult] = await Promise.all([loadArticles(getToken), loadVideos(getToken)]);
+      const [articlesResult, videosResult, keyFoodsResult] = await Promise.all([
+        loadArticles(getToken),
+        loadVideos(getToken),
+        loadKeyFoods(getToken),
+      ]);
 
       if (!isMounted) {
         return;
@@ -244,6 +250,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
       setSavedRecipeIds(savedIdsResult || []);
       setArticles(articlesResult || ARTICLE_LIBRARY);
       setVideos(videosResult || VIDEO_LIBRARY);
+      if (keyFoodsResult) setKeyFoods(keyFoodsResult);
       setSubscription(subResult);
 
       // If subscription is expired, override is_premium to false so access is revoked
@@ -319,12 +326,14 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
   }, [isSignedIn, user?.id, i18n.language]);
 
   const refreshAdminData = async () => {
-    const [freshVideos, freshRecipes] = await Promise.all([
+    const [freshVideos, freshRecipes, freshFoods] = await Promise.all([
       loadVideos(getToken),
-      loadRecipes(getToken)
+      loadRecipes(getToken),
+      loadKeyFoods(getToken),
     ]);
     if (freshVideos) setVideos(freshVideos);
     if (freshRecipes) setRecipes(freshRecipes);
+    if (freshFoods) setKeyFoods(freshFoods);
   };
 
   const refreshAIPredictionData = async () => {
@@ -514,12 +523,13 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
       savedRecipeIds,
       articles,
       videos,
+      keyFoods,
       user,
       isAdmin,
       dailyLogs,
       onRefreshAI: () => {},
     }),
-    [cycleInfo, cycleProfile, recipes, savedRecipeIds, articles, videos, user, isAdmin, dailyLogs]
+    [cycleInfo, cycleProfile, recipes, savedRecipeIds, articles, videos, keyFoods, user, isAdmin, dailyLogs]
   );
 
   const savedRecipes = useMemo(
@@ -588,16 +598,18 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
           );
         case 'admin':
           return (
-            <AdminScreen 
-              onBack={goBack} 
-              videos={videos} 
-              recipes={recipes} 
-              onRefresh={refreshAdminData} 
+            <AdminScreen
+              onBack={goBack}
+              videos={videos}
+              recipes={recipes}
+              keyFoods={keyFoods}
+              onRefresh={refreshAdminData}
               isAdmin={isAdmin}
               user={user}
               isPremium={cycleProfile.isPremium}
               onTogglePremium={handleUpgrade}
               showToast={showToast}
+              getToken={getToken}
             />
           );
 

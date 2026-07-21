@@ -364,9 +364,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   headerHero: {
-    height: 340,
+    minHeight: 340,
     width: '100%',
     backgroundColor: colors.background,
+    paddingBottom: 40,
   },
   topNav: {
     flexDirection: 'row',
@@ -475,7 +476,8 @@ const styles = StyleSheet.create({
   masterEmail: {
     fontFamily: 'Outfit_500Medium',
     fontSize: 14,
-    color: colors.on_surface_variant,
+    color: colors.on_surface,
+    opacity: 0.6,
     marginBottom: 10,
   },
   masterPhaseBadge: {

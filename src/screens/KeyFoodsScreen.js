@@ -27,7 +27,7 @@ const HORMONE_TAG_COLORS = {
   energy:           { bg: '#FDF5E4', text: '#B8882A', dot: '#D4A853' },
 };
 
-export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user }) => {
+export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, keyFoods = {} }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
   const normalizedPhaseKey = currentPhaseKey || 'follicular';
@@ -41,7 +41,8 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user })
     { key: 'luteal',     label: t('phases.luteal') },
   ];
 
-  const categories = FOODS_BY_PHASE[selectedPhase] || FOODS_BY_PHASE.follicular;
+  const dataSource = Object.keys(keyFoods).length > 0 ? keyFoods : FOODS_BY_PHASE;
+  const categories = dataSource[selectedPhase] || dataSource.follicular || [];
 
   const handleAddToList = async (foodKey, foodName) => {
     const storageKey = `@nutricycle_custom_items_${userId}`;
