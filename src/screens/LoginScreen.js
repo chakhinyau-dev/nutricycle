@@ -17,6 +17,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useSSO, useSignIn, useSignUp } from '@clerk/clerk-expo';
 import { Mail, Lock, ChevronRight, Eye, EyeOff, User } from 'lucide-react-native';
+import Svg, { Circle, Rect } from 'react-native-svg';
 
 import { colors } from '../theme/colors';
 import { env } from '../lib/env';
@@ -225,11 +226,13 @@ export const LoginScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
           <View style={styles.logoContainer}>
-            <Image
-              source={require('../../assets/Final Logo (1).png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <View style={styles.logo}>
+              <Svg width={104} height={104} viewBox="0 0 800 800">
+                <Rect width="800" height="800" fill="#F5F0E8" />
+                <Circle cx="320" cy="400" r="170" fill="none" stroke="#8A9E82" strokeWidth="18" />
+                <Circle cx="480" cy="400" r="170" fill="none" stroke="#8A9E82" strokeWidth="18" />
+              </Svg>
+            </View>
           </View>
 
           <View style={styles.titleContainer}>
@@ -431,8 +434,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   logo: {
-    width: 160,
-    height: 100,
+    width: 104,
+    height: 104,
+    borderRadius: 18,
+    overflow: 'hidden',
   },
   titleContainer: {
     marginTop: 8,

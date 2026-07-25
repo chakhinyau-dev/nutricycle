@@ -405,7 +405,7 @@
     "cycle_length_label": "CYCLE LENGTH",
     "period_days_label": "PERIOD DAYS",
     "note": "This panel is focused on your menstrual cycle: changes here update your current phase, cycle day, and suggested recipes.",
-    "updated_success": "Your name and cycle are now synced.",
+    "updated_success": "Your profile and cycle have been updated.",
     "update_error": "Unable to update the profile. Please try again."
   },
   "saved_recipes": {
@@ -641,7 +641,7 @@
     "step2_title": "Adjust your rhythm",
     "step2_sub": "With this information, we can personalize your experience.",
     "step3_title": "What is your main goal?",
-    "step3_sub": "We will personalize your recipes and your home screen focus.",
+    "step3_sub": "We will adapt your calendar, foods and home screen to your cycle and goal.",
     "step4_title": "All set",
     "step4_sub": "We've personalized your experience based on your unique biology.",
     "last_period_label": "WHEN DID YOUR LAST PERIOD START?",

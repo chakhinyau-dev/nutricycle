@@ -31,6 +31,13 @@ const VIDEO_AREA_HEIGHT = width * 1.2;
 /** Space below scroll content so tab bar / home indicator doesn’t cover title/description */
 const PLAYER_SCROLL_BOTTOM_PADDING = 140;
 
+const PHASE_TAB_COLORS = {
+  menstrual:  { solid: '#E8A0A2', tint: 'rgba(232,160,162,0.18)', border: 'rgba(232,160,162,0.6)' },
+  follicular: { solid: '#A3B3A5', tint: 'rgba(163,179,165,0.18)', border: 'rgba(163,179,165,0.6)' },
+  ovulation:  { solid: '#C9A84C', tint: 'rgba(201,168,76,0.18)',  border: 'rgba(201,168,76,0.6)'  },
+  luteal:     { solid: '#968DA1', tint: 'rgba(150,141,161,0.18)', border: 'rgba(150,141,161,0.6)' },
+};
+
 const getFilters = (t) => [
   { id: 'all', label: t('common.all') },
   { id: 'menstrual', label: t('phases.menstrual') },
@@ -41,17 +48,17 @@ const getFilters = (t) => [
 
 const getMealTypes = (t) => [
   { id: 'all', name: t('common.all') },
+  { id: 'prep', name: t('dailylog.meal_types.prep') },
   { id: 'breakfast', name: t('dailylog.meal_types.breakfast') },
   { id: 'lunch', name: t('dailylog.meal_types.lunch') },
   { id: 'snack', name: t('dailylog.meal_types.snack') },
   { id: 'dinner', name: t('dailylog.meal_types.dinner') },
-  { id: 'prep', name: t('dailylog.meal_types.prep') },
 ];
 
 
-export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe }) => {
+export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe, initialVideo = null }) => {
   const { t, i18n } = useTranslation();
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(initialVideo);
   const [displayVideo, setDisplayVideo] = useState(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [activeFilterId, setActiveFilterId] = useState(currentPhaseKey || 'all');
@@ -320,17 +327,30 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
       <View style={styles.filterWrapper}>
         <Text style={styles.filterTitle}>{t('recipes.filter_phase')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {filters.map((filter) => (
-            <Pressable
-              key={filter.id}
-              style={[styles.filterPill, activeFilterId === filter.id && styles.filterPillActive]}
-              onPress={() => setActiveFilterId(filter.id)}
-            >
-              <Text style={[styles.filterText, activeFilterId === filter.id && styles.filterTextActive]}>
-                {filter.label}
-              </Text>
-            </Pressable>
-          ))}
+          {filters.map((filter) => {
+            const pc = PHASE_TAB_COLORS[filter.id];
+            const isActive = activeFilterId === filter.id;
+            return (
+              <Pressable
+                key={filter.id}
+                style={[
+                  styles.filterPill,
+                  pc && !isActive && { backgroundColor: pc.tint, borderColor: pc.border },
+                  pc && isActive  && { backgroundColor: pc.solid, borderColor: pc.solid },
+                  !pc && isActive && styles.filterPillActive,
+                ]}
+                onPress={() => setActiveFilterId(filter.id)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  pc && !isActive && { color: pc.solid },
+                  isActive && styles.filterTextActive,
+                ]}>
+                  {filter.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 

@@ -262,10 +262,11 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
   };
 
   const features = [
-    { icon: Crown, title: t('subscription.feature1_title'), sub: t('subscription.feature1_sub') },
-    { icon: Zap, title: t('subscription.feature2_title'), sub: t('subscription.feature2_sub') },
-    { icon: Shield, title: t('subscription.feature3_title'), sub: t('subscription.feature3_sub') },
-    { icon: Heart, title: t('subscription.feature4_title'), sub: t('subscription.feature4_sub') },
+    { title: t('subscription.feature1_title'), sub: t('subscription.feature1_sub') },
+    { title: t('subscription.feature2_title'), sub: t('subscription.feature2_sub') },
+    { title: t('subscription.feature3_title'), sub: t('subscription.feature3_sub') },
+    { title: t('subscription.feature4_title'), sub: t('subscription.feature4_sub') },
+    { title: t('subscription.feature5_title'), sub: t('subscription.feature5_sub') },
   ];
 
   return (
@@ -282,7 +283,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
             <Pressable onPress={onBack} style={styles.backBtn}>
               <ChevronLeft size={24} color="#FFF" />
             </Pressable>
-            <Text style={styles.headerTitle}>{t('subscription.pro_title') || 'NUTRICYCLE PRO'}</Text>
+            <Text style={styles.headerTitle}>PLAN HORMONAL</Text>
             <View style={{ width: 44 }} />
           </View>
 
@@ -305,9 +306,6 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
           
           {features.map((item, index) => (
             <View key={index} style={styles.featureItem}>
-              <View style={styles.iconCircle}>
-                <item.icon size={22} color={colors.primary} />
-              </View>
               <View style={styles.featureText}>
                 <Text style={styles.featureTitle}>{item.title}</Text>
                 <Text style={styles.featureSub}>{item.sub}</Text>
@@ -491,13 +489,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
-    color: colors.on_surface,
-    marginBottom: 32,
+    color: '#A3B3A5',
+    marginBottom: 24,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 32,
+    marginBottom: 20,
   },
   iconCircle: {
     width: 48,
@@ -641,7 +639,7 @@ const styles = StyleSheet.create({
   mainCta: {
     flexDirection: 'row',
     height: 64,
-    backgroundColor: colors.on_surface,
+    backgroundColor: '#968DA1',
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',

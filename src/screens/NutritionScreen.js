@@ -38,7 +38,15 @@ const computeMacros = (calories) => ({
   p: Math.round((calories * 0.24) / 4),
   c: Math.round((calories * 0.46) / 4),
   g: Math.round((calories * 0.30) / 9),
+  f: Math.round(calories * 0.014),
 });
+
+const MACRO_COLORS = {
+  p: { bg: '#EBF3EC', text: '#4A7D5A' },
+  c: { bg: '#EDEAF4', text: '#7A6D95' },
+  g: { bg: '#F4EFE6', text: '#8A6B40' },
+  f: { bg: '#E8F1F4', text: '#4A7A90' },
+};
 
 const PHASE_COLORS = {
   menstrual:  '#F2C4C4',
@@ -142,23 +150,32 @@ const defaultDay = useMemo(() => {
       .slice(0, 3);
   }, [videos, phaseKey, activeSwapMeal]);
 
+  // Per-slot prime offsets so each meal type independently rotates through its candidates
+  const SLOT_OFFSETS = { breakfast: 0, lunch: 3, snack: 5, dinner: 2 };
+
   const mealRecipes = useMemo(() => {
     const map = {};
     ALL_MEAL_SLOTS.forEach(slot => {
-      map[slot] = recipes.find(r =>
+      const candidates = recipes.filter(r =>
         (r.phaseKey || r.phase_key) === phaseKey &&
         (r.mealType || r.meal_type) === slot
-      ) || null;
+      );
+      if (candidates.length === 0) {
+        map[slot] = null;
+      } else {
+        const idx = (selectedDay + (SLOT_OFFSETS[slot] || 0)) % candidates.length;
+        map[slot] = candidates[idx];
+      }
     });
     return map;
-  }, [recipes, phaseKey]);
+  }, [recipes, phaseKey, selectedDay]);
 
   const dailyTotals = useMemo(() => {
     const vals = Object.values(mealRecipes).filter(Boolean);
     return vals.reduce((acc, r) => {
       const m = computeMacros(r.calories || 0);
-      return { calories: acc.calories + (r.calories || 0), p: acc.p + m.p, c: acc.c + m.c, g: acc.g + m.g };
-    }, { calories: 0, p: 0, c: 0, g: 0 });
+      return { calories: acc.calories + (r.calories || 0), p: acc.p + m.p, c: acc.c + m.c, g: acc.g + m.g, f: acc.f + m.f };
+    }, { calories: 0, p: 0, c: 0, g: 0, f: 0 });
   }, [mealRecipes]);
 
   const phaseColor = PHASE_COLORS[phaseKey] || colors.primary;
@@ -224,7 +241,7 @@ const defaultDay = useMemo(() => {
         <View style={[styles.focusCard, { backgroundColor: phaseColor }]}>
           <Text style={styles.focusOverline}>{t('nutrition.phase_focus_label')}</Text>
           <Text style={styles.focusTitle}>{t(`phases_data.${phaseKey}.focus`)}</Text>
-          <Text style={styles.focusAdvice} numberOfLines={2}>
+          <Text style={styles.focusAdvice}>
             {t(`phases_data.${phaseKey}.advice`)}
           </Text>
           <View style={styles.focusFoodsRow}>
@@ -256,7 +273,7 @@ const defaultDay = useMemo(() => {
 
                 {/* Meal time header — label LEFT, time RIGHT */}
                 <View style={styles.mealTimeRow}>
-                  <Text style={styles.mealTypeLabel}>{timeLabel}</Text>
+                  <Text style={styles.mealTypeLabel} numberOfLines={1} adjustsFontSizeToFit>{timeLabel}</Text>
                   <Text style={styles.mealTimeText}>
                     {t(`nutrition.meal_times.${time}`, { defaultValue: '' })}
                   </Text>
@@ -269,9 +286,21 @@ const defaultDay = useMemo(() => {
                     </View>
                     <View style={styles.mealRecipeInfo}>
                       <Text style={styles.mealRecipeName} numberOfLines={2}>{recipe.title}</Text>
-                      <Text style={styles.mealRecipeMacros}>
-                        {recipe.calories} kcal · P {macros.p}g · C {macros.c}g · G {macros.g}g
-                      </Text>
+                      <View style={styles.macroChipsRow}>
+                        <View style={[styles.macroChip, { backgroundColor: '#F5F5EF' }]}>
+                          <Text style={[styles.macroChipText, { color: colors.on_surface_variant }]}>{recipe.calories} kcal</Text>
+                        </View>
+                        {[
+                          { key: 'p', label: `P ${macros.p}g` },
+                          { key: 'c', label: `C ${macros.c}g` },
+                          { key: 'g', label: `G ${macros.g}g` },
+                          { key: 'f', label: `F ${macros.f}g` },
+                        ].map(m => (
+                          <View key={m.key} style={[styles.macroChip, { backgroundColor: MACRO_COLORS[m.key].bg }]}>
+                            <Text style={[styles.macroChipText, { color: MACRO_COLORS[m.key].text }]}>{m.label}</Text>
+                          </View>
+                        ))}
+                      </View>
                     </View>
                   </View>
                 ) : (
@@ -290,9 +319,21 @@ const defaultDay = useMemo(() => {
         {dailyTotals.calories > 0 && (
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>{t('nutrition.total_day', { defaultValue: 'TOTAL DEL DÍA' })}</Text>
-            <Text style={styles.totalValue}>
-              {dailyTotals.calories} kcal · P {dailyTotals.p}g · C {dailyTotals.c}g · G {dailyTotals.g}g
-            </Text>
+            <View style={styles.totalChipsRow}>
+              <View style={[styles.macroChip, { backgroundColor: '#F5F5EF' }]}>
+                <Text style={[styles.macroChipText, { color: colors.on_surface_variant }]}>{dailyTotals.calories} kcal</Text>
+              </View>
+              {[
+                { key: 'p', label: `P ${dailyTotals.p}g` },
+                { key: 'c', label: `C ${dailyTotals.c}g` },
+                { key: 'g', label: `G ${dailyTotals.g}g` },
+                { key: 'f', label: `F ${dailyTotals.f}g` },
+              ].map(m => (
+                <View key={m.key} style={[styles.macroChip, { backgroundColor: MACRO_COLORS[m.key].bg }]}>
+                  <Text style={[styles.macroChipText, { color: MACRO_COLORS[m.key].text }]}>{m.label}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
@@ -436,12 +477,11 @@ const styles = StyleSheet.create({
   daysStrip:  { paddingRight: 24, gap: 6 },
   dayPill: {
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingTop: 6,
     paddingBottom: 8,
     borderRadius: 22,
-    minWidth: 44,
-    overflow: 'hidden',
+    minWidth: 52,
   },
   dayPillActive: { backgroundColor: '#A3B3A5' },
   dayPhaseBar: {
@@ -465,7 +505,7 @@ const styles = StyleSheet.create({
   dayLetterActive: { color: 'rgba(255,255,255,0.55)', opacity: 1, marginTop: 0 },
   dayNum: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 20,
+    fontSize: 18,
     color: colors.on_surface,
   },
   dayNumActive: { color: '#FFFFFF' },
@@ -763,6 +803,21 @@ const styles = StyleSheet.create({
     color: colors.on_surface_variant,
     opacity: 0.75,
   },
+  macroChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 6,
+  },
+  macroChip: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  macroChipText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 10,
+  },
 
   // Shortcuts
   shortcutsRow: {
@@ -892,10 +947,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
     backgroundColor: '#F0F0E8',
     borderRadius: 16,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     marginHorizontal: 20,
     marginTop: 12,
   },
@@ -906,9 +963,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  totalValue: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 13,
-    color: colors.on_surface,
+  totalChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    alignItems: 'center',
   },
 });

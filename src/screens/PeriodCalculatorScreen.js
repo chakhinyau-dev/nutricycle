@@ -535,24 +535,25 @@ const styles = StyleSheet.create({
   },
   timelineLegend: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    gap: 8,
   },
   timelineLegendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 1,
-    overflow: 'hidden',
   },
   timelineLegendDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   timelineLegendText: {
     fontFamily: 'Outfit_500Medium',
-    fontSize: 9,
+    fontSize: 10,
     color: colors.on_surface_variant,
-    opacity: 0.7,
+    opacity: 0.8,
   },
 
   // Result cards

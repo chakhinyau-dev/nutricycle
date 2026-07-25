@@ -212,7 +212,11 @@ export const WizardScreen = ({ onFinish, cycleProfile }) => {
                   </View>
                 )}
 
-                <Text style={styles.subtitle}>{current.subtitle}</Text>
+                <Text style={styles.subtitle}>
+                  {step === WIZARD_STEPS.length - 1
+                    ? t('wizard.wizard_complete_subtitle', { defaultValue: 'Tu perfil y ciclo están actualizados' })
+                    : current.subtitle}
+                </Text>
               </View>
             </View>
 

@@ -69,7 +69,7 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
         full_name: name,
       });
 
-      Alert.alert(t('common.success'), t('edit_profile.updated_success'));
+      Alert.alert('¡Listo!', t('edit_profile.updated_success'));
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert(t('settings.error'), t('edit_profile.update_error'));

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path, Line, Circle } from 'react-native-svg';
+import Svg, { Path, Line, Circle, Rect, Text as SvgText } from 'react-native-svg';
 import { colors } from '../theme/colors';
 import {
   addDays,
@@ -155,8 +155,9 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
     return (diff % cycleLength) + 1;
   }, [selectedDate, profile.lastPeriodStart, cycleLength]);
 
-  const chartWidth = width - 56;
+  const chartWidth = width - 64;
   const chartHeight = 110;
+  const CHART_PAD = 6;
 
   const { estrogenPath, progesteronePath, testosteronePath, eFilledPath, pFilledPath, tFilledPath, selectDayX, selectE_Y, selectP_Y, selectT_Y } = useMemo(() => {
     const pts_e = [], pts_p = [], pts_t = [];
@@ -164,7 +165,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
     const baseY = chartHeight - 8;
 
     for (let i = 1; i <= cycleLength; i++) {
-      const x = ((i - 1) / (cycleLength - 1)) * chartWidth;
+      const x = CHART_PAD + ((i - 1) / (cycleLength - 1)) * (chartWidth - 2 * CHART_PAD);
       const ratio = (i - 1) / (cycleLength - 1);
       const eVal = 0.15 + 0.65 * Math.exp(-Math.pow((ratio - 0.44) / 0.08, 2)) + 0.3 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
       const pVal = 0.05 + 0.7 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
@@ -462,18 +463,37 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
             <Path d={progesteronePath} fill="none" stroke="#968DA1" strokeWidth={2} />
             <Path d={estrogenPath}     fill="none" stroke="#A3B3A5" strokeWidth={2} />
             {/* Selected day marker */}
-            <Line x1={selectDayX} y1={4} x2={selectDayX} y2={chartHeight - 8} stroke="#968DA1" strokeWidth={1} strokeDasharray="3 3" />
+            <Line x1={selectDayX} y1={22} x2={selectDayX} y2={chartHeight - 8} stroke="#968DA1" strokeWidth={1} strokeDasharray="3 3" />
             <Circle cx={selectDayX} cy={selectE_Y} r={4} fill="#A3B3A5" stroke="#FFFFFF" strokeWidth={1.5} />
             <Circle cx={selectDayX} cy={selectP_Y} r={4} fill="#968DA1" stroke="#FFFFFF" strokeWidth={1.5} />
             <Circle cx={selectDayX} cy={selectT_Y} r={4} fill="#C9A84C" stroke="#FFFFFF" strokeWidth={1.5} />
+            {/* Day badge above cursor */}
+            {(() => {
+              const label = `${t('common.day')} ${selectedCycleDay}`;
+              const badgeW = label.length * 6.5 + 16;
+              const badgeH = 20;
+              const badgeX = Math.max(0, Math.min(selectDayX - badgeW / 2, chartWidth - badgeW));
+              return (
+                <>
+                  <Rect x={badgeX} y={2} width={badgeW} height={badgeH} rx={6} ry={6} fill="#4A4453" />
+                  <SvgText
+                    x={badgeX + badgeW / 2}
+                    y={15}
+                    textAnchor="middle"
+                    fill="#FFFFFF"
+                    fontSize={10}
+                    fontWeight="700"
+                  >
+                    {label}
+                  </SvgText>
+                </>
+              );
+            })()}
           </Svg>
         </View>
 
         <View style={styles.chartFooter}>
           <Text style={styles.chartFooterText}>{t('common.day')} 1</Text>
-          <Text style={[styles.chartFooterText, { fontFamily: 'Outfit_700Bold', color: colors.on_surface }]}>
-            {t('common.day')} {selectedCycleDay}
-          </Text>
           <Text style={styles.chartFooterText}>{t('common.day')} {cycleLength}</Text>
         </View>
 
@@ -897,13 +917,12 @@ const styles = StyleSheet.create({
     color: colors.on_surface_variant,
   },
   chartWrapper: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   chartFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
-    paddingHorizontal: 2,
   },
   chartFooterText: {
     fontFamily: 'Outfit_600SemiBold',

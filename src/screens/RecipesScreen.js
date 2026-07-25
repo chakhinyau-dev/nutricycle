@@ -8,6 +8,13 @@ import { RecipeCard } from '../components/RecipeCard';
 import { MOCK_RECIPES, PHASES_DATA } from '../utils/mockData';
 import { translateContent } from '../services/translationService';
 
+const PHASE_TAB_COLORS = {
+  menstrual:  { solid: '#E8A0A2', tint: 'rgba(232,160,162,0.18)', border: 'rgba(232,160,162,0.6)' },
+  follicular: { solid: '#A3B3A5', tint: 'rgba(163,179,165,0.18)', border: 'rgba(163,179,165,0.6)' },
+  ovulation:  { solid: '#C9A84C', tint: 'rgba(201,168,76,0.18)',  border: 'rgba(201,168,76,0.6)'  },
+  luteal:     { solid: '#968DA1', tint: 'rgba(150,141,161,0.18)', border: 'rgba(150,141,161,0.6)' },
+};
+
 const getCategories = (t) => [
   { id: 'all', name: t('common.all') },
   { id: 'menstrual', name: t('phases.menstrual') },
@@ -17,12 +24,12 @@ const getCategories = (t) => [
 ];
 
 const getMealTypes = (t) => [
-  { id: 'all', name: t('common.all') },
+  { id: 'all',       name: t('common.all') },
+  { id: 'prep',      name: t('dailylog.meal_types.prep') },
   { id: 'breakfast', name: t('dailylog.meal_types.breakfast') },
-  { id: 'lunch', name: t('dailylog.meal_types.lunch') },
-  { id: 'snack', name: t('dailylog.meal_types.snack') },
-  { id: 'dinner', name: t('dailylog.meal_types.dinner') },
-  { id: 'prep', name: t('dailylog.meal_types.prep') },
+  { id: 'lunch',     name: t('dailylog.meal_types.lunch') },
+  { id: 'snack',     name: t('dailylog.meal_types.snack') },
+  { id: 'dinner',    name: t('dailylog.meal_types.dinner') },
 ];
 
 export const RecipesScreen = ({
@@ -127,17 +134,30 @@ export const RecipesScreen = ({
       <View style={{ marginBottom: 24 }}>
         <Text style={styles.filterTitle}>{t('recipes.filter_phase')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {categories.map((category) => (
-            <Pressable
-              key={category.id}
-              style={[styles.filterPill, activeTab === category.id && styles.filterPillActive]}
-              onPress={() => setActiveTab(category.id)}
-            >
-              <Text style={[styles.filterText, activeTab === category.id && styles.filterTextActive]}>
-                {category.name}
-              </Text>
-            </Pressable>
-          ))}
+          {categories.map((category) => {
+            const pc = PHASE_TAB_COLORS[category.id];
+            const isActive = activeTab === category.id;
+            return (
+              <Pressable
+                key={category.id}
+                style={[
+                  styles.filterPill,
+                  pc && !isActive && { backgroundColor: pc.tint, borderColor: pc.border },
+                  pc && isActive  && { backgroundColor: pc.solid, borderColor: pc.solid },
+                  !pc && isActive && styles.filterPillActive,
+                ]}
+                onPress={() => setActiveTab(category.id)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  pc && !isActive && { color: pc.solid },
+                  isActive && styles.filterTextActive,
+                ]}>
+                  {category.name}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 

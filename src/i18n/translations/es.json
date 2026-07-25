@@ -78,7 +78,7 @@
     "biometrics_sub": "Bloqueo de app",
     "plan_label": "TU PLAN",
     "plan_premium": "Balance · Activo",
-    "plan_basic": "Básico · Mejorar",
+    "plan_basic": "Plan Gratuito · Ver planes",
     "export": "Exportar Datos",
     "export_sub": "Descarga tu historial",
     "help": "Ayuda",
@@ -381,7 +381,7 @@
     "cycle_length_label": "DURACIÓN DEL CICLO",
     "period_days_label": "DÍAS DE PERIODO",
     "note": "Este panel sí está enfocado en el ciclo menstrual: lo que cambies aquí actualiza tu fase actual, el día del ciclo y las recetas recomendadas.",
-    "updated_success": "Tu nombre y ciclo ya están sincronizados.",
+    "updated_success": "Tu perfil y ciclo están actualizados.",
     "update_error": "No se pudo actualizar el perfil. Inténtalo de nuevo."
   },
   "auth": {
@@ -418,17 +418,19 @@
     "go_premium": "UNIRME",
     "already_elite": "Eres parte de Balance",
     "already_elite_sub": "Disfruta de todas las herramientas avanzadas sin límites.",
-    "upgrade_title": "Come según tu ciclo",
-    "upgrade_subtitle": "Recetas personalizadas, seguimiento hormonal y guía nutricional — todo adaptado a tu fase del mes.",
-    "exclusive_benefits": "Beneficios Exclusivos",
-    "feature1_title": "Seguimiento inteligente de ciclo",
-    "feature1_sub": "Aprende los patrones de tu cuerpo y anticipa cómo te sentirás cada semana.",
-    "feature2_title": "Alertas en Tiempo Real",
-    "feature2_sub": "Notificaciones según tu fase: energía, alimentación y bienestar.",
-    "feature3_title": "Tus datos, protegidos y privados",
-    "feature3_sub": "Tu información de salud es solo tuya.",
-    "feature4_title": "Recetas para cada fase de tu ciclo",
-    "feature4_sub": "Accede a recetas diseñadas para apoyar tu cuerpo en cada etapa.",
+    "upgrade_title": "Desbloquea las Recetas Premium",
+    "upgrade_subtitle": "Obtén acceso completo a recetas con el paso a paso en video para cada fase de tu ciclo",
+    "exclusive_benefits": "Tu plan hormonal incluye",
+    "feature1_title": "🌿 Recetas por fase del ciclo",
+    "feature1_sub": "Desayuno, almuerzo, cena y snack adaptados a lo que tu cuerpo necesita cada semana.",
+    "feature2_title": "⚡ Plan de comidas día a día",
+    "feature2_sub": "Sabés exactamente qué comer hoy — sin adivinar ni buscar.",
+    "feature3_title": "🎥 Videos de recetas incluidos",
+    "feature3_sub": "Preparaciones cortas con ingredientes que apoyan tus hormonas.",
+    "feature4_title": "🌙 Seguimiento inteligente de ciclo",
+    "feature4_sub": "Registrá tus síntomas y anticipa cómo te vas a sentir cada fase.",
+    "feature5_title": "🔔 Notificaciones según tu fase",
+    "feature5_sub": "Recordatorios de alimentación y bienestar en el momento justo.",
     "annual_plan": "Plan Hormonal Anual",
     "monthly_plan": "Plan Hormonal Mensual",
     "balance_annual": "Plan Hormonal Anual",
@@ -461,8 +463,8 @@
     "payment_session_error": "No se pudo iniciar la sesión de pago",
     "unlock_premium_recipes": "Desbloquea Recetas Premium",
     "unlock_recipes_desc": "Obtén acceso completo a planes de alimentación personalizados y recetas específicas para cada fase de tu ciclo para equilibrar tus hormonas.",
-    "unlock_premium_videos": "Desbloquea Videos Premium",
-    "unlock_videos_desc": "Obtén acceso completo a sesiones de yoga, entrenamientos hormonales y rutinas específicas para cada fase de tu ciclo.",
+    "unlock_premium_videos": "Desbloquea las Recetas Premium",
+    "unlock_videos_desc": "Obtén acceso completo a recetas con el paso a paso en video para cada fase de tu ciclo.",
     "subscribe_now": "Suscribirse Ahora"
   },
   "admin": {
@@ -603,7 +605,7 @@
       "resting": "Descansando",
       "building": "Construyendo",
       "high": "Alto",
-      "winding": "Bajando el Ritmo"
+      "winding": "En calma"
     }
   },
   "loading": {
@@ -627,7 +629,7 @@
     "step2_title": "Ajustemos tu ritmo",
     "step2_sub": "Con esta información podremos personalizar tu experiencia.",
     "step3_title": "¿Cuál es tu objetivo principal?",
-    "step3_sub": "Personalizaremos tus recetas y el enfoque de tu pantalla de inicio.",
+    "step3_sub": "Adaptaremos tu calendario, alimentos y pantalla de inicio a tu ciclo y objetivo.",
     "step4_title": "Todo listo",
     "step4_sub": "Hemos personalizado tu experiencia basándonos en tu biología única.",
     "last_period_label": "¿CUÁNDO COMENZÓ TU ÚLTIMO PERÍODO?",
@@ -639,7 +641,8 @@
     "cycle_day_preview": "Día {{day}} de tu ciclo",
     "next_period_preview": "Próximo periodo en {{days}} días · Ventana fértil {{label}}",
     "btn_continue": "CONTINUAR",
-    "btn_finish": "ENTRAR A NUTRICYCLE",
+    "btn_finish": "¡Listo!",
+    "wizard_complete_subtitle": "Tu perfil y ciclo están actualizados",
     "goals": {
       "acne": "Acné hormonal",
       "pcos": "SOP o Síndrome de ovario poliquístico",
@@ -747,7 +750,7 @@
     }
   },
   "nutrition": {
-    "title": "Come hoy",
+    "title": "Tu menú de hoy",
     "day_label": "Día",
     "plan_today": "Plan de hoy",
     "calories_label": "Calorías",

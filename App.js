@@ -16,7 +16,7 @@ import {
   Outfit_600SemiBold,
   Outfit_700Bold,
 } from '@expo-google-fonts/outfit';
-import { Home, CircleDot, User, PlaySquare, Coffee } from 'lucide-react-native';
+import { Home, CircleDot, User, PlaySquare, Soup } from 'lucide-react-native';
 
 import { StripeProvider } from './src/components/StripeWrapper';
 
@@ -35,6 +35,7 @@ import { ArticlesScreen } from './src/screens/ArticlesScreen';
 import { WizardScreen } from './src/screens/WizardScreen';
 import { EditProfileScreen } from './src/screens/EditProfileScreen';
 import { SavedRecipesScreen } from './src/screens/SavedRecipesScreen';
+import { RecipesScreen } from './src/screens/RecipesScreen';
 import { SubscriptionScreen } from './src/screens/SubscriptionScreen';
 import { PeriodCalculatorScreen } from './src/screens/PeriodCalculatorScreen';
 import { VideosScreen } from './src/screens/VideosScreen';
@@ -596,6 +597,18 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
               onSubscribe={() => navigateTo('subscription')}
             />
           );
+        case 'videoDetail':
+          return (
+            <VideosScreen
+              onBack={goBack}
+              currentPhaseKey={cycleInfo.currentPhaseKey}
+              videos={videos}
+              recipes={recipes}
+              isLocked={!canAccessPremium}
+              onSubscribe={() => navigateTo('subscription')}
+              initialVideo={navigationParams.videoDetail}
+            />
+          );
         case 'admin':
           return (
             <AdminScreen
@@ -615,13 +628,15 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
         case 'recipes':
           return (
-            <VideosScreen
+            <RecipesScreen
               onBack={goBack}
-              currentPhaseKey={cycleInfo.currentPhaseKey}
-              videos={videos}
+              onNavigate={navigateTo}
+              user={user}
               recipes={recipes}
+              currentPhaseKey={cycleInfo.currentPhaseKey}
               isLocked={!canAccessPremium}
               onSubscribe={() => navigateTo('subscription')}
+              cycleProfile={cycleProfile}
             />
           );
         case 'keyFoods':
@@ -745,7 +760,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
               </Pressable>
               <Pressable onPress={() => handleTabPress('nutrition')} style={styles.tabItem}>
                 <View style={[styles.activeIndicator, activeTab === 'nutrition' && styles.activeIndicatorActive]}>
-                  <Coffee size={22} color={activeTab === 'nutrition' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'nutrition' ? 2 : 1.5} />
+                  <Soup size={22} color={activeTab === 'nutrition' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'nutrition' ? 2 : 1.5} />
                 </View>
                 <Text style={[styles.tabLabel, activeTab === 'nutrition' && styles.activeTabLabel]}>{t('nav.nutrition')}</Text>
               </Pressable>

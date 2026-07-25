@@ -19,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#4A4453"
+        "backgroundColor": "#A3B3A5"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.salatmahenoor.nutricycle"

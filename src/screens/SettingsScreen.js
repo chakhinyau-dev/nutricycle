@@ -16,11 +16,11 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { useClerk } from '@clerk/clerk-expo';
+import { Linking } from 'react-native';
 import {
   User,
   Bell,
   Shield,
-  CircleHelp,
   LogOut,
   ChevronRight,
   Camera,
@@ -28,7 +28,8 @@ import {
   Globe,
   Database,
   ChevronLeft,
-  CircleHelp as InfoIcon,
+  MessageCircle,
+  Info,
   Crown,
   Lock,
 } from 'lucide-react-native';
@@ -333,12 +334,12 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
           </View>
 
           <View style={styles.supportStrip}>
-            <Pressable style={styles.supportTap} onPress={() => handleAction(t('settings.help'))}>
-              <CircleHelp size={18} color={colors.on_surface_variant} />
+            <Pressable style={styles.supportTap} onPress={() => Linking.openURL('mailto:hola@nutricycle.com')}>
+              <MessageCircle size={18} color={colors.on_surface_variant} />
               <Text style={styles.supportTapText}>{t('settings.help')}</Text>
             </Pressable>
-            <Pressable style={styles.supportTap} onPress={() => handleAction(t('settings.about'))}>
-              <InfoIcon size={18} color={colors.on_surface_variant} />
+            <Pressable style={styles.supportTap} onPress={() => Linking.openURL('https://www.aliciabasurto.com/')}>
+              <Info size={18} color={colors.on_surface_variant} />
               <Text style={styles.supportTapText}>{t('settings.about')}</Text>
             </Pressable>
           </View>
@@ -617,10 +618,10 @@ const styles = StyleSheet.create({
     gap: 10,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#FFF2F2',
+    backgroundColor: '#F4F2F7',
     marginTop: 40,
     borderWidth: 1,
-    borderColor: '#FFEBEB',
+    borderColor: '#E8E4EF',
   },
   logoutRowText: {
     fontFamily: 'Outfit_700Bold',

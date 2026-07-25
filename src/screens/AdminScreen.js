@@ -154,6 +154,7 @@ export const AdminScreen = ({
 
   // Food State
   const [editingFoodId, setEditingFoodId] = useState(null);
+  const [localFoodImage, setLocalFoodImage] = useState(null);
   const [newFood, setNewFood] = useState({
     name: '',
     phaseKey: 'follicular',
@@ -165,11 +166,26 @@ export const AdminScreen = ({
 
   const resetFoodForm = () => {
     setEditingFoodId(null);
+    setLocalFoodImage(null);
     setNewFood({ name: '', phaseKey: 'follicular', categoryKey: 'proteins', hormoneTag: 'energy', mealType: 'lunch', imageUrl: '' });
+  };
+
+  const handlePickFoodImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+      base64: true,
+    });
+    if (!result.canceled) {
+      setLocalFoodImage(result.assets[0]);
+    }
   };
 
   const handleEditFood = (food) => {
     setEditingFoodId(food.id || food.key);
+    setLocalFoodImage(null);
     setNewFood({
       name:        food.name || food.key || '',
       phaseKey:    food.phaseKey    || 'follicular',
@@ -188,7 +204,12 @@ export const AdminScreen = ({
     }
     setIsSaving(true);
     try {
-      const result = await saveKeyFood(getToken, { ...newFood, id: editingFoodId });
+      let finalImageUrl = newFood.imageUrl || '';
+      if (localFoodImage) {
+        const uploaded = await uploadRecipeImage(getToken, localFoodImage, `food_${Date.now()}.jpg`);
+        if (uploaded) finalImageUrl = uploaded;
+      }
+      const result = await saveKeyFood(getToken, { ...newFood, imageUrl: finalImageUrl, id: editingFoodId });
       if (result) {
         if (showToast) showToast(editingFoodId ? 'Alimento actualizado' : 'Alimento guardado');
         resetFoodForm();
@@ -945,14 +966,17 @@ export const AdminScreen = ({
                 ))}
               </View>
 
-              <Text style={styles.label}>URL de imagen (opcional)</Text>
-              <TextInput
-                style={styles.input}
-                value={newFood.imageUrl}
-                placeholder="https://..."
-                autoCapitalize="none"
-                onChangeText={v => setNewFood({ ...newFood, imageUrl: v })}
-              />
+              <Text style={styles.label}>Imagen (opcional)</Text>
+              <Pressable onPress={handlePickFoodImage} style={styles.imagePicker}>
+                {localFoodImage || newFood.imageUrl ? (
+                  <Image
+                    source={{ uri: localFoodImage?.uri || newFood.imageUrl }}
+                    style={styles.pickedImage}
+                  />
+                ) : (
+                  <Text style={{ color: colors.primary }}>Seleccionar imagen</Text>
+                )}
+              </Pressable>
 
               <Pressable style={styles.saveBtn} onPress={handleSaveFood} disabled={isSaving}>
                 {isSaving

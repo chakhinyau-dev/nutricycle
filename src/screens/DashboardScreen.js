@@ -49,6 +49,7 @@ export const DashboardScreen = ({
   const daysUntilPeriod = cycleInfo?.daysUntilNextPeriod || 0;
   const chartWidth = width - 48;
   const chartHeight = 200;
+  const CHART_SIDE_PAD = 18;
   const CHART_TOP_PAD = 36;
   const CHART_BOTTOM_PAD = 28;
   const baselineY = chartHeight - CHART_BOTTOM_PAD;
@@ -61,7 +62,7 @@ export const DashboardScreen = ({
     const plotHeight = baselineY - CHART_TOP_PAD;
 
     for (let i = 1; i <= cycleLength; i++) {
-      const x = ((i - 1) / (cycleLength - 1)) * chartWidth;
+      const x = CHART_SIDE_PAD + ((i - 1) / (cycleLength - 1)) * (chartWidth - 2 * CHART_SIDE_PAD);
       const ratio = (i - 1) / (cycleLength - 1);
 
       const eVal = 0.15 + 0.65 * Math.exp(-Math.pow((ratio - 0.44) / 0.08, 2)) + 0.3 * Math.exp(-Math.pow((ratio - 0.76) / 0.12, 2));
@@ -144,15 +145,15 @@ export const DashboardScreen = ({
         <View style={styles.trackerColumns}>
           <View style={styles.trackerColumn}>
             <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'Energía' })}</Text>
-            <Text style={styles.trackerValue}>{trackerData.energy}</Text>
+            <Text style={styles.trackerValue} numberOfLines={1} adjustsFontSizeToFit>{trackerData.energy}</Text>
           </View>
           <View style={[styles.trackerColumn, styles.trackerColumnCenter]}>
             <Text style={styles.trackerLabel}>{t('dashboard.tracker_mood', { defaultValue: 'Ánimo' })}</Text>
-            <Text style={styles.trackerValue}>{trackerData.mood}</Text>
+            <Text style={styles.trackerValue} numberOfLines={1} adjustsFontSizeToFit>{trackerData.mood}</Text>
           </View>
           <View style={styles.trackerColumn}>
             <Text style={styles.trackerLabel}>{t('dashboard.tracker_drive', { defaultValue: 'Impulso' })}</Text>
-            <Text style={styles.trackerValue}>{trackerData.drive}</Text>
+            <Text style={styles.trackerValue} numberOfLines={1} adjustsFontSizeToFit>{trackerData.drive}</Text>
           </View>
         </View>
         <Pressable style={styles.trackerBtn} onPress={() => onNavigate('calendar')}>
@@ -225,7 +226,7 @@ export const DashboardScreen = ({
 
           {/* Bottom axis tick marks */}
           {[0, 7, 14, 21, 28].filter(d => d < cycleLength).map((d) => {
-            const tickX = d === 0 ? 0 : (d / (cycleLength - 1)) * chartWidth;
+            const tickX = CHART_SIDE_PAD + (d / (cycleLength - 1)) * (chartWidth - 2 * CHART_SIDE_PAD);
             return (
               <Line key={d} x1={tickX} y1={baselineY} x2={tickX} y2={baselineY + 5} stroke="#B0A8C0" strokeWidth={1} />
             );
@@ -299,13 +300,21 @@ export const DashboardScreen = ({
       {/* 7. Today's Meals — 4 meal slots */}
       <View style={styles.suggestedSection}>
         <Text style={styles.suggestedTitle}>{t('dashboard.featured_video')}</Text>
-        {['breakfast', 'lunch', 'snack', 'dinner'].map(mealType => {
-          const video = videos.find(v => v.phaseKey === phaseKey && v.mealType === mealType)
-            || videos.find(v => v.mealType === mealType);
+        {(() => {
+          const d = new Date().getDay();
+          const todayIndex = d === 0 ? 6 : d - 1;
+          const SLOT_OFFSETS = { breakfast: 0, lunch: 3, snack: 5, dinner: 2 };
+          return ['breakfast', 'lunch', 'snack', 'dinner'].map(mealType => {
+          const phasePool = videos.filter(v => v.phaseKey === phaseKey && v.mealType === mealType);
+          const fallbackPool = videos.filter(v => v.mealType === mealType);
+          const pool = phasePool.length ? phasePool : fallbackPool;
+          const video = pool.length
+            ? pool[(todayIndex + (SLOT_OFFSETS[mealType] || 0)) % pool.length]
+            : null;
           const timeLabel = t(`nutrition.meal_times.${mealType}`, { defaultValue: mealType });
           const mealLabel = t(`nutrition.meal_slots.${mealType}`, { defaultValue: mealType }).toUpperCase();
           return (
-            <Pressable key={mealType} style={styles.mealSlotCard} onPress={() => onNavigate('videos')}>
+            <Pressable key={mealType} style={styles.mealSlotCard} onPress={() => video ? onNavigate('videoDetail', video) : onNavigate('videos')}>
               {video?.thumbnail ? (
                 <View style={styles.mealSlotThumb}>
                   <Image source={{ uri: video.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -330,7 +339,8 @@ export const DashboardScreen = ({
               )}
             </Pressable>
           );
-        })}
+        });
+        })()}
       </View>
 
       <View style={{ height: 160 }} />
