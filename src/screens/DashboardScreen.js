@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle, Text as SvgText } from 'react-native-svg';
@@ -111,6 +111,26 @@ export const DashboardScreen = ({
     const cats = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
     return cats.flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey }))).slice(0, 3);
   }, [phaseKey]);
+
+  const foodScrollRef = useRef(null);
+  const [foodScrollIndex, setFoodScrollIndex] = useState(0);
+
+  useEffect(() => {
+    setFoodScrollIndex(0);
+    foodScrollRef.current?.scrollTo({ x: 0, animated: false });
+  }, [phaseKey]);
+
+  useEffect(() => {
+    if (phaseKeyFoods.length <= 1) return;
+    const interval = setInterval(() => {
+      setFoodScrollIndex(prev => {
+        const next = (prev + 1) % phaseKeyFoods.length;
+        foodScrollRef.current?.scrollTo({ x: next * 174, animated: true });
+        return next;
+      });
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [phaseKeyFoods.length]);
 
   const trackerData = useMemo(() => {
     const data = {
@@ -265,19 +285,27 @@ export const DashboardScreen = ({
           </Pressable>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.keyFoodsScroll}>
+        <ScrollView
+          ref={foodScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.keyFoodsScroll}
+          scrollEventThrottle={16}
+          onScroll={e => {
+            const x = e.nativeEvent.contentOffset.x;
+            const idx = Math.round(x / 174);
+            if (idx !== foodScrollIndex) setFoodScrollIndex(idx);
+          }}
+        >
           {phaseKeyFoods.map(food => {
             const tagColors = HORMONE_TAG_COLORS[food.hormoneTag] || HORMONE_TAG_COLORS.energy;
             const catColor  = CATEGORY_COLORS[food.categoryKey] || colors.primary;
             return (
               <Pressable key={food.key} style={styles.keyFoodCard} onPress={() => onNavigate('keyFoods')}>
-                {/* Category-colored accent bar */}
                 <View style={[styles.keyFoodAccent, { backgroundColor: catColor }]} />
-                {/* Image with tinted placeholder */}
                 <View style={[styles.keyFoodImageWrap, { backgroundColor: catColor + '18' }]}>
                   <Image source={{ uri: food.image }} style={styles.keyFoodImage} resizeMode="cover" />
                 </View>
-                {/* Name + badge */}
                 <View style={styles.keyFoodContent}>
                   <Text style={styles.keyFoodName} numberOfLines={2}>
                     {t(`key_foods.items.${food.key}.name`)}
@@ -293,6 +321,14 @@ export const DashboardScreen = ({
             );
           })}
         </ScrollView>
+        <View style={styles.foodDots}>
+          {phaseKeyFoods.map((_, i) => (
+            <View
+              key={i}
+              style={[styles.foodDot, i === foodScrollIndex && styles.foodDotActive]}
+            />
+          ))}
+        </View>
       </View>
 
       <View style={{ marginBottom: 36 }} />
@@ -546,6 +582,25 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingRight: 8,
     paddingBottom: 4,
+  },
+  foodDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  foodDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#D8D8D0',
+  },
+  foodDotActive: {
+    width: 18,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#A3B3A5',
   },
   keyFoodCard: {
     width: 160,
