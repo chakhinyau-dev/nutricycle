@@ -260,6 +260,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
             </View>
           </View>
 
+
           {showPassForm && (
             <View style={styles.passwordForm}>
               <Text style={styles.formTitle}>{t('settings.update_password')}</Text>
@@ -350,7 +351,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
           </Pressable>
         </View>
 
-        <View style={{ height: 180 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
@@ -520,7 +521,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 11,
-    color: '#A3B3A5', // Sage Green
+    color: '#A3B3A5',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginBottom: 8,

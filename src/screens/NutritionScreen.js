@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,10 +7,11 @@ import {
   Pressable,
   Image,
   Modal,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Play, ShoppingBag, Plus, X, Utensils } from 'lucide-react-native';
+import { ChevronLeft, Play, ShoppingBag, Utensils, Crown, RefreshCw, X } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
@@ -32,6 +33,7 @@ const MEAL_EMOJIS = {
   snack: '🫐',
   dinner: '🐟',
 };
+
 
 
 const computeMacros = (calories) => ({
@@ -71,6 +73,8 @@ export const NutritionScreen = ({
   cycleDay,
   user,
   cycleProfile = {},
+  isLocked = false,
+  onSubscribe,
 }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
@@ -81,6 +85,7 @@ const defaultDay = useMemo(() => {
   }, []);
 
   const [selectedDay, setSelectedDay] = useState(defaultDay);
+  const dayStripRef = useRef(null);
   const [swaps, setSwaps] = useState({});
   const [activeSwapMeal, setActiveSwapMeal] = useState(null);
   const [showSwapModal, setShowSwapModal] = useState(false);
@@ -119,21 +124,22 @@ const defaultDay = useMemo(() => {
       .slice(0, 3);
   }, [phaseKey]);
 
+
+  // Load saved swaps from storage
   useEffect(() => {
-    const loadSwaps = async () => {
+    const load = async () => {
       try {
         const saved = await AsyncStorage.getItem(`@nutricycle_swaps_${userId}`);
         if (saved) setSwaps(JSON.parse(saved));
       } catch (e) {}
     };
-    loadSwaps();
+    load();
   }, [userId]);
 
-  const handleSelectSwap = async (altId) => {
+  const handleSelectSwap = async (videoId) => {
     if (!activeSwapMeal) return;
-    const { mealType } = activeSwapMeal;
-    const swapKey  = `${selectedDay}_${mealType}`;
-    const newSwaps = { ...swaps, [swapKey]: altId };
+    const swapKey  = `${selectedDay}_${activeSwapMeal}`;
+    const newSwaps = { ...swaps, [swapKey]: videoId };
     setSwaps(newSwaps);
     setShowSwapModal(false);
     setActiveSwapMeal(null);
@@ -142,17 +148,10 @@ const defaultDay = useMemo(() => {
     } catch (e) {}
   };
 
-  const alternatives = useMemo(() => {
-    if (!activeSwapMeal || !videos?.length) return [];
-    const { mealType, currentVideo } = activeSwapMeal;
-    return videos
-      .filter(v => v.phaseKey === phaseKey && v.mealType === mealType && v.id !== currentVideo?.id)
-      .slice(0, 3);
-  }, [videos, phaseKey, activeSwapMeal]);
-
   // Per-slot prime offsets so each meal type independently rotates through its candidates
   const SLOT_OFFSETS = { breakfast: 0, lunch: 3, snack: 5, dinner: 2 };
 
+  // Recipes assigned to each meal slot — apply any saved swaps
   const mealRecipes = useMemo(() => {
     const map = {};
     ALL_MEAL_SLOTS.forEach(slot => {
@@ -163,12 +162,19 @@ const defaultDay = useMemo(() => {
       if (candidates.length === 0) {
         map[slot] = null;
       } else {
-        const idx = (selectedDay + (SLOT_OFFSETS[slot] || 0)) % candidates.length;
-        map[slot] = candidates[idx];
+        const swapKey   = `${selectedDay}_${slot}`;
+        const swappedId = swaps[swapKey];
+        const swapped   = swappedId ? candidates.find(r => String(r.id) === swappedId) : null;
+        if (swapped) {
+          map[slot] = swapped;
+        } else {
+          const idx = (selectedDay + (SLOT_OFFSETS[slot] || 0)) % candidates.length;
+          map[slot] = candidates[idx];
+        }
       }
     });
     return map;
-  }, [recipes, phaseKey, selectedDay]);
+  }, [recipes, phaseKey, selectedDay, swaps]);
 
   const dailyTotals = useMemo(() => {
     const vals = Object.values(mealRecipes).filter(Boolean);
@@ -178,7 +184,115 @@ const defaultDay = useMemo(() => {
     }, { calories: 0, p: 0, c: 0, g: 0, f: 0 });
   }, [mealRecipes]);
 
+  // Alternative recipes for the swap modal
+  const alternatives = useMemo(() => {
+    if (!activeSwapMeal) return [];
+    const current = mealRecipes[activeSwapMeal];
+    return recipes.filter(r =>
+      (r.phaseKey || r.phase_key) === phaseKey &&
+      (r.mealType || r.meal_type) === activeSwapMeal &&
+      String(r.id) !== String(current?.id)
+    );
+  }, [recipes, phaseKey, activeSwapMeal, mealRecipes]);
+
   const phaseColor = PHASE_COLORS[phaseKey] || colors.primary;
+
+  // --- Animations ---
+  const dayAnims = useRef(
+    DAYS.map(() => ({
+      opacity:    new Animated.Value(0),
+      translateY: new Animated.Value(14),
+      scale:      new Animated.Value(1),
+    }))
+  ).current;
+
+  const focusOpacity    = useRef(new Animated.Value(0)).current;
+  const focusTranslateY = useRef(new Animated.Value(28)).current;
+
+  // Meal slot stagger (4 slots)
+  const mealSlotAnims = useRef(
+    Array.from({ length: 4 }, () => ({
+      opacity:    new Animated.Value(0),
+      translateY: new Animated.Value(28),
+      scale:      new Animated.Value(0.95),
+    }))
+  ).current;
+
+  // Section label reveal
+  const sectionLabelOpacity    = useRef(new Animated.Value(0)).current;
+  const sectionLabelTranslateY = useRef(new Animated.Value(12)).current;
+
+  // Scroll day strip so today is always visible (centered with 2 days before it)
+  useEffect(() => {
+    if (defaultDay > 2) {
+      const PILL_W = 58; // minWidth 52 + gap 6
+      const scrollX = (defaultDay - 2) * PILL_W;
+      setTimeout(() => {
+        dayStripRef.current?.scrollTo({ x: scrollX, animated: false });
+      }, 60);
+    }
+  }, [defaultDay]);
+
+  // Day pills stagger-in on mount + section label + meal slots
+  useEffect(() => {
+    Animated.stagger(55, dayAnims.map(a =>
+      Animated.parallel([
+        Animated.timing(a.opacity,    { toValue: 1, duration: 280, useNativeDriver: true }),
+        Animated.timing(a.translateY, { toValue: 0, duration: 280, useNativeDriver: true }),
+      ])
+    )).start();
+
+    // Section label fades in after pills
+    Animated.sequence([
+      Animated.delay(420),
+      Animated.parallel([
+        Animated.timing(sectionLabelOpacity,    { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.spring(sectionLabelTranslateY, { toValue: 0, friction: 8, useNativeDriver: true }),
+      ]),
+    ]).start();
+
+    // Meal slots stagger up after label
+    Animated.sequence([
+      Animated.delay(550),
+      Animated.stagger(80, mealSlotAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.spring(a.translateY, { toValue: 0, friction: 8, tension: 80, useNativeDriver: true }),
+          Animated.spring(a.scale,    { toValue: 1, friction: 8, tension: 80, useNativeDriver: true }),
+        ])
+      )),
+    ]).start();
+  }, []);
+
+  // Focus card + meal slots re-animate on day change
+  useEffect(() => {
+    focusOpacity.setValue(0);
+    focusTranslateY.setValue(22);
+    Animated.parallel([
+      Animated.timing(focusOpacity,    { toValue: 1, duration: 380, useNativeDriver: true }),
+      Animated.spring(focusTranslateY, { toValue: 0, friction: 7, tension: 90, useNativeDriver: true }),
+    ]).start();
+
+    // Reset and re-stagger meal slots
+    mealSlotAnims.forEach(a => {
+      a.opacity.setValue(0);
+      a.translateY.setValue(28);
+      a.scale.setValue(0.95);
+    });
+    Animated.sequence([
+      Animated.delay(160),
+      Animated.stagger(70, mealSlotAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity, { toValue: 1, duration: 280, useNativeDriver: true }),
+          Animated.spring(a.translateY, { toValue: 0, friction: 8, tension: 80, useNativeDriver: true }),
+          Animated.spring(a.scale,    { toValue: 1, friction: 8, tension: 80, useNativeDriver: true }),
+        ])
+      )),
+    ]).start();
+  }, [selectedDay]);
+
+  const handleDayPressIn  = (i) => Animated.spring(dayAnims[i].scale, { toValue: 0.90, useNativeDriver: true }).start();
+  const handleDayPressOut = (i) => Animated.spring(dayAnims[i].scale, { toValue: 1, friction: 3, tension: 180, useNativeDriver: true }).start();
 
   return (
     <View style={styles.container}>
@@ -203,6 +317,7 @@ const defaultDay = useMemo(() => {
 
         {/* ── Day Strip with phase color bars ── */}
         <ScrollView
+          ref={dayStripRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.daysScroll}
@@ -213,24 +328,34 @@ const defaultDay = useMemo(() => {
             const isToday       = day.index === defaultDay;
             const shortName     = t(`shopping.days.${day.key}.short`, { defaultValue: day.key.slice(0, 1).toUpperCase() });
             const dayPhaseColor = PHASE_COLORS[weekDayPhases[day.index]];
+            const anim = dayAnims[day.index];
 
             return (
-              <Pressable
+              <Animated.View
                 key={day.index}
-                style={[styles.dayPill, isSelected && styles.dayPillActive]}
-                onPress={() => setSelectedDay(day.index)}
+                style={{
+                  opacity:   anim.opacity,
+                  transform: [{ translateY: anim.translateY }, { scale: anim.scale }],
+                }}
               >
-                {!isSelected && (
-                  <View style={[styles.dayPhaseBar, { backgroundColor: dayPhaseColor }]} />
-                )}
-                <Text style={[styles.dayLetter, isSelected && styles.dayLetterActive]}>
-                  {shortName}
-                </Text>
-                <Text style={[styles.dayNum, isSelected && styles.dayNumActive]}>
-                  {weekDates[day.index]}
-                </Text>
-                {isToday && !isSelected && <View style={styles.todayDot} />}
-              </Pressable>
+                <Pressable
+                  style={[styles.dayPill, isSelected && styles.dayPillActive]}
+                  onPress={() => setSelectedDay(day.index)}
+                  onPressIn={() => handleDayPressIn(day.index)}
+                  onPressOut={() => handleDayPressOut(day.index)}
+                >
+                  {!isSelected && (
+                    <View style={[styles.dayPhaseBar, { backgroundColor: dayPhaseColor }]} />
+                  )}
+                  <Text style={[styles.dayLetter, isSelected && styles.dayLetterActive]}>
+                    {shortName}
+                  </Text>
+                  <Text style={[styles.dayNum, isSelected && styles.dayNumActive]}>
+                    {weekDates[day.index]}
+                  </Text>
+                  {isToday && !isSelected && <View style={styles.todayDot} />}
+                </Pressable>
+              </Animated.View>
             );
           })}
         </ScrollView>
@@ -238,7 +363,7 @@ const defaultDay = useMemo(() => {
         <View style={{ marginBottom: 28 }} />
 
         {/* ── Phase Focus Card ── */}
-        <View style={[styles.focusCard, { backgroundColor: phaseColor }]}>
+        <Animated.View style={[styles.focusCard, { backgroundColor: phaseColor, opacity: focusOpacity, transform: [{ translateY: focusTranslateY }] }]}>
           <Text style={styles.focusOverline}>{t('nutrition.phase_focus_label')}</Text>
           <Text style={styles.focusTitle}>{t(`phases_data.${phaseKey}.focus`)}</Text>
           <Text style={styles.focusAdvice}>
@@ -254,24 +379,27 @@ const defaultDay = useMemo(() => {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         <View style={{ marginBottom: 36 }} />
 
         {/* ── Section label ── */}
-        <Text style={styles.sectionLabel}>{t('nutrition.meals_of_day')}</Text>
+        <Animated.Text style={[styles.sectionLabel, { opacity: sectionLabelOpacity, transform: [{ translateY: sectionLabelTranslateY }] }]}>
+          {t('nutrition.meals_of_day')}
+        </Animated.Text>
 
         {/* ── Meal Slots ── */}
         <View style={styles.mealList}>
-          {ALL_MEAL_SLOTS.map((time) => {
+          {ALL_MEAL_SLOTS.map((time, slotIndex) => {
             const recipe    = mealRecipes[time];
             const macros    = computeMacros(recipe?.calories || 0);
             const timeLabel = t(`dailylog.meal_types.${time}`).toUpperCase();
+            const sa        = mealSlotAnims[slotIndex];
 
             return (
-              <View key={time} style={styles.mealSlot}>
+              <Animated.View key={time} style={[styles.mealSlot, { opacity: sa.opacity, transform: [{ translateY: sa.translateY }, { scale: sa.scale }] }]}>
 
-                {/* Meal time header — label LEFT, time RIGHT */}
+                {/* Meal time header */}
                 <View style={styles.mealTimeRow}>
                   <Text style={styles.mealTypeLabel} numberOfLines={1} adjustsFontSizeToFit>{timeLabel}</Text>
                   <Text style={styles.mealTimeText}>
@@ -302,6 +430,13 @@ const defaultDay = useMemo(() => {
                         ))}
                       </View>
                     </View>
+                    {/* Swap button */}
+                    <Pressable
+                      style={styles.swapBtn}
+                      onPress={() => { setActiveSwapMeal(time); setShowSwapModal(true); }}
+                    >
+                      <RefreshCw size={16} color={colors.primary} />
+                    </Pressable>
                   </View>
                 ) : (
                   <Pressable style={styles.emptyMealCard} onPress={() => onNavigate('recipes')}>
@@ -310,7 +445,7 @@ const defaultDay = useMemo(() => {
                     <Text style={styles.emptyMealSub}>{t('nutrition.empty_meal_sub')}</Text>
                   </Pressable>
                 )}
-              </View>
+              </Animated.View>
             );
           })}
         </View>
@@ -359,60 +494,77 @@ const defaultDay = useMemo(() => {
           </Pressable>
         </View>
 
-        <View style={{ height: 160 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
+
 
       {/* ── Swap Modal ── */}
       <Modal
         visible={showSwapModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowSwapModal(false)}
+        onRequestClose={() => { setShowSwapModal(false); setActiveSwapMeal(null); }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('nutrition.swap_title')}</Text>
-              <Pressable
-                style={styles.closeBtn}
-                onPress={() => { setShowSwapModal(false); setActiveSwapMeal(null); }}
-              >
+              <Pressable onPress={() => { setShowSwapModal(false); setActiveSwapMeal(null); }}>
                 <X size={20} color={colors.on_surface} />
               </Pressable>
             </View>
-
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalList}>
               <Text style={styles.modalSubtitle}>
                 {t('nutrition.swap_subtitle', { phase: t(`phases.${phaseKey}`) })}
               </Text>
-
               {alternatives.length === 0 ? (
                 <View style={styles.emptyAlternatives}>
                   <Text style={styles.emptyAltText}>{t('nutrition.no_alternatives')}</Text>
                 </View>
               ) : (
-                alternatives.map((alt) => (
-                  <Pressable key={alt.id} style={styles.altCard} onPress={() => handleSelectSwap(alt.id)}>
-                    <View style={{ position: 'relative' }}>
-                      <Image source={{ uri: alt.thumbnail }} style={styles.altImage} resizeMode="cover" />
-                      <View style={[styles.playBtn, { width: 28, height: 28, borderRadius: 14 }]}>
-                        <Play size={12} color="#FFF" fill="#FFF" />
+                alternatives.map(alt => {
+                  const altMacros = computeMacros(alt.calories || 0);
+                  return (
+                    <Pressable key={alt.id} style={styles.altCard} onPress={() => handleSelectSwap(String(alt.id))}>
+                      <View style={styles.altInfo}>
+                        <Text style={styles.altTitle} numberOfLines={2}>{alt.title}</Text>
+                        <View style={styles.macroChipsRow}>
+                          <View style={[styles.macroChip, { backgroundColor: '#F5F5EF' }]}>
+                            <Text style={[styles.macroChipText, { color: colors.on_surface_variant }]}>{alt.calories} kcal</Text>
+                          </View>
+                          {[
+                            { key: 'p', label: `P ${altMacros.p}g` },
+                            { key: 'c', label: `C ${altMacros.c}g` },
+                          ].map(m => (
+                            <View key={m.key} style={[styles.macroChip, { backgroundColor: MACRO_COLORS[m.key].bg }]}>
+                              <Text style={[styles.macroChipText, { color: MACRO_COLORS[m.key].text }]}>{m.label}</Text>
+                            </View>
+                          ))}
+                        </View>
                       </View>
-                    </View>
-                    <View style={styles.altInfo}>
-                      <Text style={styles.altTitle}>{alt.title}</Text>
-                      <Text style={styles.altTime}>{alt.duration}</Text>
-                    </View>
-                    <View style={styles.selectAltBadge}>
-                      <Plus size={16} color={colors.primary} />
-                    </View>
-                  </Pressable>
-                ))
+                    </Pressable>
+                  );
+                })
               )}
             </ScrollView>
           </View>
         </View>
       </Modal>
+
+      {isLocked && (
+        <View style={styles.lockedOverlay}>
+          <View style={styles.lockCard}>
+            <View style={styles.lockIconCircle}>
+              <Crown size={32} color="#FFF" fill="#FFD700" />
+            </View>
+            <Text style={styles.lockTitle}>{t('subscription.unlock_nutrition_title')}</Text>
+            <Text style={styles.lockSubtitle}>{t('subscription.unlock_nutrition_desc')}</Text>
+            <Pressable style={styles.subscribeBtn} onPress={onSubscribe}>
+              <Text style={styles.subscribeBtnText}>{t('subscription.unlock_nutrition_btn').toUpperCase()}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -737,6 +889,140 @@ const styles = StyleSheet.create({
     color: colors.on_surface,
   },
 
+  // Video card
+  mealVideoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  thumbWrapper: {
+    width: 80,
+    height: 60,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F0EEE8',
+  },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+  playOverlay: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -14,
+    marginLeft: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.38)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mealVideoInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  mealVideoTitle: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    color: colors.on_surface,
+    lineHeight: 20,
+  },
+  mealVideoDuration: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 12,
+    color: colors.on_surface_variant,
+    opacity: 0.6,
+  },
+  swapBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F0EDF6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+
+  // Swap modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '70%',
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F1E8',
+  },
+  modalTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 18,
+    color: colors.on_surface,
+  },
+  modalList: {
+    padding: 20,
+    gap: 12,
+  },
+  modalSubtitle: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+    marginBottom: 8,
+    opacity: 0.7,
+  },
+  altCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#F9F9F2',
+    borderRadius: 16,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+  },
+  altInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  altTitle: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 14,
+    color: colors.on_surface,
+    lineHeight: 20,
+  },
+  emptyAlternatives: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyAltText: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 14,
+    color: colors.on_surface_variant,
+    opacity: 0.6,
+  },
+
   // Empty slot
   emptyMealCard: {
     borderRadius: 24,
@@ -968,5 +1254,73 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 4,
     alignItems: 'center',
+  },
+
+  // Paywall
+  lockedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(238, 242, 255, 0.88)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 999,
+  },
+  lockCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 36,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#968DA1',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#E8E2F0',
+  },
+  lockIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#EEE9F4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  lockTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 26,
+    color: colors.on_surface,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  lockSubtitle: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 14,
+    color: colors.on_surface_variant,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 28,
+    opacity: 0.8,
+  },
+  subscribeBtn: {
+    width: '100%',
+    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  subscribeBtnText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 14,
+    color: '#FFFFFF',
+    letterSpacing: 1.5,
   },
 });

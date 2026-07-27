@@ -319,6 +319,7 @@
     "title": "Recipes by phase",
     "overline": "NUTRICYCLE VIDEO LIBRARY",
     "audio_session": "Audio session",
+    "search_placeholder": "Search videos or phases",
     "category_prefix": "Phase {{phase}} • {{meal}}",
     "featured": "FEATURED FOR {{phase}}",
     "recommended": "RECOMMENDED VIDEOS",
@@ -465,7 +466,10 @@
     "unlock_recipes_desc": "Gain full access to customized meal plans and phase-specific recipes designed to balance your hormones.",
     "unlock_premium_videos": "Unlock Premium Videos",
     "unlock_videos_desc": "Gain full access to yoga sessions, hormone workouts, and phase-specific routines designed to keep you aligned.",
-    "subscribe_now": "Subscribe Now"
+    "subscribe_now": "Subscribe Now",
+    "unlock_nutrition_title": "Unlock the Recipe Plan",
+    "unlock_nutrition_desc": "Get full access to the daily menu with recipes designed for each phase of your cycle.",
+    "unlock_nutrition_btn": "I want my plan"
   },
   "admin": {
     "access_denied": "Access denied",
@@ -625,7 +629,7 @@
     "harmony_ia": "Harmonizing your hormonal cycle with AI"
   },
   "onboarding": {
-    "story_indicator": "STORY {{current}} / {{total}}",
+    "story_indicator": "STEP {{current}} / {{total}}",
     "next": "NEXT",
     "start": "START",
     "step1_title": "Heal from the root",
@@ -654,6 +658,7 @@
     "next_period_preview": "Next period in {{days}} days · Fertile window {{label}}",
     "btn_continue": "CONTINUE",
     "btn_finish": "ENTER NUTRICYCLE",
+    "wizard_complete_subtitle": "We will adapt your calendar, foods and home screen to your cycle and goal",
     "goals": {
       "acne": "Hormonal acne",
       "pcos": "PCOS or Polycystic ovary syndrome",
@@ -782,8 +787,8 @@
       "snack": "Snack",
       "dinner": "Dinner"
     },
-    "empty_meal": "No video planned",
-    "empty_meal_sub": "Tap to explore phase videos",
+    "empty_meal": "No recipe planned",
+    "empty_meal_sub": "Tap to explore phase recipes",
     "swap_title": "Swap Meal",
     "swap_subtitle": "Options for {{phase}} phase:",
     "no_alternatives": "No alternative recipes available."

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import './src/i18n';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View, ActivityIndicator, Pressable, Text, Dimensions, Alert, Platform, Image } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Pressable, Text, Dimensions, Alert, Platform, Image, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, useUser, useAuth, useClerk } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
@@ -137,6 +137,27 @@ const ConfigScreen = ({ missingRequired, missingRecommended }) => (
     ) : null}
   </View>
 );
+
+// Wraps every screen render — remounts (via key) on navigation, playing the entrance animation
+const ScreenWrapper = ({ children, isPush }) => {
+  const opacity    = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(isPush ? 32 : 0)).current;
+  const translateY = useRef(new Animated.Value(isPush ? 0 : 20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity,    { toValue: 1, duration: 260, useNativeDriver: true }),
+      Animated.spring(translateX, { toValue: 0, friction: 9, tension: 90, useNativeDriver: true }),
+      Animated.spring(translateY, { toValue: 0, friction: 9, tension: 90, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={{ flex: 1, opacity, transform: [{ translateX }, { translateY }] }}>
+      {children}
+    </Animated.View>
+  );
+};
 
 const AppShell = ({ onStripePublishableKeyChange }) => {
   const { isLoaded: authLoaded, isSignedIn: clerkIsSignedIn, getToken } = useAuth();
@@ -674,6 +695,8 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
             onBack={() => setActiveTab('today')}
             onNavigate={navigateTo}
             cycleDay={cycleInfo.cycleDay}
+            isLocked={!canAccessPremium}
+            onSubscribe={() => navigateTo('subscription')}
             {...sharedScreenProps}
           />
         );
@@ -731,48 +754,55 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
     <View style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.mainWrapper}>
-        <View style={styles.screenContainer}>{renderMainContent()}</View>
+        <View style={styles.screenContainer}>
+          <ScreenWrapper
+            key={screenStack.length > 0
+              ? screenStack[screenStack.length - 1] + '_' + screenStack.length
+              : activeTab}
+            isPush={screenStack.length > 0}
+          >
+            {renderMainContent()}
+          </ScreenWrapper>
+        </View>
         {toast.visible && (
           <View style={[styles.toastContainer, styles[`toast_${toast.type}`]]}>
             <Text style={styles.toastText}>{toast.message}</Text>
           </View>
         )}
-        {screenStack.length === 0 ? (
-          <View style={styles.tabBarWrapper}>
-            <View style={styles.tabBar}>
-              <Pressable onPress={() => handleTabPress('today')} style={styles.tabItem}>
-                <View style={[styles.activeIndicator, activeTab === 'today' && styles.activeIndicatorActive]}>
-                  <Home size={22} color={activeTab === 'today' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'today' ? 2 : 1.5} />
-                </View>
-                <Text style={[styles.tabLabel, activeTab === 'today' && styles.activeTabLabel]}>{t('nav.today')}</Text>
-              </Pressable>
-              <Pressable onPress={() => handleTabPress('calendar')} style={styles.tabItem}>
-                <View style={[styles.activeIndicator, activeTab === 'calendar' && styles.activeIndicatorActive]}>
-                  <CircleDot size={22} color={activeTab === 'calendar' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'calendar' ? 2 : 1.5} />
-                </View>
-                <Text style={[styles.tabLabel, activeTab === 'calendar' && styles.activeTabLabel]}>{t('nav.cycle')}</Text>
-              </Pressable>
-              <Pressable onPress={() => handleTabPress('videos')} style={styles.tabItem}>
-                <View style={[styles.activeIndicator, activeTab === 'videos' && styles.activeIndicatorActive]}>
-                  <PlaySquare size={22} color={activeTab === 'videos' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'videos' ? 2 : 1.5} />
-                </View>
-                <Text style={[styles.tabLabel, activeTab === 'videos' && styles.activeTabLabel]}>{t('nav.videos')}</Text>
-              </Pressable>
-              <Pressable onPress={() => handleTabPress('nutrition')} style={styles.tabItem}>
-                <View style={[styles.activeIndicator, activeTab === 'nutrition' && styles.activeIndicatorActive]}>
-                  <Soup size={22} color={activeTab === 'nutrition' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'nutrition' ? 2 : 1.5} />
-                </View>
-                <Text style={[styles.tabLabel, activeTab === 'nutrition' && styles.activeTabLabel]}>{t('nav.nutrition')}</Text>
-              </Pressable>
-              <Pressable onPress={() => handleTabPress('profile')} style={styles.tabItem}>
-                <View style={[styles.activeIndicator, activeTab === 'profile' && styles.activeIndicatorActive]}>
-                  <User size={22} color={activeTab === 'profile' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'profile' ? 2 : 1.5} />
-                </View>
-                <Text style={[styles.tabLabel, activeTab === 'profile' && styles.activeTabLabel]}>{t('nav.profile')}</Text>
-              </Pressable>
-            </View>
+        <View style={styles.tabBarWrapper}>
+          <View style={styles.tabBar}>
+            <Pressable onPress={() => handleTabPress('today')} style={styles.tabItem}>
+              <View style={[styles.activeIndicator, activeTab === 'today' && styles.activeIndicatorActive]}>
+                <Home size={22} color={activeTab === 'today' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'today' ? 2 : 1.5} />
+              </View>
+              <Text style={[styles.tabLabel, activeTab === 'today' && styles.activeTabLabel]}>{t('nav.today')}</Text>
+            </Pressable>
+            <Pressable onPress={() => handleTabPress('calendar')} style={styles.tabItem}>
+              <View style={[styles.activeIndicator, activeTab === 'calendar' && styles.activeIndicatorActive]}>
+                <CircleDot size={22} color={activeTab === 'calendar' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'calendar' ? 2 : 1.5} />
+              </View>
+              <Text style={[styles.tabLabel, activeTab === 'calendar' && styles.activeTabLabel]}>{t('nav.cycle')}</Text>
+            </Pressable>
+            <Pressable onPress={() => handleTabPress('videos')} style={styles.tabItem}>
+              <View style={[styles.activeIndicator, activeTab === 'videos' && styles.activeIndicatorActive]}>
+                <PlaySquare size={22} color={activeTab === 'videos' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'videos' ? 2 : 1.5} />
+              </View>
+              <Text style={[styles.tabLabel, activeTab === 'videos' && styles.activeTabLabel]}>{t('nav.videos')}</Text>
+            </Pressable>
+            <Pressable onPress={() => handleTabPress('nutrition')} style={styles.tabItem}>
+              <View style={[styles.activeIndicator, activeTab === 'nutrition' && styles.activeIndicatorActive]}>
+                <Soup size={22} color={activeTab === 'nutrition' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'nutrition' ? 2 : 1.5} />
+              </View>
+              <Text style={[styles.tabLabel, activeTab === 'nutrition' && styles.activeTabLabel]}>{t('nav.nutrition')}</Text>
+            </Pressable>
+            <Pressable onPress={() => handleTabPress('profile')} style={styles.tabItem}>
+              <View style={[styles.activeIndicator, activeTab === 'profile' && styles.activeIndicatorActive]}>
+                <User size={22} color={activeTab === 'profile' ? '#A3B3A5' : '#9B9589'} strokeWidth={activeTab === 'profile' ? 2 : 1.5} />
+              </View>
+              <Text style={[styles.tabLabel, activeTab === 'profile' && styles.activeTabLabel]}>{t('nav.profile')}</Text>
+            </Pressable>
           </View>
-        ) : null}
+        </View>
       </View>
     </View>
   );
@@ -895,6 +925,7 @@ const styles = StyleSheet.create({
   },
   screenContainer: {
     flex: 1,
+    paddingBottom: Platform.OS === 'ios' ? 116 : 132,
   },
   tabBarWrapper: {
     position: 'absolute',

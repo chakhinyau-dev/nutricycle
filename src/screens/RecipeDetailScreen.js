@@ -234,7 +234,7 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
           </View>
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );

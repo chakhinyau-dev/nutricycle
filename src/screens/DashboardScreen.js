@@ -1,7 +1,13 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, Image, Dimensions, Animated } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path, Line, Circle, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Line, Circle, Text as SvgText, Defs, ClipPath, Rect, G } from 'react-native-svg';
+
+const AnimatedRect    = Animated.createAnimatedComponent(Rect);
+const AnimatedPath    = Animated.createAnimatedComponent(Path);
+const AnimatedLine    = Animated.createAnimatedComponent(Line);
+const AnimatedCircle  = Animated.createAnimatedComponent(Circle);
+const AnimatedSvgText = Animated.createAnimatedComponent(SvgText);
 import { Play, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
@@ -142,6 +148,78 @@ export const DashboardScreen = ({
     return data[phaseKey] || data.follicular;
   }, [phaseKey, t]);
 
+  // --- Tracker card entrance ---
+  const trackerScale   = useRef(new Animated.Value(0.93)).current;
+  const trackerOpacity = useRef(new Animated.Value(0)).current;
+
+  // --- Log button breathing pulse ---
+  const logBtnScale = useRef(new Animated.Value(1)).current;
+
+  // --- Meal slot cards stagger from right ---
+  const mealCardAnims = useRef(
+    Array.from({ length: 4 }, () => ({
+      opacity:    new Animated.Value(0),
+      translateX: new Animated.Value(44),
+    }))
+  ).current;
+
+  useEffect(() => {
+    // Tracker card entrance
+    Animated.parallel([
+      Animated.timing(trackerOpacity, { toValue: 1, duration: 420, useNativeDriver: true }),
+      Animated.spring(trackerScale,   { toValue: 1, friction: 7, tension: 80, useNativeDriver: true }),
+    ]).start();
+
+    // Log button continuous breathing
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(logBtnScale, { toValue: 1.035, duration: 1300, useNativeDriver: true }),
+        Animated.timing(logBtnScale, { toValue: 1,     duration: 1300, useNativeDriver: true }),
+      ])
+    ).start();
+
+    // Meal cards stagger slide from right
+    Animated.sequence([
+      Animated.delay(200),
+      Animated.stagger(65, mealCardAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity,    { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.spring(a.translateX, { toValue: 0, friction: 8, tension: 80, useNativeDriver: true }),
+        ])
+      )),
+    ]).start();
+  }, []);
+
+  // --- Chart animations ---
+  const clipW      = useRef(new Animated.Value(0)).current;
+  const fillsAlpha = useRef(new Animated.Value(0)).current;
+  const markerAlpha = useRef(new Animated.Value(0)).current;
+  const badgeScale  = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    clipW.setValue(0);
+    fillsAlpha.setValue(0);
+    markerAlpha.setValue(0);
+    badgeScale.setValue(0);
+
+    Animated.sequence([
+      Animated.parallel([
+        // curves draw left → right
+        Animated.timing(clipW, { toValue: chartWidth, duration: 1000, useNativeDriver: false }),
+        // fills fade in mid-way through draw
+        Animated.sequence([
+          Animated.delay(500),
+          Animated.timing(fillsAlpha, { toValue: 1, duration: 500, useNativeDriver: false }),
+        ]),
+      ]),
+      // day marker + badge pop in after curves finish
+      Animated.parallel([
+        Animated.timing(markerAlpha, { toValue: 1, duration: 300, useNativeDriver: false }),
+        Animated.spring(badgeScale, { toValue: 1, friction: 5, tension: 120, useNativeDriver: false }),
+      ]),
+    ]).start();
+  }, [phaseKey]);
+
   return (
     <ScrollView
       style={styles.container}
@@ -161,7 +239,7 @@ export const DashboardScreen = ({
       <View style={{ marginBottom: 20 }} />
 
       {/* 3. Hormone Tracker Widget */}
-      <View style={styles.trackerCard}>
+      <Animated.View style={[styles.trackerCard, { opacity: trackerOpacity, transform: [{ scale: trackerScale }] }]}>
         <View style={styles.trackerColumns}>
           <View style={styles.trackerColumn}>
             <Text style={styles.trackerLabel}>{t('dashboard.tracker_energy', { defaultValue: 'Energía' })}</Text>
@@ -180,7 +258,7 @@ export const DashboardScreen = ({
           <Text style={styles.trackerBtnText}>{t('dashboard.view_full_tracker', { defaultValue: 'VIEW FULL TRACKER' })}</Text>
           <ChevronRight size={14} color="#FFFFFF" />
         </Pressable>
-      </View>
+      </Animated.View>
 
       <View style={{ marginBottom: 24 }} />
 
@@ -214,37 +292,51 @@ export const DashboardScreen = ({
 
       <View style={styles.chartWrapper}>
         <Svg width={chartWidth} height={chartHeight}>
-          {/* Filled areas — testosterone first (bottom), then progesterone, estrogen on top */}
-          <Path d={testosteroneFilledPath} fill="rgba(176,160,212,0.18)" />
-          <Path d={progesteroneFilledPath} fill="rgba(148,196,154,0.18)" />
-          <Path d={estrogenFilledPath} fill="rgba(232,160,162,0.22)" />
+          <Defs>
+            <ClipPath id="curveClip">
+              <AnimatedRect x={0} y={0} width={clipW} height={chartHeight} />
+            </ClipPath>
+          </Defs>
 
-          {/* Stroke curves */}
-          <Path d={testosteronePath} fill="none" stroke="#B0A0D4" strokeWidth={2} />
-          <Path d={progesteronePath} fill="none" stroke="#94C49A" strokeWidth={2} />
-          <Path d={estrogenPath} fill="none" stroke="#E8A0A2" strokeWidth={2.5} />
+          {/* Filled areas — fade in after curves draw */}
+          <AnimatedPath d={testosteroneFilledPath} fill="rgba(176,160,212,0.18)" opacity={fillsAlpha} />
+          <AnimatedPath d={progesteroneFilledPath} fill="rgba(148,196,154,0.18)" opacity={fillsAlpha} />
+          <AnimatedPath d={estrogenFilledPath}     fill="rgba(232,160,162,0.22)" opacity={fillsAlpha} />
 
-          {/* Current day dashed vertical line */}
-          <Line
+          {/* Stroke curves — draw left → right via clip */}
+          <G clipPath="url(#curveClip)">
+            <Path d={testosteronePath} fill="none" stroke="#B0A0D4" strokeWidth={2} />
+            <Path d={progesteronePath} fill="none" stroke="#94C49A" strokeWidth={2} />
+            <Path d={estrogenPath}     fill="none" stroke="#E8A0A2" strokeWidth={2.5} />
+          </G>
+
+          {/* Current day dashed line — fades in after draw */}
+          <AnimatedLine
             x1={currentDayX} y1={CHART_TOP_PAD}
             x2={currentDayX} y2={baselineY}
             stroke="rgba(90,90,180,0.45)"
             strokeWidth={1.5}
             strokeDasharray="3 3"
+            opacity={markerAlpha}
           />
 
-          {/* Day number badge at top of line */}
-          <Circle cx={currentDayX} cy={18} r={14} fill="#968DA1" />
-          <SvgText
-            x={currentDayX}
-            y={23}
+          {/* Day badge — pops in via scale */}
+          <AnimatedCircle
+            cx={currentDayX} cy={18} r={14}
+            fill="#968DA1"
+            opacity={markerAlpha}
+            transform={[{ scale: badgeScale }]}
+          />
+          <AnimatedSvgText
+            x={currentDayX} y={23}
             textAnchor="middle"
             fill="white"
             fontSize="11"
             fontWeight="bold"
-          >{String(cycleDay)}</SvgText>
+            opacity={markerAlpha}
+          >{String(cycleDay)}</AnimatedSvgText>
 
-          {/* Bottom axis tick marks */}
+          {/* Tick marks */}
           {[0, 7, 14, 21, 28].filter(d => d < cycleLength).map((d) => {
             const tickX = CHART_SIDE_PAD + (d / (cycleLength - 1)) * (chartWidth - 2 * CHART_SIDE_PAD);
             return (
@@ -252,10 +344,9 @@ export const DashboardScreen = ({
             );
           })}
 
-          {/* Phase label centered at bottom */}
+          {/* Phase label */}
           <SvgText
-            x={chartWidth / 2}
-            y={chartHeight - 7}
+            x={chartWidth / 2} y={chartHeight - 7}
             textAnchor="middle"
             fill="#968DA1"
             fontSize="9"
@@ -267,11 +358,13 @@ export const DashboardScreen = ({
 
       <View style={{ marginBottom: 32 }} />
 
-      {/* Log how you feel */}
-      <Pressable style={styles.logFeelBtn} onPress={() => onNavigate('dailyLog')}>
-        <Heart size={18} color={colors.on_primary_container} />
-        <Text style={styles.logFeelBtnText}>{t('dashboard.log_feel', { defaultValue: 'Registrar cómo me siento' })}</Text>
-      </Pressable>
+      {/* Log how you feel — breathing pulse */}
+      <Animated.View style={{ transform: [{ scale: logBtnScale }] }}>
+        <Pressable style={styles.logFeelBtn} onPress={() => onNavigate('dailyLog')}>
+          <Heart size={18} color={colors.on_primary_container} />
+          <Text style={styles.logFeelBtnText}>{t('dashboard.log_feel', { defaultValue: 'Registrar cómo me siento' })}</Text>
+        </Pressable>
+      </Animated.View>
 
       <View style={{ marginBottom: 36 }} />
 
@@ -340,7 +433,7 @@ export const DashboardScreen = ({
           const d = new Date().getDay();
           const todayIndex = d === 0 ? 6 : d - 1;
           const SLOT_OFFSETS = { breakfast: 0, lunch: 3, snack: 5, dinner: 2 };
-          return ['breakfast', 'lunch', 'snack', 'dinner'].map(mealType => {
+          return ['breakfast', 'lunch', 'snack', 'dinner'].map((mealType, i) => {
           const phasePool = videos.filter(v => v.phaseKey === phaseKey && v.mealType === mealType);
           const fallbackPool = videos.filter(v => v.mealType === mealType);
           const pool = phasePool.length ? phasePool : fallbackPool;
@@ -350,7 +443,8 @@ export const DashboardScreen = ({
           const timeLabel = t(`nutrition.meal_times.${mealType}`, { defaultValue: mealType });
           const mealLabel = t(`nutrition.meal_slots.${mealType}`, { defaultValue: mealType }).toUpperCase();
           return (
-            <Pressable key={mealType} style={styles.mealSlotCard} onPress={() => video ? onNavigate('videoDetail', video) : onNavigate('videos')}>
+            <Animated.View key={mealType} style={{ opacity: mealCardAnims[i].opacity, transform: [{ translateX: mealCardAnims[i].translateX }] }}>
+            <Pressable style={styles.mealSlotCard} onPress={() => video ? onNavigate('videoDetail', video) : onNavigate('videos')}>
               {video?.thumbnail ? (
                 <View style={styles.mealSlotThumb}>
                   <Image source={{ uri: video.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -374,12 +468,13 @@ export const DashboardScreen = ({
                 <Text style={styles.mealSlotDuration}>{video.duration}</Text>
               )}
             </Pressable>
+            </Animated.View>
           );
         });
         })()}
       </View>
 
-      <View style={{ height: 160 }} />
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 };

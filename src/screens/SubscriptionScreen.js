@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  Pressable, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Pressable,
   ImageBackground,
   ActivityIndicator,
   Alert,
-  Platform
+  Platform,
+  Animated,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-import { ChevronLeft, Check, Crown, Zap, Shield, Heart } from 'lucide-react-native';
+import { ChevronLeft, Check, Crown, Zap, Shield, Heart, Star } from 'lucide-react-native';
 import { useStripe } from '../hooks/useStripePolyfill';
 import {
   createPaymentIntent,
@@ -56,6 +57,61 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
       isActive = false;
     };
   }, [i18n.language]);
+
+  // --- Animations ---
+  const featureAnims = useRef(
+    Array.from({ length: 5 }, () => ({
+      opacity:    new Animated.Value(0),
+      translateY: new Animated.Value(22),
+    }))
+  ).current;
+  const annualCardScale  = useRef(new Animated.Value(0.86)).current;
+  const monthlyCardScale = useRef(new Animated.Value(0.86)).current;
+  const badgeScale       = useRef(new Animated.Value(0)).current;
+  const checkmarkScale   = useRef(new Animated.Value(1)).current;
+
+  // A + B: entrance sequence on mount
+  useEffect(() => {
+    Animated.parallel([
+      // A: features stagger in
+      Animated.stagger(80, featureAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity,    { toValue: 1, duration: 340, useNativeDriver: true }),
+          Animated.spring(a.translateY, { toValue: 0, friction: 8, tension: 80, useNativeDriver: true }),
+        ])
+      )),
+      // B: cards pop in after features
+      Animated.sequence([
+        Animated.delay(460),
+        Animated.parallel([
+          Animated.spring(annualCardScale,  { toValue: 1, friction: 7, tension: 90, useNativeDriver: true }),
+          Animated.spring(monthlyCardScale, { toValue: 1, friction: 7, tension: 90, useNativeDriver: true }),
+        ]),
+      ]),
+      // B: badge pops after cards
+      Animated.sequence([
+        Animated.delay(620),
+        Animated.spring(badgeScale, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, []);
+
+  // C: checkmark tick when selected plan changes
+  useEffect(() => {
+    checkmarkScale.setValue(0);
+    Animated.spring(checkmarkScale, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }).start();
+  }, [selectedPlan]);
+
+  // CTA button continuous breathing glow
+  const ctaScale = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(ctaScale, { toValue: 1.025, duration: 1100, useNativeDriver: true }),
+        Animated.timing(ctaScale, { toValue: 1,     duration: 1100, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
 
   const formatCurrency = (price, fallback) => {
     if (!price?.unitAmount || !price?.currency) {
@@ -261,6 +317,8 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
     }
   };
 
+  const FEATURE_ICONS = [Crown, Zap, Shield, Heart, Star];
+
   const features = [
     { title: t('subscription.feature1_title'), sub: t('subscription.feature1_sub') },
     { title: t('subscription.feature2_title'), sub: t('subscription.feature2_sub') },
@@ -271,7 +329,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={{ paddingBottom: 140 }}>
         {/* Premium Banner */}
         <ImageBackground 
           source={{ uri: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800' }} 
@@ -304,26 +362,44 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
         <View style={styles.content}>
           <Text style={styles.sectionTitle}>{t('subscription.exclusive_benefits')}</Text>
           
-          {features.map((item, index) => (
-            <View key={index} style={styles.featureItem}>
-              <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>{item.title}</Text>
-                <Text style={styles.featureSub}>{item.sub}</Text>
-              </View>
-            </View>
-          ))}
+          {features.map((item, index) => {
+            const FeatureIcon = FEATURE_ICONS[index] || Star;
+            return (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.featureItem,
+                  {
+                    opacity:   featureAnims[index].opacity,
+                    transform: [{ translateY: featureAnims[index].translateY }],
+                  },
+                ]}
+              >
+                <View style={styles.iconCircle}>
+                  <FeatureIcon size={22} color="#968DA1" strokeWidth={1.8} />
+                </View>
+                <View style={styles.featureText}>
+                  <Text style={styles.featureTitle}>{item.title}</Text>
+                  <Text style={styles.featureSub}>{item.sub}</Text>
+                </View>
+              </Animated.View>
+            );
+          })}
 
           {/* Pricing Cards */}
           <View style={styles.pricingSection}>
-            <Pressable 
+            {/* Annual card — B: pop-in scale */}
+            <Animated.View style={{ flex: 1, transform: [{ scale: annualCardScale }] }}>
+              <Pressable
                 onPress={() => setSelectedPlan('annual')}
-                style={[
-                    styles.card, 
-                    selectedPlan === 'annual' ? styles.cardActive : styles.cardInactive
-                ]}
-             >
+                style={[styles.card, selectedPlan === 'annual' ? styles.cardActive : styles.cardInactive]}
+              >
                 <View style={[styles.selectionIndicator, selectedPlan === 'annual' && styles.selectionIndicatorActive]}>
-                  {selectedPlan === 'annual' && <Check size={14} color="#FFF" strokeWidth={3} />}
+                  {selectedPlan === 'annual' && (
+                    <Animated.View style={{ transform: [{ scale: checkmarkScale }] }}>
+                      <Check size={14} color="#FFF" strokeWidth={3} />
+                    </Animated.View>
+                  )}
                 </View>
                 <Text style={[styles.planName, selectedPlan === 'annual' ? { color: colors.primary } : { color: colors.on_surface_variant }]}>
                   {t('subscription.balance_annual') || 'Annual Hormonal Plan'}
@@ -335,21 +411,26 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
                 <Text style={styles.livePriceHint}>
                   {pricingLoading ? t('subscription.loading_price') || 'Loading live Stripe price...' : t('subscription.live_price') || 'Live price from Stripe'}
                 </Text>
-                <Text style={styles.savings}>{t('subscription.save_40') || 'Save 40%'}</Text>
-                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                   <Text style={styles.badgeTextWhite}>{t('subscription.recommended') || 'RECOMMENDED'}</Text>
-                </View>
-             </Pressable>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={styles.savings}>{t('subscription.save_40') || 'Save 40%'}</Text>
+                {/* B: badge scale pop */}
+                <Animated.View style={[styles.badge, { backgroundColor: colors.primary, transform: [{ scale: badgeScale }] }]}>
+                  <Text style={styles.badgeTextWhite}>{t('subscription.recommended') || 'RECOMMENDED'}</Text>
+                </Animated.View>
+              </Pressable>
+            </Animated.View>
 
-             <Pressable 
+            {/* Monthly card — B: pop-in scale */}
+            <Animated.View style={{ flex: 1, transform: [{ scale: monthlyCardScale }] }}>
+              <Pressable
                 onPress={() => setSelectedPlan('monthly')}
-                style={[
-                    styles.card, 
-                    selectedPlan === 'monthly' ? styles.cardActive : styles.cardInactive
-                ]}
-             >
+                style={[styles.card, selectedPlan === 'monthly' ? styles.cardActive : styles.cardInactive]}
+              >
                 <View style={[styles.selectionIndicator, selectedPlan === 'monthly' && styles.selectionIndicatorActive]}>
-                  {selectedPlan === 'monthly' && <Check size={14} color="#FFF" strokeWidth={3} />}
+                  {selectedPlan === 'monthly' && (
+                    <Animated.View style={{ transform: [{ scale: checkmarkScale }] }}>
+                      <Check size={14} color="#FFF" strokeWidth={3} />
+                    </Animated.View>
+                  )}
                 </View>
                 <Text style={[styles.planName, selectedPlan === 'monthly' ? { color: colors.primary } : { color: colors.on_surface_variant }]}>
                   {t('subscription.balance_monthly') || 'Balance Monthly Plan'}
@@ -361,17 +442,19 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
                 <Text style={styles.livePriceHint}>
                   {pricingLoading ? t('subscription.loading_price') || 'Loading live Stripe price...' : t('subscription.live_price') || 'Live price from Stripe'}
                 </Text>
-                <Text style={styles.savings}>{t('subscription.no_commitment') || 'No commitment'}</Text>
-             </Pressable>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={styles.savings}>{t('subscription.no_commitment') || 'No commitment'}</Text>
+              </Pressable>
+            </Animated.View>
           </View>
 
-          <View style={{ height: 160 }} />
+          <View style={{ height: 24 }} />
         </View>
       </ScrollView>
 
       {/* Floating Checkout */}
       <View style={styles.footer}>
-         <Pressable 
+         <Animated.View style={{ transform: [{ scale: ctaScale }] }}>
+         <Pressable
            style={[
              styles.mainCta, 
              (isPremium && activePlan === selectedPlanType) && { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' }
@@ -401,6 +484,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
               </>
             )}
           </Pressable>
+          </Animated.View>
           <Text style={styles.footerLegal}>{t('subscription.footer_legal')}</Text>
       </View>
     </View>
@@ -489,7 +573,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
-    color: '#A3B3A5',
+    color: '#968DA1',
     marginBottom: 24,
   },
   featureItem: {
@@ -500,16 +584,14 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 48,
     height: 48,
-    borderRadius: 16,
-    backgroundColor: '#FFF',
+    borderRadius: 14,
+    backgroundColor: '#F3F0F8',
+    borderWidth: 1.5,
+    borderColor: '#E8E2F0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    marginRight: 16,
+    flexShrink: 0,
   },
   featureText: {
     flex: 1,
@@ -632,7 +714,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.9)',
     paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
     borderTopWidth: 1,
     borderTopColor: '#F1F1E8',
   },

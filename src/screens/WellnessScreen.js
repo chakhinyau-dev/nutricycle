@@ -185,7 +185,7 @@ export const WellnessScreen = ({ onBack }) => {
           <Text style={styles.sleepDesc}>{t('wellness.sleep_desc')}</Text>
         </View>
 
-        <View style={{ height: 180 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
 
       <Modal visible={!!playingActivity} animationType="slide" transparent={true}>

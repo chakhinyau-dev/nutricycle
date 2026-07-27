@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Pressable, ImageBackground, Image } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ImageBackground } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { ChevronRight } from 'lucide-react-native';
+import { NutricycleLogo } from '../components/NutricycleLogo';
 
 const ONBOARDING_STEPS = [
   {
@@ -42,11 +43,7 @@ export const OnboardingScreen = ({ onFinish }) => {
         <View style={styles.overlay} />
 
         <View style={styles.logoHeader}>
-          <Image
-            source={require('../../assets/Final Logo (1).png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <NutricycleLogo width={160} height={70} showText={false} ringColor="#FFFFFF" />
         </View>
 
         <View style={styles.content}>
@@ -96,11 +93,6 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     zIndex: 10,
-  },
-  logo: {
-    width: 130,
-    height: 80,
-    tintColor: '#FFFFFF',
   },
   content: {
     flex: 1,

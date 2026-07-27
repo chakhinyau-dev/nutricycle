@@ -8,6 +8,7 @@ const normalizeFood = (row) => ({
   name:        row.name,
   hormoneTag:  row.hormone_tag || 'energy',
   mealType:    row.meal_type  || 'lunch',
+  benefits:    row.benefits   || '',
   imageUrl:    row.image_url  || '',
 });
 
@@ -38,6 +39,7 @@ export const saveKeyFood = async (getToken, food) => {
     name:         food.name,
     hormone_tag:  food.hormoneTag,
     meal_type:    food.mealType,
+    benefits:     food.benefits || '',
     image_url:    food.imageUrl || '',
     updated_at:   new Date().toISOString(),
   };
@@ -85,6 +87,7 @@ const groupByPhase = (foods) => {
           name:       f.name,
           mealType:   f.mealType,
           hormoneTag: f.hormoneTag,
+          benefits:   f.benefits,
           image:      f.imageUrl,
         })),
     })).filter(cat => cat.items.length > 0);

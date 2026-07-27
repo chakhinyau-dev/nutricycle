@@ -269,7 +269,7 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
           </View>
         </View>
 
-        <View style={{ height: 160 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );

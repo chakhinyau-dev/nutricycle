@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View, ScrollView, TextInput, Pressable, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Pressable, Image, Animated } from 'react-native';
 import { Search, TrendingDown, Layout, Bookmark, LayoutGrid, Coffee, Utensils, Apple, Moon, ChevronLeft, Crown } from 'lucide-react-native';
 
 import { colors } from '../theme/colors';
@@ -15,12 +15,16 @@ const PHASE_TAB_COLORS = {
   luteal:     { solid: '#968DA1', tint: 'rgba(150,141,161,0.18)', border: 'rgba(150,141,161,0.6)' },
 };
 
+const PHASE_COUNT = 5;
+const MEAL_COUNT  = 6;
+const MAX_CARDS   = 12;
+
 const getCategories = (t) => [
-  { id: 'all', name: t('common.all') },
-  { id: 'menstrual', name: t('phases.menstrual') },
+  { id: 'all',        name: t('common.all') },
+  { id: 'menstrual',  name: t('phases.menstrual') },
   { id: 'follicular', name: t('phases.follicular') },
-  { id: 'ovulation', name: t('phases.ovulation') },
-  { id: 'luteal', name: t('phases.luteal') },
+  { id: 'ovulation',  name: t('phases.ovulation') },
+  { id: 'luteal',     name: t('phases.luteal') },
 ];
 
 const getMealTypes = (t) => [
@@ -47,21 +51,57 @@ export const RecipesScreen = ({
   const [activeMealType, setActiveMealType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [displayRecipes, setDisplayRecipes] = useState(recipes);
+  const [filterVersion, setFilterVersion] = useState(0);
   const translationRunId = useRef(0);
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
 
-  const categories = useMemo(() => getCategories(t), [t]);
-  const mealTypes = useMemo(() => getMealTypes(t), [t]);
+  // ── Animation values ───────────────────────────────────────────────
+  const headerAnim = useRef({
+    opacity:    new Animated.Value(0),
+    translateY: new Animated.Value(-18),
+  }).current;
 
-  // Translation effect (remains same)
+
+  const phaseLabel = useRef(new Animated.Value(0)).current;
+  const phasePillAnims = useRef(
+    Array.from({ length: PHASE_COUNT }, () => ({
+      opacity: new Animated.Value(0),
+      scale:   new Animated.Value(0.72),
+    }))
+  ).current;
+  const phaseSelectScales = useRef(
+    Array.from({ length: PHASE_COUNT }, () => new Animated.Value(1))
+  ).current;
+
+  const mealLabel = useRef(new Animated.Value(0)).current;
+  const mealPillAnims = useRef(
+    Array.from({ length: MEAL_COUNT }, () => ({
+      opacity: new Animated.Value(0),
+      scale:   new Animated.Value(0.72),
+    }))
+  ).current;
+  const mealPressScales = useRef(
+    Array.from({ length: MEAL_COUNT }, () => new Animated.Value(1))
+  ).current;
+
+  const cardAnims = useRef(
+    Array.from({ length: MAX_CARDS }, () => ({
+      opacity:    new Animated.Value(0),
+      translateY: new Animated.Value(24),
+    }))
+  ).current;
+  // ──────────────────────────────────────────────────────────────────
+
+  const categories = useMemo(() => getCategories(t), [t]);
+  const mealTypes  = useMemo(() => getMealTypes(t), [t]);
+
+  // Translation effect
   React.useEffect(() => {
     const runId = ++translationRunId.current;
     setDisplayRecipes(recipes);
-
     const translateAll = async () => {
       const translated = [];
       const chunkSize = 3;
-
       for (let i = 0; i < recipes.length; i += chunkSize) {
         const chunk = recipes.slice(i, i + chunkSize);
         const translatedChunk = await Promise.all(chunk.map((r) => translateContent(r, currentLanguage)));
@@ -71,32 +111,114 @@ export const RecipesScreen = ({
         }
       }
     };
-
     translateAll();
-    return () => {
-      translationRunId.current += 1;
-    };
+    return () => { translationRunId.current += 1; };
   }, [currentLanguage, recipes]);
 
   const filteredRecipes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const matches = displayRecipes.filter((recipe) => {
       const vidPhase = recipe.phaseKey || recipe.phase_key || '';
-      const vidMeal = recipe.mealType || recipe.meal_type || '';
-      const matchesSearch = !query || recipe.title.toLowerCase().includes(query);
-      const isPrep = vidMeal === 'prep';
-      const matchesCategory = activeTab === 'all' || isPrep || vidPhase === activeTab;
-      const matchesMealType = activeMealType === 'all' || vidMeal === activeMealType;
+      const vidMeal  = recipe.mealType  || recipe.meal_type  || '';
+      const matchesSearch    = !query || recipe.title.toLowerCase().includes(query);
+      const isPrep           = vidMeal === 'prep';
+      const matchesCategory  = activeTab === 'all' || isPrep || vidPhase === activeTab;
+      const matchesMealType  = activeMealType === 'all' || vidMeal === activeMealType;
       return matchesSearch && matchesCategory && matchesMealType;
     });
-
     const userGoal = cycleProfile?.goal || 'balance';
     return [...matches].sort((a, b) => {
       const aGoal = a.goals?.includes(userGoal) ? 1 : 0;
       const bGoal = b.goals?.includes(userGoal) ? 1 : 0;
-      return bGoal - aGoal; // Priority to recipes matching user's main goal
+      return bGoal - aGoal;
     });
   }, [activeTab, activeMealType, displayRecipes, searchQuery, cycleProfile]);
+
+  // Mount entrance
+  useEffect(() => {
+    // Header slides down from above
+    Animated.timing(headerAnim.opacity,    { toValue: 1, duration: 280, useNativeDriver: true }).start();
+    Animated.spring(headerAnim.translateY, { toValue: 0, friction: 9, tension: 90, useNativeDriver: true }).start();
+
+
+    // Phase filter label fades in
+    Animated.timing(phaseLabel, { toValue: 1, duration: 200, delay: 200, useNativeDriver: true }).start();
+
+    // Phase pills stagger pop-in (scale 0.72→1 + fade)
+    Animated.sequence([
+      Animated.delay(240),
+      Animated.stagger(50, phasePillAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+          Animated.spring(a.scale,   { toValue: 1, friction: 7, tension: 120, useNativeDriver: true }),
+        ])
+      )),
+    ]).start();
+
+    // Meal type label
+    Animated.timing(mealLabel, { toValue: 1, duration: 200, delay: 420, useNativeDriver: true }).start();
+
+    // Meal pills stagger pop-in
+    Animated.sequence([
+      Animated.delay(440),
+      Animated.stagger(45, mealPillAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+          Animated.spring(a.scale,   { toValue: 1, friction: 7, tension: 110, useNativeDriver: true }),
+        ])
+      )),
+    ]).start();
+
+    // Recipe cards stagger slide-up
+    Animated.sequence([
+      Animated.delay(600),
+      Animated.stagger(55, cardAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity,    { toValue: 1, duration: 260, useNativeDriver: true }),
+          Animated.spring(a.translateY, { toValue: 0, friction: 8, tension: 80, useNativeDriver: true }),
+        ])
+      )),
+    ]).start();
+  }, []);
+
+  // Re-stagger recipe cards on filter change
+  useEffect(() => {
+    if (filterVersion === 0) return;
+    Animated.sequence([
+      Animated.delay(60),
+      Animated.stagger(55, cardAnims.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity,    { toValue: 1, duration: 240, useNativeDriver: true }),
+          Animated.spring(a.translateY, { toValue: 0, friction: 8, tension: 80, useNativeDriver: true }),
+        ])
+      )),
+    ]).start();
+  }, [filterVersion]);
+
+  // Phase pill tap: reset cards → update state → bounce tapped pill
+  const handlePhaseSelect = (categoryId, index) => {
+    cardAnims.forEach(a => { a.opacity.setValue(0); a.translateY.setValue(24); });
+    setActiveTab(categoryId);
+    setFilterVersion(v => v + 1);
+    Animated.sequence([
+      Animated.spring(phaseSelectScales[index], { toValue: 1.14, friction: 5, tension: 160, useNativeDriver: true }),
+      Animated.spring(phaseSelectScales[index], { toValue: 1,    friction: 7, tension: 90,  useNativeDriver: true }),
+    ]).start();
+  };
+
+  // Meal pill tap: reset cards → update state
+  const handleMealSelect = (typeId, index) => {
+    cardAnims.forEach(a => { a.opacity.setValue(0); a.translateY.setValue(24); });
+    setActiveMealType(typeId);
+    setFilterVersion(v => v + 1);
+  };
+
+  const handleMealPressIn  = (index) => {
+    Animated.spring(mealPressScales[index], { toValue: 0.88, friction: 8, tension: 200, useNativeDriver: true }).start();
+  };
+  const handleMealPressOut = (index) => {
+    Animated.spring(mealPressScales[index], { toValue: 1,    friction: 6, tension: 100, useNativeDriver: true }).start();
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -106,95 +228,128 @@ export const RecipesScreen = ({
         contentContainerStyle={styles.contentContainer}
         scrollEnabled={!isLocked}
       >
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Pressable onPress={onBack} style={styles.backButton}>
-            <ChevronLeft size={24} color={colors.on_surface} />
-          </Pressable>
-          <View style={styles.headerTextGroup}>
-            <Text style={styles.title}>{t('recipes.title')}</Text>
-          </View>
-        </View>
-        <View style={{ width: 44 }} />
-      </View>
-
-      <View style={styles.searchSection}>
-        <View style={styles.searchBar}>
-          <Search size={20} color={colors.on_surface_variant} opacity={0.5} />
-          <TextInput
-            placeholder={t('recipes.search_placeholder')}
-            style={styles.searchInput}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={colors.placeholder}
-          />
-        </View>
-      </View>
-
-      <View style={{ marginBottom: 24 }}>
-        <Text style={styles.filterTitle}>{t('recipes.filter_phase')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {categories.map((category) => {
-            const pc = PHASE_TAB_COLORS[category.id];
-            const isActive = activeTab === category.id;
-            return (
-              <Pressable
-                key={category.id}
-                style={[
-                  styles.filterPill,
-                  pc && !isActive && { backgroundColor: pc.tint, borderColor: pc.border },
-                  pc && isActive  && { backgroundColor: pc.solid, borderColor: pc.solid },
-                  !pc && isActive && styles.filterPillActive,
-                ]}
-                onPress={() => setActiveTab(category.id)}
-              >
-                <Text style={[
-                  styles.filterText,
-                  pc && !isActive && { color: pc.solid },
-                  isActive && styles.filterTextActive,
-                ]}>
-                  {category.name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      <View style={{ marginBottom: 32 }}>
-        <Text style={styles.filterTitle}>{t('recipes.filter_meal')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {mealTypes.map((type) => (
-            <Pressable
-              key={type.id}
-              style={[styles.mealPill, activeMealType === type.id && styles.mealPillActive]}
-              onPress={() => setActiveMealType(type.id)}
-            >
-              <Text style={[styles.mealText, activeMealType === type.id && styles.mealTextActive]}>
-                {type.name}
-              </Text>
+        {/* Header slides down */}
+        <Animated.View style={[styles.header, { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] }]}>
+          <View style={styles.headerLeft}>
+            <Pressable onPress={onBack} style={styles.backButton}>
+              <ChevronLeft size={24} color={colors.on_surface} />
             </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.recipesList}>
-        {filteredRecipes.length ? (
-          filteredRecipes.map((recipe) => (
-            <RecipeCard 
-              key={recipe.id} 
-              {...recipe} 
-              onPress={() => onNavigate('recipeDetail', recipe)} 
-            />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>{t('recipes.empty_state')}</Text>
+            <View style={styles.headerTextGroup}>
+              <Text style={styles.title}>{t('recipes.title')}</Text>
+            </View>
           </View>
-        )}
-      </View>
+          <View style={{ width: 44 }} />
+        </Animated.View>
 
-        <View style={{ height: 160 }} />
+        {/* Search bar — always visible, TextInput conflicts with Animated.View opacity */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchBar}>
+            <Search size={20} color={colors.on_surface_variant} opacity={0.5} />
+            <TextInput
+              placeholder={t('recipes.search_placeholder')}
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor={colors.placeholder}
+            />
+          </View>
+        </View>
+
+        {/* Phase filter pills */}
+        <View style={{ marginBottom: 24 }}>
+          <Animated.Text style={[styles.filterTitle, { opacity: phaseLabel }]}>
+            {t('recipes.filter_phase')}
+          </Animated.Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {categories.map((category, index) => {
+              const pc = PHASE_TAB_COLORS[category.id];
+              const isActive = activeTab === category.id;
+              const pa = phasePillAnims[index];
+              return (
+                <Animated.View
+                  key={category.id}
+                  style={{
+                    opacity:   pa.opacity,
+                    transform: [{ scale: Animated.multiply(pa.scale, phaseSelectScales[index]) }],
+                  }}
+                >
+                  <Pressable
+                    style={[
+                      styles.filterPill,
+                      pc && !isActive && { backgroundColor: pc.tint, borderColor: pc.border },
+                      pc && isActive  && { backgroundColor: pc.solid, borderColor: pc.solid },
+                      !pc && isActive && styles.filterPillActive,
+                    ]}
+                    onPress={() => handlePhaseSelect(category.id, index)}
+                  >
+                    <Text style={[
+                      styles.filterText,
+                      pc && !isActive && { color: pc.solid },
+                      isActive && styles.filterTextActive,
+                    ]}>
+                      {category.name}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Meal type filter pills */}
+        <View style={{ marginBottom: 32 }}>
+          <Animated.Text style={[styles.filterTitle, { opacity: mealLabel }]}>
+            {t('recipes.filter_meal')}
+          </Animated.Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {mealTypes.map((type, index) => (
+              <Animated.View
+                key={type.id}
+                style={{
+                  opacity:   mealPillAnims[index].opacity,
+                  transform: [{ scale: Animated.multiply(mealPillAnims[index].scale, mealPressScales[index]) }],
+                }}
+              >
+                <Pressable
+                  style={[styles.mealPill, activeMealType === type.id && styles.mealPillActive]}
+                  onPress={() => handleMealSelect(type.id, index)}
+                  onPressIn={() => handleMealPressIn(index)}
+                  onPressOut={() => handleMealPressOut(index)}
+                >
+                  <Text style={[styles.mealText, activeMealType === type.id && styles.mealTextActive]}>
+                    {type.name}
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Recipe cards — stagger in, re-stagger on filter change */}
+        <View style={styles.recipesList}>
+          {filteredRecipes.length ? (
+            filteredRecipes.map((recipe, i) => {
+              const ca = i < MAX_CARDS ? cardAnims[i] : null;
+              return (
+                <Animated.View
+                  key={recipe.id}
+                  style={ca ? { opacity: ca.opacity, transform: [{ translateY: ca.translateY }] } : undefined}
+                >
+                  <RecipeCard
+                    {...recipe}
+                    onPress={() => onNavigate('recipeDetail', recipe)}
+                  />
+                </Animated.View>
+              );
+            })
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>{t('recipes.empty_state')}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={{ height: 24 }} />
       </ScrollView>
 
       {isLocked && (

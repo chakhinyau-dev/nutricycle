@@ -77,7 +77,7 @@ export const ArticlesScreen = ({ onBack, articles = ARTICLE_LIBRARY }) => {
         ))}
       </View>
 
-      <View style={{ height: 100 }} />
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -106,7 +106,7 @@ export const AdminScreen = ({
   const [newVideo, setNewVideo] = useState({
     title: '',
     description: '',
-    phaseKey: 'follicular',
+    phaseKey: 'menstrual',
     mealType: 'none',
     youtubeUrl: '',
     videoUrl: '',
@@ -134,11 +134,31 @@ export const AdminScreen = ({
     instructions: '',
   });
 
+  // Reset video form when switching to the Videos tab without an active edit
+  useEffect(() => {
+    if (activeTab === 'videos' && !editingVideoId) {
+      setNewVideo({
+        title: '',
+        description: '',
+        phaseKey: 'menstrual',
+        mealType: 'none',
+        youtubeUrl: '',
+        videoUrl: '',
+        duration: '5:00',
+        calories: '',
+        thumbnail: '',
+        ingredients: '',
+        instructions: '',
+      });
+      setLocalVideoFile(null);
+    }
+  }, [activeTab]);
+
   const resetVideoForm = () => {
     setNewVideo({
       title: '',
       description: '',
-      phaseKey: 'follicular',
+      phaseKey: 'menstrual',
       mealType: 'none',
       youtubeUrl: '',
       videoUrl: '',
@@ -161,13 +181,14 @@ export const AdminScreen = ({
     categoryKey: 'proteins',
     hormoneTag: 'energy',
     mealType: 'lunch',
+    benefits: '',
     imageUrl: '',
   });
 
   const resetFoodForm = () => {
     setEditingFoodId(null);
     setLocalFoodImage(null);
-    setNewFood({ name: '', phaseKey: 'follicular', categoryKey: 'proteins', hormoneTag: 'energy', mealType: 'lunch', imageUrl: '' });
+    setNewFood({ name: '', phaseKey: 'follicular', categoryKey: 'proteins', hormoneTag: 'energy', mealType: 'lunch', benefits: '', imageUrl: '' });
   };
 
   const handlePickFoodImage = async () => {
@@ -192,6 +213,7 @@ export const AdminScreen = ({
       categoryKey: food.categoryKey || 'proteins',
       hormoneTag:  food.hormoneTag  || 'energy',
       mealType:    food.mealType    || 'lunch',
+      benefits:    food.benefits    || '',
       imageUrl:    food.imageUrl || food.image || '',
     });
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -209,7 +231,7 @@ export const AdminScreen = ({
         const uploaded = await uploadRecipeImage(getToken, localFoodImage, `food_${Date.now()}.jpg`);
         if (uploaded) finalImageUrl = uploaded;
       }
-      const result = await saveKeyFood(getToken, { ...newFood, imageUrl: finalImageUrl, id: editingFoodId });
+      const result = await saveKeyFood(getToken, { ...newFood, imageUrl: finalImageUrl, benefits: newFood.benefits?.trim() || '', id: editingFoodId });
       if (result) {
         if (showToast) showToast(editingFoodId ? 'Alimento actualizado' : 'Alimento guardado');
         resetFoodForm();
@@ -369,26 +391,26 @@ export const AdminScreen = ({
           throw new Error(t('admin.video_upload_failed'));
         }
         finalVideoUrl = uploaded;
-
-        // Upload generated thumbnail if present (local file or base64)
-        const isLocalFile = newVideo.thumbnail && newVideo.thumbnail.startsWith('file');
-        const isBase64 = newVideo.thumbnail && newVideo.thumbnail.startsWith('data:');
-
-        if (isLocalFile || isBase64) {
-          const thumbUrl = await uploadVideoThumbnail(
-            getToken, 
-            newVideo.thumbnail, 
-            `thumb_${Date.now()}.jpg`
-          );
-          if (thumbUrl) {
-            finalThumbnail = thumbUrl;
-          }
-        }
       } else if (newVideo.youtubeUrl) {
-        const ytId = extractYouTubeId(newVideo.youtubeUrl);
-        finalThumbnail = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
         isYoutube = true;
-        finalVideoUrl = ''; // Clear direct video if youtube
+        finalVideoUrl = '';
+        // Use YouTube auto-thumbnail only when no custom thumbnail was picked
+        if (!finalThumbnail) {
+          const ytId = extractYouTubeId(newVideo.youtubeUrl);
+          finalThumbnail = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+        }
+      }
+
+      // Upload any local/base64/blob thumbnail (custom pick or auto-generated) to cloud storage
+      const needsThumbUpload = finalThumbnail &&
+        (finalThumbnail.startsWith('file') || finalThumbnail.startsWith('data:') || finalThumbnail.startsWith('blob:'));
+      if (needsThumbUpload) {
+        const thumbUrl = await uploadVideoThumbnail(
+          getToken,
+          finalThumbnail,
+          `thumb_${Date.now()}.jpg`
+        );
+        if (thumbUrl) finalThumbnail = thumbUrl;
       }
       
       const payload = {
@@ -643,15 +665,21 @@ export const AdminScreen = ({
                   {t('admin.video_upload_hint')}
                 </Text>
 
-                {newVideo.thumbnail ? (
-                  <View style={styles.thumbnailPreviewContainer}>
-                    <Text style={styles.label}>{t('admin.thumbnail_preview')}</Text>
+                <View style={styles.thumbnailPreviewContainer}>
+                  <Text style={styles.label}>{t('admin.thumbnail_preview')}</Text>
+                  {newVideo.thumbnail ? (
                     <Image source={{ uri: newVideo.thumbnail }} style={styles.thumbnailPreview} />
-                    <Pressable onPress={handlePickCustomThumbnail} style={styles.changeThumbBtn}>
-                      <Text style={styles.changeThumbText}>{t('admin.change_thumbnail')}</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
+                  ) : (
+                    <View style={[styles.thumbnailPreview, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' }]}>
+                      <Text style={{ color: '#666', fontFamily: 'Outfit_500Medium', fontSize: 13 }}>Sin miniatura</Text>
+                    </View>
+                  )}
+                  <Pressable onPress={handlePickCustomThumbnail} style={styles.changeThumbBtn}>
+                    <Text style={styles.changeThumbText}>
+                      {newVideo.thumbnail ? t('admin.change_thumbnail') : 'Elegir miniatura'}
+                    </Text>
+                  </Pressable>
+                </View>
 
                 <Text style={styles.label}>{t('videos.enter_youtube_url')}</Text>
                 <View style={styles.inputWrapper}>
@@ -966,6 +994,17 @@ export const AdminScreen = ({
                 ))}
               </View>
 
+              <Text style={styles.label}>Beneficios</Text>
+              <TextInput
+                multiline
+                numberOfLines={4}
+                style={[styles.input, { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
+                value={newFood.benefits}
+                placeholder="Ej: Rico en hierro, ayuda a reducir la inflamación, apoya la producción de progesterona..."
+                placeholderTextColor="#94A3B8"
+                onChangeText={v => setNewFood({ ...newFood, benefits: v })}
+              />
+
               <Text style={styles.label}>Imagen (opcional)</Text>
               <Pressable onPress={handlePickFoodImage} style={styles.imagePicker}>
                 {localFoodImage || newFood.imageUrl ? (
@@ -1010,6 +1049,9 @@ export const AdminScreen = ({
                       <View style={{ flex: 1 }}>
                         <Text style={styles.itemTitle}>{food.name || food.key}</Text>
                         <Text style={styles.itemSub}>{phase} · {cat.categoryKey}</Text>
+                        {food.benefits ? (
+                          <Text style={styles.itemBenefits} numberOfLines={1}>{food.benefits}</Text>
+                        ) : null}
                       </View>
                       <View style={styles.itemActions}>
                         <Pressable onPress={() => handleEditFood({ ...food, phaseKey: phase, categoryKey: cat.categoryKey, imageUrl: food.image })} style={styles.itemActionBtn}>
@@ -1027,7 +1069,7 @@ export const AdminScreen = ({
           </View>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
@@ -1171,6 +1213,7 @@ const styles = StyleSheet.create({
   itemInfo: { flex: 1 },
   itemTitle: { fontSize: 14, fontFamily: 'Outfit_700Bold', color: '#1A1A1A' },
   itemSub: { fontSize: 12, fontFamily: 'Outfit_500Medium', color: '#64748B' },
+  itemBenefits: { fontSize: 11, fontFamily: 'Outfit_500Medium', color: '#A3B3A5', marginTop: 2 },
   itemActions: { flexDirection: 'row', gap: 8 },
   itemActionBtn: {
     width: 36,

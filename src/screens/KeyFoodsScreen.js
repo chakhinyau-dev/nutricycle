@@ -115,7 +115,13 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
                 {cat.items.map(food => {
                   const tagColors = HORMONE_TAG_COLORS[food.hormoneTag] || HORMONE_TAG_COLORS.energy;
                   const isAdded = !!addedItems[food.key];
-                  const foodName = t(`key_foods.items.${food.key}.name`);
+                  // Database foods carry name/benefits directly; static foods use translation keys
+                  const nameKey = `key_foods.items.${food.key}.name`;
+                  const benefitKey = `key_foods.items.${food.key}.benefit`;
+                  const translatedName    = t(nameKey);
+                  const translatedBenefit = t(benefitKey);
+                  const foodName    = food.name    || (translatedName    !== nameKey    ? translatedName    : '');
+                  const foodBenefit = food.benefits || food.benefit || (translatedBenefit !== benefitKey ? translatedBenefit : '');
                   return (
                     <View key={food.key} style={styles.foodCard}>
                       {/* Top row: image + name + add button */}
@@ -144,11 +150,11 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
                       </View>
 
                       {/* Hormonal benefit note — always visible */}
-                      <View style={[styles.benefitBox, { borderLeftColor: catColor }]}>
-                        <Text style={styles.benefitText}>
-                          {t(`key_foods.items.${food.key}.benefit`)}
-                        </Text>
-                      </View>
+                      {foodBenefit ? (
+                        <View style={[styles.benefitBox, { borderLeftColor: catColor }]}>
+                          <Text style={styles.benefitText}>{foodBenefit}</Text>
+                        </View>
+                      ) : null}
                     </View>
                   );
                 })}
@@ -157,7 +163,7 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
           })
         )}
 
-        <View style={{ height: 160 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );

@@ -1,7 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, Alert } from 'react-native';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, Alert, Animated, Easing } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path, Line, Circle, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Line, Circle, Rect, Text as SvgText, Defs, ClipPath, G } from 'react-native-svg';
+
+const AnimatedRectSvg   = Animated.createAnimatedComponent(Rect);
+const AnimatedPathSvg   = Animated.createAnimatedComponent(Path);
+const AnimatedLineSvg   = Animated.createAnimatedComponent(Line);
+const AnimatedCircleSvg = Animated.createAnimatedComponent(Circle);
 import { colors } from '../theme/colors';
 import {
   addDays,
@@ -16,12 +21,20 @@ import { getCycleInsights, getPhaseForDate, isFertileDate, isPeriodDate, normali
 
 const { width } = Dimensions.get('window');
 
-// Tracker Phase Colors
+// Tracker Phase Colors — used for arcs and legend
 const TRACKER_COLORS = {
   menstrual:  '#F2C4C4',
   follicular: '#B8D8BC',
   ovulation:  '#F9E4B7',
   luteal:     '#C8BCE0',
+};
+
+// Dot colors — same hue family, more saturated for visibility
+const DOT_COLORS = {
+  menstrual:  '#D97B85',
+  follicular: '#6BAF7A',
+  ovulation:  '#E8B84B',
+  luteal:     '#9B8DC4',
 };
 
 export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [], onDeleteLog }) => {
@@ -39,6 +52,21 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
   const periodLength = Number(profile.periodLength) || 5;
   const cycleDay = cycleInfo.cycleDay;
   const currentPhase = cycleInfo.currentPhaseKey;
+
+  // Count-up animation: 1 → cycleDay over ~1.2s
+  const [displayDay, setDisplayDay] = useState(1);
+  useEffect(() => {
+    setDisplayDay(1);
+    if (cycleDay <= 1) { setDisplayDay(cycleDay); return; }
+    const stepMs = Math.max(16, Math.round(2400 / cycleDay));
+    let current = 1;
+    const timer = setInterval(() => {
+      current += 1;
+      setDisplayDay(current);
+      if (current >= cycleDay) clearInterval(timer);
+    }, stepMs);
+    return () => clearInterval(timer);
+  }, [cycleDay]);
 
   // --- 1. Day of Week Strip (Centered around Selected Date) ---
   const weekDays = useMemo(() => {
@@ -75,17 +103,202 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
       else if (dayNum >= fertileStart && dayNum <= fertileEnd) phase = 'ovulation';
       else if (dayNum > fertileEnd) phase = 'luteal';
 
+      const isPast = dayNum <= cycleDay;
       dotsArray.push({
         dayNum,
         x,
         y,
         phase,
-        color: TRACKER_COLORS[phase],
+        color: isPast ? DOT_COLORS[phase] : TRACKER_COLORS[phase],
         isCurrent: dayNum === cycleDay,
       });
     }
     return dotsArray;
   }, [cycleLength, periodLength, cycleDay, fertileStart, fertileEnd, cx, cy]);
+
+  // --- Animations ---
+  const MAX_CYCLE = 35;
+  const dotAnims = useRef(Array.from({ length: MAX_CYCLE }, () => new Animated.Value(0))).current;
+  const pulseScale = useRef(new Animated.Value(0.6)).current;
+  const pulseOpacity = useRef(new Animated.Value(0.7)).current;
+  const centerScale = useRef(new Animated.Value(1)).current;
+  const orbitAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // B: staggered ring draw-in (dot by dot, clockwise up to cycleDay then rest)
+    const allAnims = dotAnims.slice(0, cycleLength).map((anim, i) => {
+      anim.setValue(0);
+      return Animated.timing(anim, {
+        toValue: 1,
+        duration: i < cycleDay ? 220 : 120,
+        delay: 0,
+        useNativeDriver: true,
+      });
+    });
+    const stagger = Animated.stagger(28, allAnims);
+    stagger.start();
+
+    // A: pulse ring on active dot
+    const pulse = Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(pulseScale, { toValue: 1.9, duration: 900, useNativeDriver: true }),
+          Animated.timing(pulseScale, { toValue: 0.6, duration: 900, useNativeDriver: true }),
+        ]),
+        Animated.sequence([
+          Animated.timing(pulseOpacity, { toValue: 0, duration: 900, useNativeDriver: true }),
+          Animated.timing(pulseOpacity, { toValue: 0.7, duration: 900, useNativeDriver: true }),
+        ]),
+      ])
+    );
+    pulse.start();
+
+    // C: heartbeat center text — lub-dub pattern every ~1.6s
+    const breath = Animated.loop(
+      Animated.sequence([
+        Animated.timing(centerScale, { toValue: 1.28, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(centerScale, { toValue: 1.0,  duration: 180, easing: Easing.in(Easing.quad),  useNativeDriver: true }),
+        Animated.timing(centerScale, { toValue: 1.16, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(centerScale, { toValue: 1.0,  duration: 160, easing: Easing.in(Easing.quad),  useNativeDriver: true }),
+        Animated.delay(1000),
+      ])
+    );
+    breath.start();
+
+    return () => {
+      pulse.stop(); breath.stop();
+    };
+  }, []);
+
+  // Orbit dot — spins continuously for as long as the screen is shown.
+  // Uses a recursive callback instead of Animated.loop to avoid a React Native
+  // native-driver bug where the loop silently stops after the first iteration.
+  const orbitActiveRef = useRef(true);
+  useEffect(() => {
+    orbitActiveRef.current = true;
+
+    const spin = () => {
+      orbitAnim.setValue(0);
+      Animated.timing(orbitAnim, {
+        toValue: 1,
+        duration: 1600,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished && orbitActiveRef.current) spin();
+      });
+    };
+    spin();
+
+    const pulseSpin = () => {
+      Animated.sequence([
+        Animated.timing(orbitDotScale, { toValue: 1.6, duration: 500, useNativeDriver: true }),
+        Animated.timing(orbitDotScale, { toValue: 1.0, duration: 500, useNativeDriver: true }),
+      ]).start(({ finished }) => {
+        if (finished && orbitActiveRef.current) pulseSpin();
+      });
+    };
+    pulseSpin();
+
+    const listenerId = orbitAnim.addListener(({ value }) => {
+      setOrbitAngleDeg(value * 360);
+      const dayPos = Math.floor(value * cycleLength) + 1;
+      let ph = 'follicular';
+      if (dayPos <= periodLength) ph = 'menstrual';
+      else if (dayPos >= fertileStart && dayPos <= fertileEnd) ph = 'ovulation';
+      else if (dayPos > fertileEnd) ph = 'luteal';
+      setOrbitPhase(ph);
+    });
+
+    return () => {
+      orbitActiveRef.current = false;
+      orbitAnim.stopAnimation();
+      orbitDotScale.stopAnimation();
+      orbitAnim.removeListener(listenerId);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const orbitRotate = orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  // Comet tail — 4 ghost dots trailing behind the main dot
+  const TAIL_CONFIG = [
+    { offset: 18, size: 10, opacity: 0.55 },
+    { offset: 36, size: 8,  opacity: 0.35 },
+    { offset: 54, size: 6,  opacity: 0.20 },
+    { offset: 72, size: 4,  opacity: 0.10 },
+  ];
+  const tailRotates = TAIL_CONFIG.map(({ offset }) =>
+    orbitAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [`${-offset}deg`, `${360 - offset}deg`],
+    })
+  );
+
+  // Orbit dot — pulsing scale + phase-aware color + trail arc
+  const orbitDotScale = useRef(new Animated.Value(1)).current;
+  const [orbitPhase, setOrbitPhase] = useState('menstrual');
+  const [orbitAngleDeg, setOrbitAngleDeg] = useState(0);
+
+  // 28° trailing arc that follows the orbit dot
+  const trailArcPath = useMemo(() => {
+    const tailDeg = 28;
+    const a1 = ((orbitAngleDeg - tailDeg) * Math.PI) / 180 - Math.PI / 2;
+    const a2 = (orbitAngleDeg * Math.PI) / 180 - Math.PI / 2;
+    const x1 = (cx + circleRadius * Math.cos(a1)).toFixed(2);
+    const y1 = (cy + circleRadius * Math.sin(a1)).toFixed(2);
+    const x2 = (cx + circleRadius * Math.cos(a2)).toFixed(2);
+    const y2 = (cy + circleRadius * Math.sin(a2)).toFixed(2);
+    return `M ${x1},${y1} A ${circleRadius},${circleRadius} 0 0,1 ${x2},${y2}`;
+  }, [orbitAngleDeg, cx, cy, circleRadius]);
+
+  // --- Log card reveal on date change ---
+  const logCardOpacity    = useRef(new Animated.Value(0)).current;
+  const logCardTranslateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    logCardOpacity.setValue(0);
+    logCardTranslateY.setValue(20);
+    Animated.parallel([
+      Animated.timing(logCardOpacity,    { toValue: 1, duration: 320, useNativeDriver: true }),
+      Animated.spring(logCardTranslateY, { toValue: 0, friction: 7, tension: 90, useNativeDriver: true }),
+    ]).start();
+  }, [selectedDate]);
+
+  // --- Chart animations (Mareas Hormonales) ---
+  const chartClipW      = useRef(new Animated.Value(0)).current;
+  const chartFillAlpha  = useRef(new Animated.Value(0)).current;
+  const chartMarkerAlpha = useRef(new Animated.Value(0)).current;
+  const chartBadgeScale  = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    chartClipW.setValue(0);
+    chartFillAlpha.setValue(0);
+    chartMarkerAlpha.setValue(0);
+    chartBadgeScale.setValue(0);
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(chartClipW, { toValue: chartWidth, duration: 1100, useNativeDriver: false }),
+        Animated.sequence([
+          Animated.delay(600),
+          Animated.timing(chartFillAlpha, { toValue: 1, duration: 500, useNativeDriver: false }),
+        ]),
+      ]),
+      Animated.parallel([
+        Animated.timing(chartMarkerAlpha, { toValue: 1, duration: 300, useNativeDriver: false }),
+        Animated.spring(chartBadgeScale, { toValue: 1, friction: 5, tension: 120, useNativeDriver: false }),
+      ]),
+    ]).start();
+  }, []);
+
+  // Re-animate marker when selected date changes
+  useEffect(() => {
+    chartMarkerAlpha.setValue(0);
+    chartBadgeScale.setValue(0);
+    Animated.parallel([
+      Animated.timing(chartMarkerAlpha, { toValue: 1, duration: 250, useNativeDriver: false }),
+      Animated.spring(chartBadgeScale, { toValue: 1, friction: 5, tension: 130, useNativeDriver: false }),
+    ]).start();
+  }, [selectedDate]);
 
   // --- 2b. Phase arc segments for SVG ---
   const phaseArcs = useMemo(() => {
@@ -229,69 +442,177 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
           >
             {/* Gray base ring */}
             <Circle cx={cx} cy={cy} r={circleRadius} fill="none" stroke="#E8E4DC" strokeWidth={8} />
-            {/* Colored phase arcs */}
-            {phaseArcs.map(arc => (
-              <Path
-                key={arc.key}
-                d={arc.d}
-                fill="none"
-                stroke={arc.color}
-                strokeWidth={8}
-                strokeLinecap="round"
-                opacity={0.45}
-              />
-            ))}
+            {/* Colored phase arcs — active phase is thicker with a soft glow */}
+            {phaseArcs.map(arc => {
+              const isActive = arc.key === currentPhase;
+              const glowColor = DOT_COLORS[currentPhase];
+              return (
+                <G key={arc.key}>
+                  {isActive && (
+                    <>
+                      <Path d={arc.d} fill="none" stroke={glowColor} strokeWidth={30} strokeLinecap="round" opacity={0.07} />
+                      <Path d={arc.d} fill="none" stroke={glowColor} strokeWidth={20} strokeLinecap="round" opacity={0.13} />
+                    </>
+                  )}
+                  <Path
+                    d={arc.d}
+                    fill="none"
+                    stroke={arc.color}
+                    strokeWidth={isActive ? 11 : 8}
+                    strokeLinecap="round"
+                    opacity={isActive ? 0.9 : 0.45}
+                  />
+                </G>
+              );
+            })}
+            {/* Trailing arc — 28° satellite glow behind the orbit dot */}
+            <Path
+              d={trailArcPath}
+              fill="none"
+              stroke={DOT_COLORS[orbitPhase]}
+              strokeWidth={5}
+              strokeLinecap="round"
+              opacity={0.45}
+            />
           </Svg>
 
-          {/* Tappable circular dots */}
-          {dots.map(dot => {
+          {/* D: Comet tail dots — use orbitPhase color so tail shifts with the head */}
+          {TAIL_CONFIG.map(({ size, opacity }, i) => (
+            <Animated.View
+              key={`tail_${i}`}
+              style={{
+                position: 'absolute',
+                left: cx,
+                top: cy,
+                width: 0,
+                height: 0,
+                transform: [{ rotate: tailRotates[i] }],
+              }}
+            >
+              <View style={{
+                position: 'absolute',
+                left: circleRadius - size / 2,
+                top: -size / 2,
+                width: size,
+                height: size,
+                borderRadius: size / 2,
+                backgroundColor: DOT_COLORS[orbitPhase],
+                opacity,
+              }} />
+            </Animated.View>
+          ))}
+
+          {/* D: Orbit dot — teardrop shape, pulsing scale, phase-shifting color */}
+          <Animated.View
+            style={{
+              position: 'absolute',
+              left: cx,
+              top: cy,
+              width: 0,
+              height: 0,
+              transform: [{ rotate: orbitRotate }],
+            }}
+          >
+            <Animated.View style={{
+              position: 'absolute',
+              left: circleRadius - 5,
+              top: -8,
+              width: 10,
+              height: 16,
+              borderTopLeftRadius: 3,
+              borderTopRightRadius: 3,
+              borderBottomLeftRadius: 8,
+              borderBottomRightRadius: 8,
+              backgroundColor: DOT_COLORS[orbitPhase],
+              borderWidth: 2,
+              borderColor: '#FFFFFF',
+              shadowColor: DOT_COLORS[orbitPhase],
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.9,
+              shadowRadius: 6,
+              elevation: 4,
+              transform: [{ scale: orbitDotScale }],
+            }} />
+          </Animated.View>
+
+          {/* Tappable circular dots — B: stagger fade-in on mount */}
+          {dots.map((dot, i) => {
             const isSelected = dot.dayNum === selectedCycleDay;
             const dotSize = dot.isCurrent ? 18 : isSelected ? 15 : 10;
             const halfSize = dotSize / 2;
             return (
-              <Pressable
+              <Animated.View
                 key={dot.dayNum}
-                style={[styles.dotWrapper, { left: dot.x - halfSize, top: dot.y - halfSize }]}
-                onPress={() => handleDotPress(dot.dayNum)}
-                hitSlop={4}
+                style={[
+                  styles.dotWrapper,
+                  { left: dot.x - 15, top: dot.y - 15, width: 30, height: 30, justifyContent: 'center', alignItems: 'center' },
+                  { opacity: dotAnims[i] },
+                ]}
               >
-                <View
-                  style={[
-                    styles.circleDot,
-                    {
-                      width: dotSize,
-                      height: dotSize,
-                      borderRadius: halfSize,
-                      backgroundColor: dot.isCurrent ? dot.color : isSelected ? '#FFFFFF' : dot.color,
-                    },
-                    dot.isCurrent && styles.activeDotOutline,
-                    isSelected && !dot.isCurrent && { borderWidth: 2.5, borderColor: dot.color },
-                  ]}
-                />
-              </Pressable>
+                {/* A: pulse ring on the current-day dot */}
+                {dot.isCurrent && (
+                  <Animated.View style={{
+                    position: 'absolute',
+                    width: dotSize,
+                    height: dotSize,
+                    borderRadius: dotSize / 2,
+                    backgroundColor: dot.color,
+                    transform: [{ scale: pulseScale }],
+                    opacity: pulseOpacity,
+                  }} />
+                )}
+                <Pressable
+                  onPress={() => handleDotPress(dot.dayNum)}
+                  hitSlop={4}
+                  style={{ justifyContent: 'center', alignItems: 'center' }}
+                >
+                  <View
+                    style={[
+                      styles.circleDot,
+                      {
+                        width: dotSize,
+                        height: dotSize,
+                        borderRadius: halfSize,
+                        backgroundColor: dot.isCurrent ? dot.color : isSelected ? '#FFFFFF' : dot.color,
+                      },
+                      dot.isCurrent && styles.activeDotOutline,
+                      isSelected && !dot.isCurrent && { borderWidth: 2.5, borderColor: dot.color },
+                    ]}
+                  />
+                </Pressable>
+              </Animated.View>
             );
           })}
 
-          {/* Center text of circular tracker */}
-          <View style={styles.centerTextContainer}>
-            <Text style={styles.centerDayNum}>{cycleDay}</Text>
+          {/* C: Breathing center text */}
+          <Animated.View style={[styles.centerTextContainer, { transform: [{ scale: centerScale }] }]}>
+            <Text style={[styles.centerDayNum, { color: DOT_COLORS[currentPhase] }]}>{displayDay}</Text>
             <Text style={styles.centerPhaseName}>{t(`phases.${currentPhase}`)}</Text>
             <Text style={styles.centerCountdown}>
               {nextPhaseInfo.days === 1
                 ? t('calendar.countdown_one_day', { phase: nextPhaseInfo.name, defaultValue: `Falta 1 día para ${nextPhaseInfo.name}` })
                 : t('calendar.countdown_days', { days: nextPhaseInfo.days, phase: nextPhaseInfo.name, defaultValue: `Faltan ${nextPhaseInfo.days} días para ${nextPhaseInfo.name}` })}
             </Text>
-          </View>
+          </Animated.View>
         </View>
 
         {/* Phase legend */}
         <View style={styles.phaseLegendRow}>
-          {Object.entries(TRACKER_COLORS).map(([key, color]) => (
-            <View key={key} style={styles.phaseLegendItem}>
-              <View style={[styles.phaseLegendDot, { backgroundColor: color }]} />
-              <Text style={styles.phaseLegendLabel}>{t(`phases.${key}`)}</Text>
-            </View>
-          ))}
+          {Object.entries(DOT_COLORS).map(([key, dotColor]) => {
+            const isActive = key === currentPhase;
+            return (
+              <View key={key} style={styles.phaseLegendItem}>
+                <View style={[styles.phaseLegendDot, { backgroundColor: dotColor }]} />
+                <Text style={[
+                  styles.phaseLegendLabel,
+                  { color: dotColor },
+                  isActive && { fontFamily: 'Outfit_700Bold' },
+                ]}>
+                  {t(`phases.${key}`)}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
         {/* Log Period CTA */}
@@ -395,6 +716,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
           </Text>
         </View>
 
+        <Animated.View style={{ opacity: logCardOpacity, transform: [{ translateY: logCardTranslateY }] }}>
         {selectedDayLog ? (
           <View style={styles.logDetailsBox}>
             <View style={styles.logHeaderRow}>
@@ -439,6 +761,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
             </View>
           </Pressable>
         )}
+        </Animated.View>
       </View>
 
       <View style={{ marginBottom: 28 }} />
@@ -454,35 +777,59 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
 
         <View style={styles.chartWrapper}>
           <Svg width={chartWidth} height={chartHeight}>
-            {/* Filled areas */}
-            <Path d={tFilledPath} fill="#C9A84C" opacity={0.10} />
-            <Path d={pFilledPath} fill="#968DA1" opacity={0.12} />
-            <Path d={eFilledPath} fill="#A3B3A5" opacity={0.14} />
-            {/* Stroke curves */}
-            <Path d={testosteronePath} fill="none" stroke="#C9A84C" strokeWidth={1.5} />
-            <Path d={progesteronePath} fill="none" stroke="#968DA1" strokeWidth={2} />
-            <Path d={estrogenPath}     fill="none" stroke="#A3B3A5" strokeWidth={2} />
-            {/* Selected day marker */}
-            <Line x1={selectDayX} y1={22} x2={selectDayX} y2={chartHeight - 8} stroke="#968DA1" strokeWidth={1} strokeDasharray="3 3" />
-            <Circle cx={selectDayX} cy={selectE_Y} r={4} fill="#A3B3A5" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={selectDayX} cy={selectP_Y} r={4} fill="#968DA1" stroke="#FFFFFF" strokeWidth={1.5} />
-            <Circle cx={selectDayX} cy={selectT_Y} r={4} fill="#C9A84C" stroke="#FFFFFF" strokeWidth={1.5} />
-            {/* Day badge above cursor */}
+            <Defs>
+              <ClipPath id="hormonalClip">
+                <AnimatedRectSvg x={0} y={0} width={chartClipW} height={chartHeight} />
+              </ClipPath>
+            </Defs>
+
+            {/* Filled areas — fade in after curves draw */}
+            <AnimatedPathSvg d={tFilledPath} fill="#C9A84C" opacity={chartFillAlpha.interpolate({ inputRange: [0, 1], outputRange: [0, 0.10] })} />
+            <AnimatedPathSvg d={pFilledPath} fill="#968DA1" opacity={chartFillAlpha.interpolate({ inputRange: [0, 1], outputRange: [0, 0.12] })} />
+            <AnimatedPathSvg d={eFilledPath} fill="#A3B3A5" opacity={chartFillAlpha.interpolate({ inputRange: [0, 1], outputRange: [0, 0.14] })} />
+
+            {/* Stroke curves — draw left → right */}
+            <G clipPath="url(#hormonalClip)">
+              <Path d={testosteronePath} fill="none" stroke="#C9A84C" strokeWidth={1.5} />
+              <Path d={progesteronePath} fill="none" stroke="#968DA1" strokeWidth={2} />
+              <Path d={estrogenPath}     fill="none" stroke="#A3B3A5" strokeWidth={2} />
+            </G>
+
+            {/* Selected day dashed line — fades in */}
+            <AnimatedLineSvg
+              x1={selectDayX} y1={22} x2={selectDayX} y2={chartHeight - 8}
+              stroke="#968DA1" strokeWidth={1} strokeDasharray="3 3"
+              opacity={chartMarkerAlpha}
+            />
+
+            {/* Intersection circles — fade in */}
+            <AnimatedCircleSvg cx={selectDayX} cy={selectE_Y} r={4} fill="#A3B3A5" stroke="#FFFFFF" strokeWidth={1.5} opacity={chartMarkerAlpha} />
+            <AnimatedCircleSvg cx={selectDayX} cy={selectP_Y} r={4} fill="#968DA1" stroke="#FFFFFF" strokeWidth={1.5} opacity={chartMarkerAlpha} />
+            <AnimatedCircleSvg cx={selectDayX} cy={selectT_Y} r={4} fill="#C9A84C" stroke="#FFFFFF" strokeWidth={1.5} opacity={chartMarkerAlpha} />
+
+            {/* Day badge — pops in with scale spring */}
             {(() => {
               const label = `${t('common.day')} ${selectedCycleDay}`;
               const badgeW = label.length * 6.5 + 16;
               const badgeH = 20;
               const badgeX = Math.max(0, Math.min(selectDayX - badgeW / 2, chartWidth - badgeW));
+              const midX = badgeX + badgeW / 2;
+              const midY = 2 + badgeH / 2;
               return (
                 <>
-                  <Rect x={badgeX} y={2} width={badgeW} height={badgeH} rx={6} ry={6} fill="#4A4453" />
+                  <AnimatedRectSvg
+                    x={badgeX} y={2} width={badgeW} height={badgeH} rx={6} ry={6}
+                    fill="#4A4453"
+                    opacity={chartMarkerAlpha}
+                    transform={[{ scale: chartBadgeScale, originX: midX, originY: midY }]}
+                  />
                   <SvgText
-                    x={badgeX + badgeW / 2}
-                    y={15}
+                    x={midX} y={15}
                     textAnchor="middle"
                     fill="#FFFFFF"
                     fontSize={10}
                     fontWeight="700"
+                    opacity={chartMarkerAlpha}
                   >
                     {label}
                   </SvgText>
@@ -507,7 +854,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
         </View>
       </View>
 
-      <View style={{ height: 160 }} />
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 };
@@ -585,15 +932,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   phaseLegendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   phaseLegendLabel: {
     fontFamily: 'Outfit_500Medium',
     fontSize: 11,
-    color: colors.on_surface_variant,
-    opacity: 0.75,
   },
   centerTextContainer: {
     justifyContent: 'center',

@@ -465,7 +465,10 @@
     "unlock_recipes_desc": "Obtén acceso completo a planes de alimentación personalizados y recetas específicas para cada fase de tu ciclo para equilibrar tus hormonas.",
     "unlock_premium_videos": "Desbloquea las Recetas Premium",
     "unlock_videos_desc": "Obtén acceso completo a recetas con el paso a paso en video para cada fase de tu ciclo.",
-    "subscribe_now": "Suscribirse Ahora"
+    "subscribe_now": "Suscribirse Ahora",
+    "unlock_nutrition_title": "Desbloquea el Plan de Recetas",
+    "unlock_nutrition_desc": "Obtén acceso completo al menú diario con recetas diseñadas para cada fase de tu ciclo.",
+    "unlock_nutrition_btn": "Quiero mi plan"
   },
   "admin": {
     "access_denied": "Acceso denegado",
@@ -476,6 +479,7 @@
     "placeholder_url": "URL (YouTube o Alojado)",
     "title": "Recetas en video",
     "audio_session": "Sesión de audio",
+    "search_placeholder": "Buscar videos o fases",
     "no_source": "No hay video disponible",
     "category_prefix": "Fase {{phase}} • {{meal}}",
     "types": {
@@ -613,7 +617,7 @@
     "harmony_ia": "Armonizando tu ciclo hormonal con IA"
   },
   "onboarding": {
-    "story_indicator": "HISTORIA {{current}} / {{total}}",
+    "story_indicator": "PASO {{current}} / {{total}}",
     "next": "SIGUIENTE",
     "start": "COMENZAR",
     "step1_title": "Sana desde la raíz",
@@ -641,8 +645,8 @@
     "cycle_day_preview": "Día {{day}} de tu ciclo",
     "next_period_preview": "Próximo periodo en {{days}} días · Ventana fértil {{label}}",
     "btn_continue": "CONTINUAR",
-    "btn_finish": "¡Listo!",
-    "wizard_complete_subtitle": "Tu perfil y ciclo están actualizados",
+    "btn_finish": "ENTRAR A NUTRICYCLE",
+    "wizard_complete_subtitle": "Adaptaremos tu calendario, alimentos y pantalla de inicio a tu ciclo y objetivo",
     "goals": {
       "acne": "Acné hormonal",
       "pcos": "SOP o Síndrome de ovario poliquístico",
@@ -777,8 +781,8 @@
       "snack": "Snack",
       "dinner": "Cena"
     },
-    "empty_meal": "Sin video planificado",
-    "empty_meal_sub": "Toca para explorar videos de la fase",
+    "empty_meal": "Sin receta planificada",
+    "empty_meal_sub": "Toca para explorar recetas de la fase",
     "total_day": "TOTAL DEL DÍA",
     "swap_title": "Intercambiar comida",
     "swap_subtitle": "Alternativas para la fase {{phase}}:",
