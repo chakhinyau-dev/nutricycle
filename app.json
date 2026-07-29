@@ -14,7 +14,9 @@
       "backgroundColor": "#4A4453"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.salatmahenoor.nutricycle",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +33,7 @@
       "expo-font",
       "expo-web-browser",
       "expo-secure-store",
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {

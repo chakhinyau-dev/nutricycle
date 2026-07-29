@@ -15,6 +15,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useSSO, useSignIn, useSignUp } from '@clerk/clerk-expo';
 import { Mail, Lock, ChevronRight, Eye, EyeOff, User } from 'lucide-react-native';
 
@@ -41,7 +42,10 @@ const formatClerkError = (error, t) => {
   return error?.message || t('auth.error_auth_generic');
 };
 
-export const LoginScreen = () => {
+const DEMO_EMAIL = 'demo@nutricycle.com';
+const DEMO_PASSWORD = 'Demo1234!';
+
+export const LoginScreen = ({ onDemoLogin }) => {
   const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [showPass, setShowPass] = useState(false);
@@ -95,6 +99,12 @@ export const LoginScreen = () => {
   };
 
   const handleEmailAuth = async () => {
+    // Demo account for Apple App Store review
+    if (isLogin && email.trim() === DEMO_EMAIL && password === DEMO_PASSWORD) {
+      if (onDemoLogin) await onDemoLogin();
+      return;
+    }
+
     if (!isReady) {
       setErrorMessage(t('auth.service_initializing'));
       return;
@@ -197,6 +207,36 @@ export const LoginScreen = () => {
       }
     } catch (error) {
       setErrorMessage(formatClerkError(error, t));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAppleAuth = async () => {
+    if (!isReady) return;
+    setIsSubmitting(true);
+    setErrorMessage('');
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: 'oauth_apple',
+        redirectUrl,
+        appleIdToken: credential.identityToken,
+      });
+
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+      }
+    } catch (error) {
+      if (error.code !== 'ERR_REQUEST_CANCELED') {
+        setErrorMessage(formatClerkError(error, t));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -373,6 +413,16 @@ export const LoginScreen = () => {
               />
               <Text style={styles.googleButtonText}>{t('auth.google_signin')}</Text>
             </Pressable>
+
+            {Platform.OS === 'ios' && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={30}
+                style={styles.appleButton}
+                onPress={handleAppleAuth}
+              />
+            )}
           </View>
 
           <View style={styles.footer}>
@@ -584,6 +634,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_700Bold',
     fontSize: 15,
     color: colors.primary,
+  },
+  appleButton: {
+    width: '100%',
+    height: 60,
+    marginTop: 16,
   },
   buttonDisabled: {
     opacity: 0.5,

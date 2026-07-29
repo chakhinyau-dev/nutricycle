@@ -5,6 +5,7 @@ import { StyleSheet, View, ActivityIndicator, Pressable, Text, Dimensions, Alert
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, useUser, useAuth, useClerk } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   useFonts,
   InstrumentSerif_400Regular,
@@ -164,17 +165,18 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
   const { signOut } = useClerk();
   const { user: clerkUser } = useUser();
 
-  // Clerk authentication bypass for local browser testing and validation
-  const BYPASS_CLERK = false;
+  // Demo mode — activated when Apple reviewer logs in with demo@nutricycle.com / Demo1234!
+  const BYPASS_CLERK = isDemoMode;
   const isSignedIn = BYPASS_CLERK ? true : clerkIsSignedIn;
-  const user = BYPASS_CLERK ? (clerkUser || {
-    id: 'user_dev_test_123',
-    primaryEmailAddress: { emailAddress: 'dev_test@example.com' },
-    fullName: 'Test Developer',
-    firstName: 'Test',
-    lastName: 'Developer',
-    publicMetadata: { role: 'admin' }
-  }) : clerkUser;
+  const user = BYPASS_CLERK ? {
+    id: 'user_demo_apple_review',
+    primaryEmailAddress: { emailAddress: 'demo@nutricycle.com' },
+    fullName: 'Demo User',
+    firstName: 'Demo',
+    lastName: 'User',
+    imageUrl: null,
+    publicMetadata: { role: 'admin' },
+  } : clerkUser;
   const { t, i18n } = useTranslation();
 
   const [onboardingReady, setOnboardingReady] = useState(false);
@@ -202,20 +204,27 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
   const cycleInfo = useMemo(() => getCycleInsights(cycleProfile), [cycleProfile]);
 
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
 
     const boot = async () => {
-      const onboardingComplete = await getOnboardingComplete();
+      const [onboardingComplete, demoFlag] = await Promise.all([
+        getOnboardingComplete(),
+        AsyncStorage.getItem('nutricycle_demo_mode'),
+      ]);
 
-      if (!isMounted) {
-        return;
+      if (!isMounted) return;
+
+      if (demoFlag === 'true') {
+        setIsDemoMode(true);
+        setHasCompletedOnboarding(true);
+      } else {
+        setHasCompletedOnboarding(onboardingComplete);
       }
 
-      setHasCompletedOnboarding(onboardingComplete);
       setOnboardingReady(true);
-      
-      // Request notifications permission
       requestNotificationPermissions();
     };
 
@@ -231,6 +240,25 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
 
     const bootstrapUserData = async () => {
       if (!authLoaded || !user?.id) {
+        return;
+      }
+
+      // Demo mode: skip all Supabase calls and use a pre-filled profile
+      if (isDemoMode) {
+        const d = new Date();
+        d.setDate(d.getDate() - 8);
+        const demoLastPeriod = d.toISOString().split('T')[0];
+        setCycleProfile({
+          currentPhase: 'follicular',
+          cycleLength: 28,
+          periodLength: 5,
+          lastPeriodStart: demoLastPeriod,
+          isPremium: true,
+          is_premium: true,
+          goal: 'balance',
+        });
+        setWizardComplete(true);
+        setProfileLoading(false);
         return;
       }
 
@@ -520,8 +548,29 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
     goBack();
   };
 
+  const handleDemoLogin = async () => {
+    await AsyncStorage.setItem('nutricycle_demo_mode', 'true');
+    setIsDemoMode(true);
+    setHasCompletedOnboarding(true);
+  };
+
   const handleLogout = async () => {
-    await signOut();
+    if (isDemoMode) {
+      await AsyncStorage.removeItem('nutricycle_demo_mode');
+      setIsDemoMode(false);
+      setWizardComplete(false);
+      setCycleProfile({
+        currentPhase: 'follicular',
+        cycleLength: 28,
+        periodLength: 5,
+        lastPeriodStart: new Date().toISOString().split('T')[0],
+        isPremium: false,
+        is_premium: false,
+        goal: 'balance',
+      });
+    } else {
+      await signOut();
+    }
     setActiveTab('today');
     setScreenStack([]);
     setNavigationParams({});
@@ -727,7 +776,7 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
   }
 
   if (!isSignedIn) {
-    return <LoginScreen />;
+    return <LoginScreen onDemoLogin={handleDemoLogin} />;
   }
 
   if (profileLoading && isSignedIn) {

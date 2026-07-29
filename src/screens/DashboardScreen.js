@@ -327,14 +327,13 @@ export const DashboardScreen = ({
             opacity={markerAlpha}
             transform={[{ scale: badgeScale }]}
           />
-          <AnimatedSvgText
+          <SvgText
             x={currentDayX} y={23}
             textAnchor="middle"
             fill="white"
             fontSize="11"
             fontWeight="bold"
-            opacity={markerAlpha}
-          >{String(cycleDay)}</AnimatedSvgText>
+          >{String(cycleDay)}</SvgText>
 
           {/* Tick marks */}
           {[0, 7, 14, 21, 28].filter(d => d < cycleLength).map((d) => {

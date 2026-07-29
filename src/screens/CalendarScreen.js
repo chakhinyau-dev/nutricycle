@@ -122,8 +122,6 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
   const pulseScale = useRef(new Animated.Value(0.6)).current;
   const pulseOpacity = useRef(new Animated.Value(0.7)).current;
   const centerScale = useRef(new Animated.Value(1)).current;
-  const orbitAnim = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     // B: staggered ring draw-in (dot by dot, clockwise up to cycleDay then rest)
     const allAnims = dotAnims.slice(0, cycleLength).map((anim, i) => {
@@ -170,86 +168,6 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
     };
   }, []);
 
-  // Orbit dot — spins continuously for as long as the screen is shown.
-  // Uses a recursive callback instead of Animated.loop to avoid a React Native
-  // native-driver bug where the loop silently stops after the first iteration.
-  const orbitActiveRef = useRef(true);
-  useEffect(() => {
-    orbitActiveRef.current = true;
-
-    const spin = () => {
-      orbitAnim.setValue(0);
-      Animated.timing(orbitAnim, {
-        toValue: 1,
-        duration: 1600,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished && orbitActiveRef.current) spin();
-      });
-    };
-    spin();
-
-    const pulseSpin = () => {
-      Animated.sequence([
-        Animated.timing(orbitDotScale, { toValue: 1.6, duration: 500, useNativeDriver: true }),
-        Animated.timing(orbitDotScale, { toValue: 1.0, duration: 500, useNativeDriver: true }),
-      ]).start(({ finished }) => {
-        if (finished && orbitActiveRef.current) pulseSpin();
-      });
-    };
-    pulseSpin();
-
-    const listenerId = orbitAnim.addListener(({ value }) => {
-      setOrbitAngleDeg(value * 360);
-      const dayPos = Math.floor(value * cycleLength) + 1;
-      let ph = 'follicular';
-      if (dayPos <= periodLength) ph = 'menstrual';
-      else if (dayPos >= fertileStart && dayPos <= fertileEnd) ph = 'ovulation';
-      else if (dayPos > fertileEnd) ph = 'luteal';
-      setOrbitPhase(ph);
-    });
-
-    return () => {
-      orbitActiveRef.current = false;
-      orbitAnim.stopAnimation();
-      orbitDotScale.stopAnimation();
-      orbitAnim.removeListener(listenerId);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const orbitRotate = orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-
-  // Comet tail — 4 ghost dots trailing behind the main dot
-  const TAIL_CONFIG = [
-    { offset: 18, size: 10, opacity: 0.55 },
-    { offset: 36, size: 8,  opacity: 0.35 },
-    { offset: 54, size: 6,  opacity: 0.20 },
-    { offset: 72, size: 4,  opacity: 0.10 },
-  ];
-  const tailRotates = TAIL_CONFIG.map(({ offset }) =>
-    orbitAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [`${-offset}deg`, `${360 - offset}deg`],
-    })
-  );
-
-  // Orbit dot — pulsing scale + phase-aware color + trail arc
-  const orbitDotScale = useRef(new Animated.Value(1)).current;
-  const [orbitPhase, setOrbitPhase] = useState('menstrual');
-  const [orbitAngleDeg, setOrbitAngleDeg] = useState(0);
-
-  // 28° trailing arc that follows the orbit dot
-  const trailArcPath = useMemo(() => {
-    const tailDeg = 28;
-    const a1 = ((orbitAngleDeg - tailDeg) * Math.PI) / 180 - Math.PI / 2;
-    const a2 = (orbitAngleDeg * Math.PI) / 180 - Math.PI / 2;
-    const x1 = (cx + circleRadius * Math.cos(a1)).toFixed(2);
-    const y1 = (cy + circleRadius * Math.sin(a1)).toFixed(2);
-    const x2 = (cx + circleRadius * Math.cos(a2)).toFixed(2);
-    const y2 = (cy + circleRadius * Math.sin(a2)).toFixed(2);
-    return `M ${x1},${y1} A ${circleRadius},${circleRadius} 0 0,1 ${x2},${y2}`;
-  }, [orbitAngleDeg, cx, cy, circleRadius]);
 
   // --- Log card reveal on date change ---
   const logCardOpacity    = useRef(new Animated.Value(0)).current;
@@ -465,75 +383,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
                 </G>
               );
             })}
-            {/* Trailing arc — 28° satellite glow behind the orbit dot */}
-            <Path
-              d={trailArcPath}
-              fill="none"
-              stroke={DOT_COLORS[orbitPhase]}
-              strokeWidth={5}
-              strokeLinecap="round"
-              opacity={0.45}
-            />
           </Svg>
-
-          {/* D: Comet tail dots — use orbitPhase color so tail shifts with the head */}
-          {TAIL_CONFIG.map(({ size, opacity }, i) => (
-            <Animated.View
-              key={`tail_${i}`}
-              style={{
-                position: 'absolute',
-                left: cx,
-                top: cy,
-                width: 0,
-                height: 0,
-                transform: [{ rotate: tailRotates[i] }],
-              }}
-            >
-              <View style={{
-                position: 'absolute',
-                left: circleRadius - size / 2,
-                top: -size / 2,
-                width: size,
-                height: size,
-                borderRadius: size / 2,
-                backgroundColor: DOT_COLORS[orbitPhase],
-                opacity,
-              }} />
-            </Animated.View>
-          ))}
-
-          {/* D: Orbit dot — teardrop shape, pulsing scale, phase-shifting color */}
-          <Animated.View
-            style={{
-              position: 'absolute',
-              left: cx,
-              top: cy,
-              width: 0,
-              height: 0,
-              transform: [{ rotate: orbitRotate }],
-            }}
-          >
-            <Animated.View style={{
-              position: 'absolute',
-              left: circleRadius - 5,
-              top: -8,
-              width: 10,
-              height: 16,
-              borderTopLeftRadius: 3,
-              borderTopRightRadius: 3,
-              borderBottomLeftRadius: 8,
-              borderBottomRightRadius: 8,
-              backgroundColor: DOT_COLORS[orbitPhase],
-              borderWidth: 2,
-              borderColor: '#FFFFFF',
-              shadowColor: DOT_COLORS[orbitPhase],
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.9,
-              shadowRadius: 6,
-              elevation: 4,
-              transform: [{ scale: orbitDotScale }],
-            }} />
-          </Animated.View>
 
           {/* Tappable circular dots — B: stagger fade-in on mount */}
           {dots.map((dot, i) => {
@@ -947,14 +797,14 @@ const styles = StyleSheet.create({
   },
   centerDayNum: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 72,
+    fontSize: 56,
     color: '#B5705A',
-    lineHeight: 76,
+    lineHeight: 60,
     marginBottom: 2,
   },
   centerPhaseName: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 20,
+    fontSize: 16,
     color: colors.on_surface,
     fontStyle: 'italic',
     marginBottom: 6,
