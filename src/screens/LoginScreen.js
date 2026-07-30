@@ -21,7 +21,6 @@ import { Mail, Lock, ChevronRight, Eye, EyeOff, User } from 'lucide-react-native
 
 import { colors } from '../theme/colors';
 import { env } from '../lib/env';
-import { NutricycleLogo } from '../components/NutricycleLogo';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -266,7 +265,11 @@ export const LoginScreen = ({ onDemoLogin }) => {
         keyboardShouldPersistTaps="handled"
       >
           <View style={styles.logoContainer}>
-            <NutricycleLogo width={160} height={110} showText={false} />
+            <Image
+              source={require('../../assets/logo - 23.png')}
+              style={{ width: 160, height: 110 }}
+              resizeMode="contain"
+            />
           </View>
 
           <View style={styles.titleContainer}>

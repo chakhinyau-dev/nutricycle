@@ -7,6 +7,11 @@ import { NutricycleLogo } from '../components/NutricycleLogo';
 
 const ONBOARDING_STEPS = [
   {
+    titleKey: 'onboarding.step3_title',
+    subtitleKey: 'onboarding.step3_subtitle',
+    image: require('../../assets/third.jpg'),
+  },
+  {
     titleKey: 'onboarding.step1_title',
     subtitleKey: 'onboarding.step1_subtitle',
     image: require('../../assets/first.jpg'),
@@ -15,11 +20,6 @@ const ONBOARDING_STEPS = [
     titleKey: 'onboarding.step2_title',
     subtitleKey: 'onboarding.step2_subtitle',
     image: require('../../assets/second.jpg'),
-  },
-  {
-    titleKey: 'onboarding.step3_title',
-    subtitleKey: 'onboarding.step3_subtitle',
-    image: require('../../assets/third.jpg'),
   },
 ];
 
