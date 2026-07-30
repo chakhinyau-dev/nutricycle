@@ -19,7 +19,7 @@ import {
 } from '@expo-google-fonts/outfit';
 import { Home, CircleDot, User, PlaySquare, Soup } from 'lucide-react-native';
 
-import { StripeProvider } from './src/components/StripeWrapper';
+import { configureRevenueCat } from './src/services/revenuecatService';
 
 import { colors } from './src/theme/colors';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -66,7 +66,6 @@ import { loadArticles } from './src/services/articleService';
 import { loadVideos } from './src/services/videoService';
 import { requestNotificationPermissions } from './src/services/notificationService';
 import { recordSubscription, loadUserSubscription } from './src/services/subscriptionService';
-import { finalizeSubscriptionSession } from './src/services/stripeService';
 
 const { width } = Dimensions.get('window');
 
@@ -243,6 +242,9 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
         return;
       }
 
+      // Initialize RevenueCat with the current user ID
+      configureRevenueCat(user.id);
+
       // Demo mode: skip all Supabase calls and use a pre-filled profile
       if (isDemoMode) {
         const d = new Date();
@@ -352,28 +354,6 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
     };
   }, [authLoaded, isSignedIn, user?.id]);
 
-  useEffect(() => {
-    // Check for Stripe success redirect on Web
-    if (Platform.OS === 'web' && isSignedIn && user?.id) {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('success') === 'true' && params.get('session_id')) {
-        const finalizeUpgrade = async () => {
-          try {
-            console.log('[Stripe] Payment success detected, finalizing Stripe subscription...');
-            const finalized = await finalizeSubscriptionSession({
-              sessionId: params.get('session_id'),
-              locale: i18n.language,
-            });
-            await handleUpgrade(finalized);
-            window.history.replaceState({}, document.title, window.location.pathname);
-          } catch (err) {
-            console.error('[Stripe Upgrade Error]:', err);
-          }
-        };
-        finalizeUpgrade();
-      }
-    }
-  }, [isSignedIn, user?.id, i18n.language]);
 
   const refreshAdminData = async () => {
     const [freshVideos, freshRecipes, freshFoods] = await Promise.all([
