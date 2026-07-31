@@ -26,6 +26,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#A3B3A5"
       },
+      "permissions": [
+        "com.android.vending.BILLING"
+      ],
       "edgeToEdgeEnabled": true,
       "package": "com.salatmahenoor.nutricycle"
     },
