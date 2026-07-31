@@ -159,7 +159,7 @@ const ScreenWrapper = ({ children, isPush }) => {
   );
 };
 
-const AppShell = ({ onStripePublishableKeyChange }) => {
+const AppShell = () => {
   const { isLoaded: authLoaded, isSignedIn: clerkIsSignedIn, getToken } = useAuth();
   const { signOut } = useClerk();
   const { user: clerkUser } = useUser();
@@ -633,7 +633,6 @@ const AppShell = ({ onStripePublishableKeyChange }) => {
               isPremium={cycleProfile.isPremium}
               activePlan={subscription?.plan_id || (subscription?.plan_type)}
               user={user}
-              onStripePublishableKeyChange={onStripePublishableKeyChange}
             />
           );
         case 'videos':
@@ -848,7 +847,6 @@ export default function App() {
   });
 
   const { i18n } = useTranslation();
-  const [stripePublishableKey, setStripePublishableKey] = useState(env.stripePublishableKey);
 
   const missingRequired = getMissingRequiredEnv();
   const missingRecommended = getMissingRecommendedEnv();
@@ -863,15 +861,9 @@ export default function App() {
 
   return (
     <ClerkProvider publishableKey={env.clerkPublishableKey} tokenCache={tokenCache}>
-      <StripeProvider
-        key={stripePublishableKey || env.stripePublishableKey}
-        publishableKey={stripePublishableKey || env.stripePublishableKey}
-        merchantIdentifier="merchant.nutricycle"
-      >
-        {/* Hidden container for Clerk's CAPTCHA security on Web */}
-        <View nativeID="clerk-captcha" style={{ display: 'none' }} />
-        <AppShell key={i18n.language} onStripePublishableKeyChange={setStripePublishableKey} />
-      </StripeProvider>
+      {/* Hidden container for Clerk's CAPTCHA security on Web */}
+      <View nativeID="clerk-captcha" style={{ display: 'none' }} />
+      <AppShell key={i18n.language} />
     </ClerkProvider>
   );
 }

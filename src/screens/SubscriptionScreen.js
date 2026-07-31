@@ -20,11 +20,9 @@ import {
   restorePurchases,
   isPremiumActive,
   getActivePlanType,
-  MONTHLY_PRODUCT_ID,
-  ANNUAL_PRODUCT_ID,
 } from '../services/revenuecatService';
 
-export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, user }) => {
+export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan }) => {
   const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('annual');
@@ -120,8 +118,8 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan, u
   const selectedPlanType = selectedPlan === 'annual' ? 'yearly' : 'monthly';
 
   const handleCheckout = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('Suscripción', 'Las compras in-app solo están disponibles en la app de iOS.');
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Suscripción', 'Las compras in-app solo están disponibles en la app de iOS desde el App Store.');
       return;
     }
 

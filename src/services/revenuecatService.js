@@ -5,12 +5,20 @@ export const ENTITLEMENT_ID = 'Nutricycle Pro';
 export const MONTHLY_PRODUCT_ID = 'com.salatmahenoor.nutricycle.monthly';
 export const ANNUAL_PRODUCT_ID  = 'com.salatmahenoor.nutricycle.annual';
 
+// RevenueCat is iOS only — App Store purchases are not available on Android/web
+const isSupported = () => Platform.OS === 'ios';
+
 let Purchases = null;
 
 const getRC = async () => {
-  if (Platform.OS === 'web') return null;
+  if (!isSupported()) return null;
   if (!Purchases) {
-    Purchases = (await import('react-native-purchases')).default;
+    try {
+      Purchases = (await import('react-native-purchases')).default;
+    } catch (e) {
+      console.warn('[RC] react-native-purchases not available:', e?.message);
+      return null;
+    }
   }
   return Purchases;
 };
@@ -50,7 +58,7 @@ export const getOfferings = async () => {
 
 export const purchasePackage = async (pkg) => {
   const RC = await getRC();
-  if (!RC) throw new Error('RevenueCat not available on web');
+  if (!RC) throw new Error('Las compras solo están disponibles en la app de iOS desde el App Store.');
   try {
     const { customerInfo } = await RC.purchasePackage(pkg);
     return customerInfo;
