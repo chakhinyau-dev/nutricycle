@@ -1,12 +1,15 @@
 import { Platform } from 'react-native';
 
-const RC_API_KEY_IOS = 'appl_nHXAVeKhaSsgnrwfHYpoNeVXfhJ';
+const RC_API_KEY_IOS     = 'appl_nHXAVeKhaSsgnrwfHYpoNeVXfhJ';
+const RC_API_KEY_ANDROID = 'goog_ojcdfACAFZhotZfLkYPyGzkKXAK';
 export const ENTITLEMENT_ID = 'Nutricycle Pro';
 export const MONTHLY_PRODUCT_ID = 'com.salatmahenoor.nutricycle.monthly';
 export const ANNUAL_PRODUCT_ID  = 'com.salatmahenoor.nutricycle.annual';
 
-// RevenueCat is iOS only — App Store purchases are not available on Android/web
-const isSupported = () => Platform.OS === 'ios';
+const isSupported = () => Platform.OS === 'ios' || Platform.OS === 'android';
+
+const getApiKey = () =>
+  Platform.OS === 'android' ? RC_API_KEY_ANDROID : RC_API_KEY_IOS;
 
 let Purchases = null;
 
@@ -27,7 +30,7 @@ export const configureRevenueCat = async (userId = null) => {
   const RC = await getRC();
   if (!RC) return;
   try {
-    RC.configure({ apiKey: RC_API_KEY_IOS });
+    RC.configure({ apiKey: getApiKey() });
     if (userId) await RC.logIn(userId);
   } catch (e) {
     console.error('[RC] configure error:', e);

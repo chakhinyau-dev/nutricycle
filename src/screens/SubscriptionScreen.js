@@ -118,11 +118,6 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
   const selectedPlanType = selectedPlan === 'annual' ? 'yearly' : 'monthly';
 
   const handleCheckout = async () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert('Suscripción', 'Las compras in-app solo están disponibles en la app de iOS desde el App Store.');
-      return;
-    }
-
     setIsProcessing(true);
     try {
       const pkg = selectedPlan === 'annual' ? annualPkg : monthlyPkg;
@@ -258,7 +253,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
                   <Text style={styles.period}>/{t('common.year')}</Text>
                 </Text>
                 <Text style={styles.livePriceHint}>
-                  {pricingLoading ? t('subscription.loading_price') : 'Precio desde App Store'}
+                  {pricingLoading ? t('subscription.loading_price') : Platform.OS === 'android' ? 'Precio desde Google Play' : 'Precio desde App Store'}
                 </Text>
                 <Text numberOfLines={1} adjustsFontSizeToFit style={styles.savings}>{t('subscription.save_40')}</Text>
                 <Animated.View style={[styles.badge, { backgroundColor: colors.primary, transform: [{ scale: badgeScale }] }]}>
@@ -287,7 +282,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
                   <Text style={styles.period}>/{t('common.month')}</Text>
                 </Text>
                 <Text style={styles.livePriceHint}>
-                  {pricingLoading ? t('subscription.loading_price') : 'Precio desde App Store'}
+                  {pricingLoading ? t('subscription.loading_price') : Platform.OS === 'android' ? 'Precio desde Google Play' : 'Precio desde App Store'}
                 </Text>
                 <Text numberOfLines={1} adjustsFontSizeToFit style={styles.savings}>{t('subscription.no_commitment')}</Text>
               </Pressable>
@@ -331,7 +326,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
           </Pressable>
         </Animated.View>
 
-        {Platform.OS === 'ios' && !isPremium && (
+        {(Platform.OS === 'ios' || Platform.OS === 'android') && !isPremium && (
           <Pressable onPress={handleRestore} disabled={isProcessing} style={{ paddingVertical: 8 }}>
             <Text style={styles.restoreText}>{t('subscription.restore_activate') || 'Restaurar compra'}</Text>
           </Pressable>

@@ -3,14 +3,20 @@
     "name": "NutriCycle",
     "slug": "nutricycle",
     "scheme": "nutricycle",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4A4453"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.salatmahenoor.nutricycle",
-      "buildNumber": "2",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -20,11 +26,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#A3B3A5"
       },
-      "package": "com.salatmahenoor.nutricycle",
-      "versionCode": 2,
-      "permissions": [
-        "com.android.vending.BILLING"
-      ]
+      "edgeToEdgeEnabled": true,
+      "package": "com.salatmahenoor.nutricycle"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,24 +40,13 @@
       [
         "expo-build-properties",
         {
-          "ios": {
-            "deploymentTarget": "16.4"
-          },
           "android": {
             "extraAllowlist": {
               "android.enablePngCrunchInReleaseBuilds": "false"
             }
           }
         }
-      ],
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "merchant.com.salatmahenoor.nutricycle"
-        }
-      ],
-      "expo-status-bar",
-      "expo-video"
+      ]
     ],
     "extra": {
       "eas": {

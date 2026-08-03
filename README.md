@@ -32,18 +32,7 @@ A personalized wellness and menstrual cycle tracking application built with Reac
    npm install
    ```
 
-3. Build and launch the iOS dev client once (required for native modules like Stripe):
+3. Start the application:
    ```bash
-   npx expo run:ios
-   ```
-
-4. Start Metro for the dev client:
-   ```bash
-   npm start
-   ```
-
-## Useful commands
-1. Build for production
-   ```bash
-   
+   npx expo start
    ```
