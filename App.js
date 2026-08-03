@@ -164,6 +164,8 @@ const AppShell = () => {
   const { signOut } = useClerk();
   const { user: clerkUser } = useUser();
 
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
   // Demo mode — activated when Apple reviewer logs in with demo@nutricycle.com / Demo1234!
   const BYPASS_CLERK = isDemoMode;
   const isSignedIn = BYPASS_CLERK ? true : clerkIsSignedIn;
@@ -202,8 +204,6 @@ const AppShell = () => {
   };
 
   const cycleInfo = useMemo(() => getCycleInsights(cycleProfile), [cycleProfile]);
-
-  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
