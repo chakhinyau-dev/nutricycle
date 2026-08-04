@@ -82,7 +82,7 @@ export const NotificationsScreen = ({ onBack, onNavigate, cycleInfo, recipes }) 
           <Pressable style={styles.settingsBtn} onPress={() => onNavigate('saveDetail')}>
             <Bookmark size={24} color={colors.on_surface_variant} />
           </Pressable>
-          <Pressable style={[styles.settingsBtn, { marginLeft: 12 }]}>
+          <Pressable style={[styles.settingsBtn, { marginLeft: 12 }]} onPress={() => onNavigate('settings')}>
             <Settings size={24} color={colors.on_surface_variant} />
           </Pressable>
         </View>

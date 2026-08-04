@@ -18,7 +18,7 @@ import { getGeminiChatResponse } from '../services/aiService';
 
 const { width } = Dimensions.get('window');
 
-export const AIChatScreen = ({ onBack, cycleInfo, isPremium }) => {
+export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, isPremium }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState([
     {
@@ -69,7 +69,7 @@ export const AIChatScreen = ({ onBack, cycleInfo, isPremium }) => {
         </View>
         <Text style={styles.lockedTitle}>{t('chat.locked_title')}</Text>
         <Text style={styles.lockedSubtitle}>{t('chat.locked_sub')}</Text>
-        <Pressable style={styles.upgradeBtn} onPress={onBack}>
+        <Pressable style={styles.upgradeBtn} onPress={() => onNavigate('subscription')}>
           <Text style={styles.upgradeBtnText}>{t('chat.discover_pro')}</Text>
         </Pressable>
       </View>

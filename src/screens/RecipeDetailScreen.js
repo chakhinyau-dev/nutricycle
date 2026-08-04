@@ -11,9 +11,10 @@ import {
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { 
+import {
   ArrowLeft,
   Share2,
+  Bookmark,
   CheckCircle2,
   ChevronDown,
   ChevronUp
@@ -31,7 +32,7 @@ const extractYouTubeId = (url) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
-export const RecipeDetailScreen = ({ recipe, onBack }) => {
+export const RecipeDetailScreen = ({ recipe, onBack, isSaved = false, onToggleSave }) => {
   const { t, i18n } = useTranslation();
   const [displayRecipe, setDisplayRecipe] = useState(recipe);
   const [isIngredientsExpanded, setIsIngredientsExpanded] = useState(false);
@@ -127,6 +128,15 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
               <ArrowLeft size={24} color="#FFF" />
             </Pressable>
             <View style={styles.headerRight}>
+              {onToggleSave && (
+                <Pressable style={styles.headerBtn} onPress={onToggleSave}>
+                  <Bookmark
+                    size={22}
+                    color="#FFF"
+                    fill={isSaved ? '#FFF' : 'none'}
+                  />
+                </Pressable>
+              )}
               <Pressable style={styles.headerBtn} onPress={onShare}>
                 <Share2 size={22} color="#FFF" />
               </Pressable>
@@ -226,7 +236,7 @@ export const RecipeDetailScreen = ({ recipe, onBack }) => {
                   ))
                 ) : (
                   <Text style={[styles.ingredientText, { opacity: 0.5 }]}>
-                    No hay información nutricional clave para esta receta.
+                    {t('recipe_detail.no_key_ingredients', { defaultValue: 'No key nutritional info for this recipe.' })}
                   </Text>
                 )}
               </View>

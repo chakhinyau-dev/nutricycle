@@ -17,14 +17,12 @@ import { env } from '../lib/env';
 
 const genAI = new GoogleGenerativeAI(env.geminiApiKey);
 
-export const AIPredictorScreen = ({ onBack, cycleInfo, cycleProfile, user, onNavigate }) => {
+export const AIPredictorScreen = ({ onBack, cycleInfo, user, onNavigate, isPremium }) => {
   const { t, i18n } = useTranslation();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState(null);
   const [error, setError] = useState(null);
-
-  const isPremium = cycleProfile?.isPremium;
 
   const generatePrediction = async (userPrompt = '') => {
     if (!isPremium) return;
@@ -40,7 +38,7 @@ export const AIPredictorScreen = ({ onBack, cycleInfo, cycleProfile, user, onNav
       User Info:
       - Name: ${user?.firstName || 'User'}
       - Current Phase: ${cycleInfo.currentPhaseKey}
-      - Cycle Day: ${cycleInfo.dayOfCycle}
+      - Cycle Day: ${cycleInfo.cycleDay}
       - Symptoms mentioned in prompt: ${userPrompt}
       
       Task: Provide a short, professional, and encouraging health prediction or recommendation for this specific cycle phase. 

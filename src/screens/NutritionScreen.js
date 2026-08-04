@@ -805,19 +805,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
-  swapBtn: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.38)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
   playBtn: {
     position: 'absolute',
     top: '50%',
@@ -953,74 +940,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
-  },
-
-  // Swap modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    maxHeight: '70%',
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F1E8',
-  },
-  modalTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 18,
-    color: colors.on_surface,
-  },
-  modalList: {
-    padding: 20,
-    gap: 12,
-  },
-  modalSubtitle: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 13,
-    color: colors.on_surface_variant,
-    marginBottom: 8,
-    opacity: 0.7,
-  },
-  altCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#F9F9F2',
-    borderRadius: 16,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#EFEDE4',
-  },
-  altInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  altTitle: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 14,
-    color: colors.on_surface,
-    lineHeight: 20,
-  },
-  emptyAlternatives: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyAltText: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 14,
-    color: colors.on_surface_variant,
-    opacity: 0.6,
   },
 
   // Empty slot

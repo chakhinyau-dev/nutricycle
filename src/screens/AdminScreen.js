@@ -221,7 +221,7 @@ export const AdminScreen = ({
 
   const handleSaveFood = async () => {
     if (!newFood.name?.trim()) {
-      if (showToast) showToast('El nombre del alimento es obligatorio', 'error');
+      if (showToast) showToast(t('admin.food_name_required', { defaultValue: 'El nombre del alimento es obligatorio' }), 'error');
       return;
     }
     setIsSaving(true);
@@ -233,12 +233,12 @@ export const AdminScreen = ({
       }
       const result = await saveKeyFood(getToken, { ...newFood, imageUrl: finalImageUrl, benefits: newFood.benefits?.trim() || '', id: editingFoodId });
       if (result) {
-        if (showToast) showToast(editingFoodId ? 'Alimento actualizado' : 'Alimento guardado');
+        if (showToast) showToast(editingFoodId ? t('admin.food_updated', { defaultValue: 'Alimento actualizado' }) : t('admin.food_saved', { defaultValue: 'Alimento guardado' }));
         resetFoodForm();
         if (onRefresh) onRefresh();
       }
     } catch (err) {
-      if (showToast) showToast('Error al guardar', 'error');
+      if (showToast) showToast(t('admin.food_save_error', { defaultValue: 'Error al guardar' }), 'error');
     } finally {
       setIsSaving(false);
     }
@@ -250,19 +250,23 @@ export const AdminScreen = ({
         setIsSaving(true);
         const ok = await deleteKeyFood(getToken, foodId);
         if (ok) {
-          if (showToast) showToast('Alimento eliminado');
+          if (showToast) showToast(t('admin.food_deleted', { defaultValue: 'Alimento eliminado' }));
           if (onRefresh) onRefresh();
         }
       } catch (err) {
-        if (showToast) showToast('Error al eliminar', 'error');
+        if (showToast) showToast(t('admin.food_delete_error', { defaultValue: 'Error al eliminar' }), 'error');
       } finally {
         setIsSaving(false);
       }
     };
     if (Platform.OS === 'web') {
-      if (window.confirm('¿Eliminar este alimento?')) performDelete();
+      if (window.confirm(t('admin.delete_food_confirm', { defaultValue: '¿Eliminar este alimento?' }))) performDelete();
     } else {
-      Alert.alert('Eliminar', '¿Eliminar este alimento?', [{ text: 'Cancelar' }, { text: 'Eliminar', onPress: performDelete }]);
+      Alert.alert(
+        t('common.delete', { defaultValue: 'Eliminar' }),
+        t('admin.delete_food_confirm', { defaultValue: '¿Eliminar este alimento?' }),
+        [{ text: t('common.cancel') }, { text: t('common.delete', { defaultValue: 'Eliminar' }), onPress: performDelete }]
+      );
     }
   };
 
@@ -635,7 +639,7 @@ export const AdminScreen = ({
           style={[styles.tab, activeTab === 'foods' && styles.tabActive]}
         >
           <Apple size={18} color={activeTab === 'foods' ? colors.primary : '#64748B'} />
-          <Text style={[styles.tabText, activeTab === 'foods' && styles.tabTextActive]}>Alimentos</Text>
+          <Text style={[styles.tabText, activeTab === 'foods' && styles.tabTextActive]}>{t('admin.foods_tab', { defaultValue: 'Alimentos' })}</Text>
         </Pressable>
       </View>
 
@@ -671,12 +675,12 @@ export const AdminScreen = ({
                     <Image source={{ uri: newVideo.thumbnail }} style={styles.thumbnailPreview} />
                   ) : (
                     <View style={[styles.thumbnailPreview, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' }]}>
-                      <Text style={{ color: '#666', fontFamily: 'Outfit_500Medium', fontSize: 13 }}>Sin miniatura</Text>
+                      <Text style={{ color: '#666', fontFamily: 'Outfit_500Medium', fontSize: 13 }}>{t('admin.no_thumbnail', { defaultValue: 'Sin miniatura' })}</Text>
                     </View>
                   )}
                   <Pressable onPress={handlePickCustomThumbnail} style={styles.changeThumbBtn}>
                     <Text style={styles.changeThumbText}>
-                      {newVideo.thumbnail ? t('admin.change_thumbnail') : 'Elegir miniatura'}
+                      {newVideo.thumbnail ? t('admin.change_thumbnail') : t('admin.choose_thumbnail', { defaultValue: 'Elegir miniatura' })}
                     </Text>
                   </Pressable>
                 </View>
@@ -909,17 +913,17 @@ export const AdminScreen = ({
 
           <View>
             <View style={styles.formCard}>
-              <Text style={styles.sectionTitle}>Agregar alimento</Text>
+              <Text style={styles.sectionTitle}>{t('admin.add_food', { defaultValue: 'Agregar alimento' })}</Text>
 
-              <Text style={styles.label}>Nombre del alimento *</Text>
+              <Text style={styles.label}>{t('admin.food_name_label', { defaultValue: 'Nombre del alimento *' })}</Text>
               <TextInput
                 style={styles.input}
                 value={newFood.name}
-                placeholder="Ej: Espinacas, Salmón, Lentejas..."
+                placeholder={t('admin.food_name_placeholder', { defaultValue: 'Ej: Espinacas, Salmón, Lentejas...' })}
                 onChangeText={v => setNewFood({ ...newFood, name: v })}
               />
 
-              <Text style={styles.label}>Fase</Text>
+              <Text style={styles.label}>{t('admin.phase')}</Text>
               <View style={styles.phaseSelector}>
                 {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
                   <Pressable
@@ -934,13 +938,13 @@ export const AdminScreen = ({
                 ))}
               </View>
 
-              <Text style={styles.label}>Categoría</Text>
+              <Text style={styles.label}>{t('admin.food_category', { defaultValue: 'Categoría' })}</Text>
               <View style={styles.mealTypeSelector}>
                 {[
-                  { id: 'proteins',   label: 'Proteínas' },
-                  { id: 'fats',       label: 'Grasas' },
-                  { id: 'carbs',      label: 'Carbos' },
-                  { id: 'veg_fruits', label: 'Veg/Fruta' },
+                  { id: 'proteins',   label: t('admin.cat_proteins',   { defaultValue: 'Proteínas' }) },
+                  { id: 'fats',       label: t('admin.cat_fats',       { defaultValue: 'Grasas' }) },
+                  { id: 'carbs',      label: t('admin.cat_carbs',      { defaultValue: 'Carbos' }) },
+                  { id: 'veg_fruits', label: t('admin.cat_veg_fruits', { defaultValue: 'Veg/Fruta' }) },
                 ].map(c => (
                   <Pressable
                     key={c.id}
@@ -954,13 +958,13 @@ export const AdminScreen = ({
                 ))}
               </View>
 
-              <Text style={styles.label}>Beneficio hormonal</Text>
+              <Text style={styles.label}>{t('admin.hormone_benefit', { defaultValue: 'Beneficio hormonal' })}</Text>
               <View style={styles.mealTypeSelector}>
                 {[
-                  { id: 'estrogen',         label: 'Estrógeno' },
-                  { id: 'progesterone',     label: 'Progesterona' },
-                  { id: 'antiinflammatory', label: 'Antiinflamatorio' },
-                  { id: 'energy',           label: 'Energía' },
+                  { id: 'estrogen',         label: t('admin.tag_estrogen',         { defaultValue: 'Estrógeno' }) },
+                  { id: 'progesterone',     label: t('admin.tag_progesterone',     { defaultValue: 'Progesterona' }) },
+                  { id: 'antiinflammatory', label: t('admin.tag_antiinflammatory', { defaultValue: 'Antiinflamatorio' }) },
+                  { id: 'energy',           label: t('admin.tag_energy',           { defaultValue: 'Energía' }) },
                 ].map(h => (
                   <Pressable
                     key={h.id}
@@ -974,13 +978,13 @@ export const AdminScreen = ({
                 ))}
               </View>
 
-              <Text style={styles.label}>Tipo de comida</Text>
+              <Text style={styles.label}>{t('admin.food_meal_type', { defaultValue: 'Tipo de comida' })}</Text>
               <View style={styles.mealTypeSelector}>
                 {[
-                  { id: 'breakfast', label: 'Desayuno' },
-                  { id: 'lunch',     label: 'Almuerzo' },
-                  { id: 'snack',     label: 'Snack' },
-                  { id: 'dinner',    label: 'Cena' },
+                  { id: 'breakfast', label: t('dailylog.meal_types.breakfast') },
+                  { id: 'lunch',     label: t('dailylog.meal_types.lunch') },
+                  { id: 'snack',     label: t('dailylog.meal_types.snack') },
+                  { id: 'dinner',    label: t('dailylog.meal_types.dinner') },
                 ].map(m => (
                   <Pressable
                     key={m.id}
@@ -994,18 +998,18 @@ export const AdminScreen = ({
                 ))}
               </View>
 
-              <Text style={styles.label}>Beneficios</Text>
+              <Text style={styles.label}>{t('admin.food_benefits', { defaultValue: 'Beneficios' })}</Text>
               <TextInput
                 multiline
                 numberOfLines={4}
                 style={[styles.input, { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
                 value={newFood.benefits}
-                placeholder="Ej: Rico en hierro, ayuda a reducir la inflamación, apoya la producción de progesterona..."
+                placeholder={t('admin.food_benefits_placeholder', { defaultValue: 'Ej: Rico en hierro, ayuda a reducir la inflamación...' })}
                 placeholderTextColor="#94A3B8"
                 onChangeText={v => setNewFood({ ...newFood, benefits: v })}
               />
 
-              <Text style={styles.label}>Imagen (opcional)</Text>
+              <Text style={styles.label}>{t('admin.food_image_label', { defaultValue: 'Imagen (opcional)' })}</Text>
               <Pressable onPress={handlePickFoodImage} style={styles.imagePicker}>
                 {localFoodImage || newFood.imageUrl ? (
                   <Image
@@ -1013,26 +1017,26 @@ export const AdminScreen = ({
                     style={styles.pickedImage}
                   />
                 ) : (
-                  <Text style={{ color: colors.primary }}>Seleccionar imagen</Text>
+                  <Text style={{ color: colors.primary }}>{t('admin.select_food_image', { defaultValue: 'Seleccionar imagen' })}</Text>
                 )}
               </Pressable>
 
               <Pressable style={styles.saveBtn} onPress={handleSaveFood} disabled={isSaving}>
                 {isSaving
                   ? <ActivityIndicator color="#FFF" />
-                  : <Text style={styles.saveBtnText}>{editingFoodId ? 'Actualizar alimento' : 'Guardar alimento'}</Text>}
+                  : <Text style={styles.saveBtnText}>{editingFoodId ? t('admin.update_food', { defaultValue: 'Actualizar alimento' }) : t('admin.save_food', { defaultValue: 'Guardar alimento' })}</Text>}
               </Pressable>
               {editingFoodId && (
                 <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetFoodForm}>
-                  <Text style={{ color: '#475569' }}>Cancelar</Text>
+                  <Text style={{ color: '#475569' }}>{t('common.cancel')}</Text>
                 </Pressable>
               )}
             </View>
 
-            <Text style={styles.sectionTitle}>Alimentos guardados</Text>
+            <Text style={styles.sectionTitle}>{t('admin.saved_foods', { defaultValue: 'Alimentos guardados' })}</Text>
             {Object.keys(keyFoods).length === 0 ? (
               <Text style={{ color: '#94A3B8', textAlign: 'center', marginTop: 16 }}>
-                Aún no hay alimentos. Agrega el primero arriba.
+                {t('admin.no_foods_yet', { defaultValue: 'Aún no hay alimentos. Agrega el primero arriba.' })}
               </Text>
             ) : (
               ['menstrual', 'follicular', 'ovulation', 'luteal'].map(phase =>

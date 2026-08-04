@@ -294,7 +294,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
       </ScrollView>
 
       <View style={styles.footer}>
-        <Animated.View style={{ transform: [{ scale: ctaScale }] }}>
+        <Animated.View style={{ transform: [{ scale: ctaScale }], width: '100%' }}>
           <Pressable
             style={[
               styles.mainCta,

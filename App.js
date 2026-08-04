@@ -44,6 +44,8 @@ import { AdminScreen } from './src/screens/AdminScreen';
 import { KeyFoodsScreen } from './src/screens/KeyFoodsScreen';
 import { ShoppingListScreen } from './src/screens/ShoppingListScreen';
 import { NutritionScreen } from './src/screens/NutritionScreen';
+import { AIChatScreen } from './src/screens/AIChatScreen';
+import { AIPredictorScreen } from './src/screens/AIPredictorScreen';
 import { MOCK_RECIPES } from './src/utils/mockData';
 import { ARTICLE_LIBRARY } from './src/utils/articleData';
 import { VIDEO_LIBRARY } from './src/utils/videoData';
@@ -603,7 +605,7 @@ const AppShell = () => {
         case 'wellness':
           return <WellnessScreen onBack={goBack} />;
         case 'articles':
-          return <ArticlesScreen onBack={goBack} articles={articles} />;
+          return <ArticlesScreen onBack={goBack} articles={articles} user={user} />;
         case 'dailyLog':
           return <DailyLogScreen onBack={goBack} onNavigate={navigateTo} {...sharedScreenProps} />;
         case 'periodCalculator':
@@ -611,7 +613,7 @@ const AppShell = () => {
         case 'notifications':
           return <NotificationsScreen onBack={goBack} onNavigate={navigateTo} {...sharedScreenProps} />;
         case 'settings':
-          return <SettingsScreen onBack={goBack} onNavigate={navigateTo} onLogout={handleLogout} isPremium={cycleProfile.isPremium} {...sharedScreenProps} />;
+          return <SettingsScreen onBack={goBack} onNavigate={navigateTo} onLogout={handleLogout} isPremium={canAccessPremium} {...sharedScreenProps} />;
         case 'recipeDetail':
           return (
             <RecipeDetailScreen
@@ -630,7 +632,7 @@ const AppShell = () => {
             <SubscriptionScreen
               onBack={goBack}
               onUpgrade={handleUpgrade}
-              isPremium={cycleProfile.isPremium}
+              isPremium={canAccessPremium}
               activePlan={subscription?.plan_id || (subscription?.plan_type)}
               user={user}
             />
@@ -668,7 +670,7 @@ const AppShell = () => {
               onRefresh={refreshAdminData}
               isAdmin={isAdmin}
               user={user}
-              isPremium={cycleProfile.isPremium}
+              isPremium={canAccessPremium}
               onTogglePremium={handleUpgrade}
               showToast={showToast}
               getToken={getToken}
@@ -692,13 +694,17 @@ const AppShell = () => {
           return <KeyFoodsScreen onBack={goBack} {...sharedScreenProps} />;
         case 'shoppingList':
           return <ShoppingListScreen onBack={goBack} {...sharedScreenProps} />;
+        case 'aiChat':
+          return <AIChatScreen onBack={goBack} onNavigate={navigateTo} cycleInfo={cycleInfo} isPremium={canAccessPremium} />;
+        case 'aiPredictor':
+          return <AIPredictorScreen onBack={goBack} onNavigate={navigateTo} cycleInfo={cycleInfo} cycleProfile={cycleProfile} user={user} isPremium={canAccessPremium} />;
 
         default:
           return (
             <DashboardScreen 
               onNavigate={navigateTo} 
               cycleProfile={cycleProfile} 
-              isPremium={cycleProfile.isPremium}
+              isPremium={canAccessPremium}
               {...sharedScreenProps} 
             />
           );
@@ -711,7 +717,7 @@ const AppShell = () => {
           <DashboardScreen 
              onNavigate={navigateTo} 
              cycleProfile={cycleProfile} 
-             isPremium={cycleProfile.isPremium}
+             isPremium={canAccessPremium}
              {...sharedScreenProps} 
           />
         );
@@ -742,7 +748,7 @@ const AppShell = () => {
       case 'profile':
         return <SettingsScreen onBack={() => setActiveTab('today')} onNavigate={navigateTo} onLogout={handleLogout} {...sharedScreenProps} />;
       default:
-        return <DashboardScreen onNavigate={navigateTo} {...sharedScreenProps} />;
+        return <DashboardScreen onNavigate={navigateTo} isPremium={canAccessPremium} {...sharedScreenProps} />;
     }
   };
 

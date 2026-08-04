@@ -7,8 +7,7 @@ const AnimatedRect    = Animated.createAnimatedComponent(Rect);
 const AnimatedPath    = Animated.createAnimatedComponent(Path);
 const AnimatedLine    = Animated.createAnimatedComponent(Line);
 const AnimatedCircle  = Animated.createAnimatedComponent(Circle);
-const AnimatedSvgText = Animated.createAnimatedComponent(SvgText);
-import { Play, Heart, ChevronRight } from 'lucide-react-native';
+import { Play, Heart, ChevronRight, Crown, Sparkles, BrainCircuit } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
@@ -37,6 +36,7 @@ export const DashboardScreen = ({
   cycleInfo,
   cycleProfile,
   videos = [],
+  isPremium = false,
 }) => {
   const { t } = useTranslation();
   const phaseKey = currentPhaseKey || 'follicular';
@@ -365,7 +365,27 @@ export const DashboardScreen = ({
         </Pressable>
       </Animated.View>
 
-      <View style={{ marginBottom: 36 }} />
+      <View style={{ marginBottom: 24 }} />
+
+      {/* AI shortcuts row */}
+      <View style={styles.aiShortcutRow}>
+        <Pressable style={styles.aiShortcutCard} onPress={() => onNavigate('aiChat')}>
+          <View style={[styles.aiShortcutIcon, { backgroundColor: '#EEE8FA' }]}>
+            <Sparkles size={20} color="#8B5CF6" />
+          </View>
+          <Text style={styles.aiShortcutLabel}>{t('dashboard.ai_chat_shortcut', { defaultValue: 'NutriCycle AI' })}</Text>
+          <ChevronRight size={14} color={colors.on_surface_variant} style={{ opacity: 0.4 }} />
+        </Pressable>
+        <Pressable style={styles.aiShortcutCard} onPress={() => onNavigate('aiPredictor')}>
+          <View style={[styles.aiShortcutIcon, { backgroundColor: '#E8F4EA' }]}>
+            <BrainCircuit size={20} color="#4B8C52" />
+          </View>
+          <Text style={styles.aiShortcutLabel}>{t('dashboard.ai_predictor_shortcut', { defaultValue: 'Predictor IA' })}</Text>
+          <ChevronRight size={14} color={colors.on_surface_variant} style={{ opacity: 0.4 }} />
+        </Pressable>
+      </View>
+
+      <View style={{ marginBottom: 28 }} />
 
       {/* 6. Key Foods for Your Phase */}
       <View style={styles.keyFoodsSection}>
@@ -425,52 +445,79 @@ export const DashboardScreen = ({
 
       <View style={{ marginBottom: 36 }} />
 
-      {/* 7. Today's Meals — 4 meal slots */}
+      {/* 7. Today's Meals — 4 meal slots (premium gated) */}
       <View style={styles.suggestedSection}>
         <Text style={styles.suggestedTitle}>{t('dashboard.featured_video')}</Text>
-        {(() => {
-          const d = new Date().getDay();
-          const todayIndex = d === 0 ? 6 : d - 1;
-          const SLOT_OFFSETS = { breakfast: 0, lunch: 3, snack: 5, dinner: 2 };
-          return ['breakfast', 'lunch', 'snack', 'dinner'].map((mealType, i) => {
-          const phasePool = videos.filter(v => v.phaseKey === phaseKey && v.mealType === mealType);
-          const fallbackPool = videos.filter(v => v.mealType === mealType);
-          const pool = phasePool.length ? phasePool : fallbackPool;
-          const video = pool.length
-            ? pool[(todayIndex + (SLOT_OFFSETS[mealType] || 0)) % pool.length]
-            : null;
-          const timeLabel = t(`nutrition.meal_times.${mealType}`, { defaultValue: mealType });
-          const mealLabel = t(`nutrition.meal_slots.${mealType}`, { defaultValue: mealType }).toUpperCase();
-          return (
-            <Animated.View key={mealType} style={{ opacity: mealCardAnims[i].opacity, transform: [{ translateX: mealCardAnims[i].translateX }] }}>
-            <Pressable style={styles.mealSlotCard} onPress={() => video ? onNavigate('videoDetail', video) : onNavigate('videos')}>
-              {video?.thumbnail ? (
-                <View style={styles.mealSlotThumb}>
-                  <Image source={{ uri: video.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                  <View style={styles.mealSlotPlayOverlay}>
-                    <Play size={14} color="#FFFFFF" fill="#FFFFFF" />
-                  </View>
+
+        {!isPremium ? (
+          <View style={styles.premiumLockContainer}>
+            {/* Ghost skeleton cards shown blurred behind the overlay */}
+            {[0, 1, 2].map(i => (
+              <View key={i} style={[styles.mealSlotCard, { marginBottom: 10, opacity: 0.15 }]}>
+                <View style={[styles.mealSlotThumb, { backgroundColor: '#968DA1' }]} />
+                <View style={styles.mealSlotInfo}>
+                  <View style={{ height: 8, width: '40%', backgroundColor: '#C8C4D0', borderRadius: 4, marginBottom: 6 }} />
+                  <View style={{ height: 13, width: '72%', backgroundColor: '#C8C4D0', borderRadius: 4, marginBottom: 6 }} />
+                  <View style={{ height: 8, width: '28%', backgroundColor: '#C8C4D0', borderRadius: 4 }} />
                 </View>
-              ) : (
-                <View style={[styles.mealSlotThumb, styles.mealSlotThumbEmpty]}>
-                  <Play size={14} color={colors.on_surface_variant} style={{ opacity: 0.3 }} />
-                </View>
-              )}
-              <View style={styles.mealSlotInfo}>
-                <Text style={styles.mealSlotTime}>{timeLabel}</Text>
-                <Text style={styles.mealSlotName} numberOfLines={2}>
-                  {video ? video.title : t('nutrition.empty_meal', { defaultValue: 'Sin video planificado' })}
-                </Text>
-                <Text style={styles.mealSlotType}>{mealLabel}</Text>
               </View>
-              {video?.duration && (
-                <Text style={styles.mealSlotDuration}>{video.duration}</Text>
-              )}
-            </Pressable>
-            </Animated.View>
-          );
-        });
-        })()}
+            ))}
+            <View style={styles.premiumOverlay}>
+              <View style={styles.premiumIconCircle}>
+                <Crown size={26} color="#FFF" fill="#FFF" />
+              </View>
+              <Text style={styles.premiumLockTitle}>{t('dashboard.meals_premium_title', { defaultValue: 'Plan de comidas Premium' })}</Text>
+              <Text style={styles.premiumLockSub}>{t('dashboard.meals_premium_sub', { defaultValue: 'Accede a tu plan diario personalizado según tu fase hormonal' })}</Text>
+              <Pressable style={styles.premiumLockBtn} onPress={() => onNavigate('subscription')}>
+                <Text style={styles.premiumLockBtnText}>{t('dashboard.meals_premium_cta', { defaultValue: 'HAZTE PREMIUM' })}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          (() => {
+            const d = new Date().getDay();
+            const todayIndex = d === 0 ? 6 : d - 1;
+            const SLOT_OFFSETS = { breakfast: 0, lunch: 3, snack: 5, dinner: 2 };
+            return ['breakfast', 'lunch', 'snack', 'dinner'].map((mealType, i) => {
+              const phasePool = videos.filter(v => v.phaseKey === phaseKey && v.mealType === mealType);
+              const fallbackPool = videos.filter(v => v.mealType === mealType);
+              const pool = phasePool.length ? phasePool : fallbackPool;
+              const video = pool.length
+                ? pool[(todayIndex + (SLOT_OFFSETS[mealType] || 0)) % pool.length]
+                : null;
+              const timeLabel = t(`nutrition.meal_times.${mealType}`, { defaultValue: mealType });
+              const mealLabel = t(`nutrition.meal_slots.${mealType}`, { defaultValue: mealType }).toUpperCase();
+              return (
+                <Animated.View key={mealType} style={{ opacity: mealCardAnims[i].opacity, transform: [{ translateX: mealCardAnims[i].translateX }] }}>
+                  <Pressable style={styles.mealSlotCard} onPress={() => video ? onNavigate('videoDetail', video) : onNavigate('videos')}>
+                    {video?.thumbnail ? (
+                      <View style={styles.mealSlotThumb}>
+                        <Image source={{ uri: video.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                        <View style={styles.mealSlotPlayOverlay}>
+                          <Play size={14} color="#FFFFFF" fill="#FFFFFF" />
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={[styles.mealSlotThumb, styles.mealSlotThumbEmpty]}>
+                        <Play size={14} color={colors.on_surface_variant} style={{ opacity: 0.3 }} />
+                      </View>
+                    )}
+                    <View style={styles.mealSlotInfo}>
+                      <Text style={styles.mealSlotTime}>{timeLabel}</Text>
+                      <Text style={styles.mealSlotName} numberOfLines={2}>
+                        {video ? video.title : t('nutrition.empty_meal', { defaultValue: 'Sin video planificado' })}
+                      </Text>
+                      <Text style={styles.mealSlotType}>{mealLabel}</Text>
+                    </View>
+                    {video?.duration && (
+                      <Text style={styles.mealSlotDuration}>{video.duration}</Text>
+                    )}
+                  </Pressable>
+                </Animated.View>
+              );
+            });
+          })()
+        )}
       </View>
 
       <View style={{ height: 24 }} />
@@ -905,5 +952,90 @@ const styles = StyleSheet.create({
     color: colors.on_surface_variant,
     opacity: 0.7,
     paddingRight: 14,
+  },
+  premiumLockContainer: {
+    position: 'relative',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  premiumOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(249,249,242,0.93)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 28,
+    gap: 10,
+  },
+  premiumIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#968DA1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  premiumLockTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 20,
+    color: colors.on_surface,
+    textAlign: 'center',
+  },
+  premiumLockSub: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 13,
+    color: colors.on_surface_variant,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  premiumLockBtn: {
+    backgroundColor: '#968DA1',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    marginTop: 6,
+  },
+  premiumLockBtnText: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 12,
+    color: '#FFF',
+    letterSpacing: 1,
+  },
+  aiShortcutRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  aiShortcutCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    shadowColor: '#4A4453',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  aiShortcutIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiShortcutLabel: {
+    flex: 1,
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 12,
+    color: colors.on_surface,
   },
 });

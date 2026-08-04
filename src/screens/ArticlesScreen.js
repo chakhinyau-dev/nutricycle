@@ -1,16 +1,40 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, Image, Share } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
 import { ChevronLeft, Clock, Bookmark, Share2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ARTICLE_LIBRARY } from '../utils/articleData';
 import { translateContent } from '../services/translationService';
 
-export const ArticlesScreen = ({ onBack, articles = ARTICLE_LIBRARY }) => {
+export const ArticlesScreen = ({ onBack, articles = ARTICLE_LIBRARY, user }) => {
   const { t, i18n } = useTranslation();
   const [displayArticles, setDisplayArticles] = useState(articles);
+  const [savedIds, setSavedIds] = useState([]);
   const translationRunId = useRef(0);
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
+
+  const storageKey = `@nutricycle_saved_articles_${user?.id || 'guest'}`;
+
+  useEffect(() => {
+    AsyncStorage.getItem(storageKey).then(raw => {
+      if (raw) setSavedIds(JSON.parse(raw));
+    });
+  }, [storageKey]);
+
+  const handleBookmark = async (articleId) => {
+    const next = savedIds.includes(String(articleId))
+      ? savedIds.filter(id => id !== String(articleId))
+      : [...savedIds, String(articleId)];
+    setSavedIds(next);
+    await AsyncStorage.setItem(storageKey, JSON.stringify(next));
+  };
+
+  const handleShare = async (article) => {
+    try {
+      await Share.share({ message: `${t('common.check_this')}: ${article.title}` });
+    } catch (_) {}
+  };
 
   useEffect(() => {
     const runId = ++translationRunId.current;
@@ -55,8 +79,12 @@ export const ArticlesScreen = ({ onBack, articles = ARTICLE_LIBRARY }) => {
                 <View style={styles.tag}>
                   <Text style={styles.tagText}>{article.tag}</Text>
                 </View>
-                <Pressable>
-                  <Bookmark size={16} color={colors.on_surface_variant} />
+                <Pressable onPress={() => handleBookmark(article.id)} hitSlop={8}>
+                  <Bookmark
+                    size={16}
+                    color={savedIds.includes(String(article.id)) ? colors.primary : colors.on_surface_variant}
+                    fill={savedIds.includes(String(article.id)) ? colors.primary : 'none'}
+                  />
                 </Pressable>
               </View>
               <Text style={styles.articleTitle}>{article.title}</Text>
@@ -68,7 +96,7 @@ export const ArticlesScreen = ({ onBack, articles = ARTICLE_LIBRARY }) => {
                   <Clock size={14} color={colors.on_surface_variant} />
                   <Text style={styles.timeText}>{article.time}</Text>
                 </View>
-                <Pressable>
+                <Pressable onPress={() => handleShare(article)} hitSlop={8}>
                   <Share2 size={16} color={colors.primary} />
                 </Pressable>
               </View>

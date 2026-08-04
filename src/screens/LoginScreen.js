@@ -125,7 +125,7 @@ export const LoginScreen = ({ onDemoLogin }) => {
           // If the status is not complete, it might be because verification is needed
           // even during sign-in (e.g., if signup was abandoned)
           console.log('Incomplete sign-in:', result.status);
-          setErrorMessage(`SignIn incomplete: ${result.status}. If you haven't verified your email yet, please try the Sign Up flow.`);
+          setErrorMessage(t('auth.signin_incomplete', { status: result.status, defaultValue: `Inicio de sesión incompleto (${result.status}). Si aún no verificaste tu email, intenta registrarte nuevamente.` }));
         }
       } else if (!needsVerification) {
         // First step of Sign Up: Create account
@@ -153,7 +153,7 @@ export const LoginScreen = ({ onDemoLogin }) => {
         if (result.status === 'complete') {
           await setSignUpActive({ session: result.createdSessionId });
         } else {
-          setErrorMessage(`Verification incomplete: ${result.status}`);
+          setErrorMessage(t('auth.verification_incomplete', { status: result.status, defaultValue: `Verificación incompleta (${result.status}). Por favor intenta de nuevo.` }));
         }
       }
     } catch (error) {
@@ -164,7 +164,7 @@ export const LoginScreen = ({ onDemoLogin }) => {
       // If the error says the user already exists during signup, 
       // it might be because they need to verify an existing account.
       if (!isLogin && !needsVerification && formattedError.toLowerCase().includes('already exists')) {
-        setErrorMessage('This account already exists. Please Sign In instead or use Google Login.');
+        setErrorMessage(t('auth.account_already_exists', { defaultValue: 'Esta cuenta ya existe. Por favor inicia sesión o usa Google.' }));
       }
     } finally {
       setIsSubmitting(false);
@@ -178,7 +178,7 @@ export const LoginScreen = ({ onDemoLogin }) => {
       await signUp.prepareEmailAddressVerification({
         strategy: 'email_code',
       });
-      setErrorMessage('Verification code resent to your email.');
+      setErrorMessage(t('auth.resend_code_sent', { defaultValue: 'Código de verificación reenviado a tu email.' }));
     } catch (error) {
       setErrorMessage(formatClerkError(error, t));
     } finally {

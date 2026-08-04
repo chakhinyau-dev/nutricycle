@@ -234,7 +234,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
         <View style={styles.headerMeta}>
           {cycleInfo?.cycleDay != null && (
             <Text style={styles.cycleDayText}>
-              {t('common.day')} {cycleInfo.cycleDay} del ciclo
+              {t('dashboard.cycle_day', { day: cycleInfo.cycleDay, defaultValue: `Day ${cycleInfo.cycleDay} of your cycle` })}
             </Text>
           )}
           {cycleInfo?.currentPhaseKey && (
