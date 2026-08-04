@@ -945,6 +945,7 @@ export const AdminScreen = ({
                   { id: 'fats',       label: t('admin.cat_fats',       { defaultValue: 'Grasas' }) },
                   { id: 'carbs',      label: t('admin.cat_carbs',      { defaultValue: 'Carbos' }) },
                   { id: 'veg_fruits', label: t('admin.cat_veg_fruits', { defaultValue: 'Veg/Fruta' }) },
+                  { id: 'herbs',      label: t('admin.cat_herbs',      { defaultValue: 'Hierbas' }) },
                 ].map(c => (
                   <Pressable
                     key={c.id}
