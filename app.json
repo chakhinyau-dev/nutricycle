@@ -19,7 +19,8 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "appleTeamId": "FJ8T8R2YM5"
     },
     "android": {
       "adaptiveIcon": {
