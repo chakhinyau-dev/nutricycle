@@ -30,9 +30,27 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
   const [annualPkg, setAnnualPkg] = useState(null);
   const [pricingLoading, setPricingLoading] = useState(true);
 
+  const monthlyPkgRef = useRef(null);
+  const annualPkgRef  = useRef(null);
+
   const defaultPricing = {
     annual:  { priceString: '$84.99', period: 'year' },
     monthly: { priceString: '$14.99', period: 'month' },
+  };
+
+  const fetchPackages = async () => {
+    const offering = await getOfferings();
+    if (!offering) return { mPkg: null, aPkg: null };
+    const pkgs = offering.availablePackages || [];
+    const mPkg = pkgs.find(p =>
+      p.packageType === 'MONTHLY' ||
+      p.product?.productIdentifier?.includes('monthly')
+    ) || null;
+    const aPkg = pkgs.find(p =>
+      p.packageType === 'ANNUAL' ||
+      p.product?.productIdentifier?.includes('annual')
+    ) || null;
+    return { mPkg, aPkg };
   };
 
   useEffect(() => {
@@ -40,19 +58,10 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
     const loadOfferings = async () => {
       if (Platform.OS === 'web') { setPricingLoading(false); return; }
       try {
-        const offering = await getOfferings();
-        if (!isActive || !offering) return;
-        const pkgs = offering.availablePackages || [];
-        const mPkg = pkgs.find(p =>
-          p.packageType === 'MONTHLY' ||
-          p.product?.productIdentifier?.includes('monthly')
-        );
-        const aPkg = pkgs.find(p =>
-          p.packageType === 'ANNUAL' ||
-          p.product?.productIdentifier?.includes('annual')
-        );
-        if (mPkg) setMonthlyPkg(mPkg);
-        if (aPkg) setAnnualPkg(aPkg);
+        const { mPkg, aPkg } = await fetchPackages();
+        if (!isActive) return;
+        if (mPkg) { setMonthlyPkg(mPkg); monthlyPkgRef.current = mPkg; }
+        if (aPkg) { setAnnualPkg(aPkg);  annualPkgRef.current  = aPkg; }
       } catch (e) {
         console.warn('[RC] Could not load offerings:', e?.message);
       } finally {
@@ -120,7 +129,19 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
   const handleCheckout = async () => {
     setIsProcessing(true);
     try {
-      const pkg = selectedPlan === 'annual' ? annualPkg : monthlyPkg;
+      let pkg = selectedPlan === 'annual'
+        ? (annualPkgRef.current  || annualPkg)
+        : (monthlyPkgRef.current || monthlyPkg);
+
+      if (!pkg) {
+        // RC may not have been configured when the screen first mounted — retry once
+        console.log('[RC] Package not cached, retrying offerings fetch...');
+        const { mPkg, aPkg } = await fetchPackages();
+        if (mPkg) { setMonthlyPkg(mPkg); monthlyPkgRef.current = mPkg; }
+        if (aPkg) { setAnnualPkg(aPkg);  annualPkgRef.current  = aPkg; }
+        pkg = selectedPlan === 'annual' ? aPkg : mPkg;
+      }
+
       if (!pkg) throw new Error('Producto no disponible. Intenta de nuevo.');
 
       const customerInfo = await purchasePackage(pkg);

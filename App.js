@@ -245,7 +245,7 @@ const AppShell = () => {
       }
 
       // Initialize RevenueCat with the current user ID
-      configureRevenueCat(user.id);
+      await configureRevenueCat(user.id);
 
       // Demo mode: skip all Supabase calls and use a pre-filled profile
       if (isDemoMode) {
