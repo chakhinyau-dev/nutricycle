@@ -529,6 +529,7 @@
     "delete_error": "Error al eliminar",
     "save_error": "Error al guardar",
     "database_error": "Error al conectar con la base de datos.",
+    "save_denied": "No se pudo guardar. Verifica tu conexión, o que tu cuenta tenga el rol de administrador en Clerk.",
     "confirm_delete_video": "Eliminar este video?",
     "confirm_delete_recipe": "Eliminar esta receta?",
     "video_too_large_title": "Video demasiado grande",
@@ -578,7 +579,9 @@
     "cat_fats": "Grasas",
     "cat_carbs": "Carbos",
     "cat_veg_fruits": "Veg/Fruta",
-    "cat_herbs": "Hierbas",
+    "cat_grains": "Granos",
+    "cat_extras": "Extras",
+    "cat_herbs": "Hierbas & Adaptógenos",
     "hormone_benefit": "Beneficio hormonal",
     "tag_estrogen": "Estrógeno",
     "tag_progesterone": "Progesterona",
@@ -779,7 +782,10 @@
       "proteins": "Proteínas",
       "fats": "Grasas",
       "carbs": "Carbohidratos",
-      "veg_fruits": "Vegetales y Frutas"
+      "veg_fruits": "Vegetales y Frutas",
+      "grains": "Granos",
+      "extras": "Extras",
+      "herbs": "Hierbas & Adaptógenos"
     },
     "items": {
       "lentejas": { "name": "Lentejas", "benefit": "Ricas en hierro no hemo para compensar la pérdida de sangre y zinc para apoyar el sistema inmunitario." },

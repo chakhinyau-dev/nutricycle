@@ -68,6 +68,9 @@ const CATEGORY_COLORS = {
   fats:       '#D4A853',
   carbs:      '#B0A0D4',
   veg_fruits: '#94C49A',
+  grains:     '#C4A572',
+  extras:     '#ADB5BD',
+  herbs:      '#9CAF88',
 };
 
 export const NutritionScreen = ({

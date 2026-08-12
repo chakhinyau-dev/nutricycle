@@ -248,6 +248,12 @@ export const AdminScreen = ({
         if (showToast) showToast(editingFoodId ? t('admin.food_updated', { defaultValue: 'Alimento actualizado' }) : t('admin.food_saved', { defaultValue: 'Alimento guardado' }));
         resetFoodForm();
         if (onRefresh) onRefresh();
+      } else {
+        // Same gap as Videos/Recipes — saveKeyFood() returns null rather than
+        // throwing on a database error, so a rejected write previously showed
+        // nothing at all (this was on top of the image-upload-specific fix
+        // above, which only covered the upload step, not the actual save).
+        throw new Error(t('admin.save_denied'));
       }
     } catch (err) {
       if (showToast) showToast(err.message || t('admin.food_save_error', { defaultValue: 'Error al guardar' }), 'error');
@@ -457,6 +463,11 @@ export const AdminScreen = ({
         if (showToast) showToast(editingVideoId ? t('admin.video_updated') : t('admin.video_saved'));
         resetVideoForm();
         if (onRefresh) onRefresh();
+      } else {
+        // saveVideo() returns null (rather than throwing) on a database error —
+        // e.g. an RLS write rejection — so without this, a failed save showed
+        // absolutely nothing: no success toast, no error, just silence.
+        throw new Error(t('admin.save_denied'));
       }
     } catch (err) {
       console.error('[Admin Save Video Error]:', err);
@@ -586,6 +597,11 @@ export const AdminScreen = ({
         if (showToast) showToast(editingRecipeId ? t('admin.recipe_updated') : t('admin.recipe_saved'));
         resetRecipeForm();
         if (onRefresh) onRefresh();
+      } else {
+        // Same silent-failure gap as Videos/Key Foods — saveRecipe() returns
+        // null rather than throwing, so a rejected write (e.g. RLS) previously
+        // showed nothing at all.
+        throw new Error(t('admin.save_denied'));
       }
     } catch (err) {
       console.error('[Admin Save Recipe Error]:', err);
@@ -1015,7 +1031,9 @@ export const AdminScreen = ({
                   { id: 'fats',       label: t('admin.cat_fats',       { defaultValue: 'Grasas' }) },
                   { id: 'carbs',      label: t('admin.cat_carbs',      { defaultValue: 'Carbos' }) },
                   { id: 'veg_fruits', label: t('admin.cat_veg_fruits', { defaultValue: 'Veg/Fruta' }) },
-                  { id: 'herbs',      label: t('admin.cat_herbs',      { defaultValue: 'Hierbas' }) },
+                  { id: 'grains',     label: t('admin.cat_grains',     { defaultValue: 'Granos' }) },
+                  { id: 'extras',     label: t('admin.cat_extras',     { defaultValue: 'Extras' }) },
+                  { id: 'herbs',      label: t('admin.cat_herbs',      { defaultValue: 'Hierbas & Adaptógenos' }) },
                 ].map(c => (
                   <Pressable
                     key={c.id}

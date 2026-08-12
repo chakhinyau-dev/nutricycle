@@ -27,6 +27,9 @@ const CATEGORY_COLORS = {
   fats: '#C9A84C',
   carbs: '#9B8EC0',
   veg_fruits: '#7BAE8A',
+  grains: '#B8935A',
+  extras: '#9CA3AF',
+  herbs: '#8FA876',
 };
 
 const PHASE_COLORS = {

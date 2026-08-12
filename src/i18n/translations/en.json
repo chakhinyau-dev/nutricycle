@@ -514,6 +514,7 @@
     "delete_error": "Error while deleting",
     "save_error": "Error while saving",
     "database_error": "Error connecting to the database.",
+    "save_denied": "Couldn't save. Check your connection, or that your account has the admin role set in Clerk.",
     "confirm_delete_video": "Delete this video?",
     "confirm_delete_recipe": "Delete this recipe?",
     "video_too_large_title": "Video too large",
@@ -566,7 +567,9 @@
     "cat_fats": "Fats",
     "cat_carbs": "Carbs",
     "cat_veg_fruits": "Veg/Fruit",
-    "cat_herbs": "Herbs",
+    "cat_grains": "Grains",
+    "cat_extras": "Extras",
+    "cat_herbs": "Herbs & Adaptogens",
     "hormone_benefit": "Hormonal benefit",
     "tag_estrogen": "Estrogen",
     "tag_progesterone": "Progesterone",
@@ -784,7 +787,10 @@
       "proteins": "Proteins",
       "fats": "Healthy Fats",
       "carbs": "Complex Carbs",
-      "veg_fruits": "Vegetables & Fruits"
+      "veg_fruits": "Vegetables & Fruits",
+      "grains": "Grains",
+      "extras": "Extras",
+      "herbs": "Herbs & Adaptogens"
     },
     "items": {
       "lentejas": { "name": "Lentils", "benefit": "Rich in non-heme iron to offset blood loss and zinc to support the immune system." },
