@@ -14,7 +14,15 @@ export const deleteUserAccountData = async (getToken, clerkUserId) => {
     return { success: false };
   }
 
-  const tables = ['daily_logs', 'saved_recipes', 'subscriptions', 'profiles'];
+  const tables = [
+    'daily_logs',
+    'saved_recipes',
+    'hydration_logs',
+    'shopping_list_state',
+    'shopping_list_custom_items',
+    'subscriptions',
+    'profiles',
+  ];
 
   const results = await Promise.all(
     tables.map(async (table) => {

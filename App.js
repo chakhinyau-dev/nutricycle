@@ -476,26 +476,39 @@ const AppShell = () => {
       isPremium: true,
     };
 
-    await persistProfile(newProfile);
-    
-    // Record in the subscriptions table
-    const recordedSub = await recordSubscription(getToken, user.id, {
-        status: upgradeData?.status || 'active',
-        plan_type: resolvedPlanType,
-        stripe_customer_id: typeof upgradeData === 'object' ? upgradeData?.stripeCustomerId || upgradeData?.customer || '' : '',
-        stripe_subscription_id: typeof upgradeData === 'object' ? upgradeData?.stripeSubscriptionId || upgradeData?.subscriptionId || '' : '',
-        current_period_end: currentPeriodEnd
-    });
+    // Callers (SubscriptionScreen's handleCheckout/handleRestore) await this
+    // function now, so errors here must be caught and surfaced — otherwise a
+    // failed write after a real purchase fails completely silently, and the
+    // caller's `finally` block still resets its loading state as if nothing
+    // went wrong.
+    try {
+      await persistProfile(newProfile);
 
-    if (recordedSub) {
-      setSubscription(recordedSub);
+      // Record in the subscriptions table
+      const recordedSub = await recordSubscription(getToken, user.id, {
+          status: upgradeData?.status || 'active',
+          plan_type: resolvedPlanType,
+          stripe_customer_id: typeof upgradeData === 'object' ? upgradeData?.stripeCustomerId || upgradeData?.customer || '' : '',
+          stripe_subscription_id: typeof upgradeData === 'object' ? upgradeData?.stripeSubscriptionId || upgradeData?.subscriptionId || '' : '',
+          current_period_end: currentPeriodEnd
+      });
+
+      if (recordedSub) {
+        setSubscription(recordedSub);
+      }
+
+      Alert.alert(
+        t('subscription.success_title'),
+        t('subscription.success_msg'),
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('[Upgrade] Failed to record subscription:', error);
+      Alert.alert(
+        t('settings.error'),
+        t('subscription.payment_session_error')
+      );
     }
-
-    Alert.alert(
-      t('subscription.success_title'), 
-      t('subscription.success_msg'),
-      [{ text: 'OK' }]
-    );
   };
 
   const handleToggleSavedRecipe = async (recipe) => {
@@ -627,10 +640,17 @@ const AppShell = () => {
     [recipes, savedRecipeIds]
   );
 
+  // When a `subscriptions` row exists, it's the freshest source of truth (it's what
+  // recordSubscription() just wrote, or what bootstrapUserData() just loaded) — use it
+  // directly rather than also requiring cycleProfile.isPremium to already agree, since
+  // those two values are written by separate network calls and can momentarily (or
+  // permanently, if one of the calls fails) disagree. When there's no subscription row
+  // at all — legacy accounts, or premium granted via the admin toggle — fall back to
+  // cycleProfile.isPremium instead of hard-locking the user out.
   const canAccessPremium = isAdmin || (
-    cycleProfile.isPremium &&
-    subscription !== null &&
-    (subscription?.is_active === true || subscription?.status === 'active' || subscription?.status === 'premium')
+    subscription
+      ? (subscription.is_active === true || subscription.status === 'active' || subscription.status === 'premium')
+      : cycleProfile.isPremium
   );
 
   const renderMainContent = () => {
@@ -638,7 +658,7 @@ const AppShell = () => {
       const topScreen = screenStack[screenStack.length - 1];
       switch (topScreen) {
         case 'hydration':
-          return <HydrationScreen onBack={goBack} />;
+          return <HydrationScreen onBack={goBack} user={user} getToken={getToken} />;
         case 'wellness':
           return <WellnessScreen onBack={goBack} />;
         case 'articles':
@@ -730,7 +750,7 @@ const AppShell = () => {
         case 'keyFoods':
           return <KeyFoodsScreen onBack={goBack} {...sharedScreenProps} />;
         case 'shoppingList':
-          return <ShoppingListScreen onBack={goBack} {...sharedScreenProps} />;
+          return <ShoppingListScreen onBack={goBack} getToken={getToken} {...sharedScreenProps} />;
         case 'aiChat':
           return <AIChatScreen onBack={goBack} onNavigate={navigateTo} cycleInfo={cycleInfo} isPremium={canAccessPremium} />;
         case 'aiPredictor':

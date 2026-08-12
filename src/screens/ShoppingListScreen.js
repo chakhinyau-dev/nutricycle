@@ -13,6 +13,14 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
+import {
+  loadShoppingListState,
+  saveShoppingListState,
+  loadCustomItems,
+  addCustomItem,
+  removeCustomItemRemote,
+  clearShoppingListRemote,
+} from '../services/shoppingListService';
 
 const CATEGORY_COLORS = {
   proteins: '#C97C7C',
@@ -28,7 +36,7 @@ const PHASE_COLORS = {
   luteal: '#C8BCE0',
 };
 
-export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', user, recipes = [] }) => {
+export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', user, recipes = [], getToken }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
   const phaseKey = currentPhaseKey || 'follicular';
@@ -44,12 +52,28 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
 
   useEffect(() => {
     const load = async () => {
+      // AsyncStorage first — fast, always available, works offline.
       try {
         const savedChecks = await AsyncStorage.getItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`);
         if (savedChecks) setCheckedItems(JSON.parse(savedChecks));
         const savedCustoms = await AsyncStorage.getItem(`@nutricycle_custom_items_${userId}`);
         if (savedCustoms) setCustomItems(JSON.parse(savedCustoms));
       } catch (e) {}
+
+      // Then Supabase, if reachable — authoritative once loaded, so it
+      // overwrites the local cache (keeps devices in sync with each other).
+      const [remoteChecked, remoteCustoms] = await Promise.all([
+        loadShoppingListState(getToken, userId, phaseKey),
+        loadCustomItems(getToken, userId),
+      ]);
+      if (remoteChecked) {
+        setCheckedItems(remoteChecked);
+        AsyncStorage.setItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`, JSON.stringify(remoteChecked)).catch(() => {});
+      }
+      if (remoteCustoms) {
+        setCustomItems(remoteCustoms.map(item => ({ id: item.id, name: item.name })));
+        AsyncStorage.setItem(`@nutricycle_custom_items_${userId}`, JSON.stringify(remoteCustoms)).catch(() => {});
+      }
     };
     load();
   }, [userId, phaseKey]);
@@ -60,6 +84,7 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
     try {
       await AsyncStorage.setItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`, JSON.stringify(updated));
     } catch (e) {}
+    saveShoppingListState(getToken, userId, phaseKey, updated);
   };
 
   const toggleRecipe = (id) => {
@@ -67,14 +92,26 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
   };
 
   const handleAddCustomItem = async () => {
-    if (!newCustomItem.trim()) return;
-    const item = { id: Date.now().toString(), name: newCustomItem.trim() };
+    const name = newCustomItem.trim();
+    if (!name) return;
+    const tempId = `local_${Date.now()}`;
+    const item = { id: tempId, name };
     const updated = [...customItems, item];
     setCustomItems(updated);
     setNewCustomItem('');
     try {
       await AsyncStorage.setItem(`@nutricycle_custom_items_${userId}`, JSON.stringify(updated));
     } catch (e) {}
+
+    // Reconcile the temp local id with the real one once Supabase confirms it.
+    const saved = await addCustomItem(getToken, userId, name);
+    if (saved) {
+      setCustomItems(current => {
+        const reconciled = current.map(i => (i.id === tempId ? { id: saved.id, name: saved.name } : i));
+        AsyncStorage.setItem(`@nutricycle_custom_items_${userId}`, JSON.stringify(reconciled)).catch(() => {});
+        return reconciled;
+      });
+    }
   };
 
   const removeCustomItem = async (id) => {
@@ -83,6 +120,9 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
     try {
       await AsyncStorage.setItem(`@nutricycle_custom_items_${userId}`, JSON.stringify(updated));
     } catch (e) {}
+    // No-ops harmlessly if `id` is still a local-only temp id that never
+    // finished syncing — nothing with that id exists remotely yet either way.
+    removeCustomItemRemote(getToken, userId, id);
   };
 
   const handleClearList = () => {
@@ -102,6 +142,7 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
               await AsyncStorage.removeItem(`@nutricycle_checked_v2_${userId}_${phaseKey}`);
               await AsyncStorage.removeItem(`@nutricycle_custom_items_${userId}`);
             } catch (e) {}
+            clearShoppingListRemote(getToken, userId, phaseKey);
           }
         }
       ]

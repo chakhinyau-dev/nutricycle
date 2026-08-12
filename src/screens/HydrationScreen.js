@@ -1,40 +1,103 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Pressable, 
-  ScrollView, 
-  Dimensions 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  ScrollView,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-import { 
-  ChevronLeft, 
-  Droplets, 
-  Plus, 
-  Minus, 
-  Zap, 
-  Waves, 
+import {
+  ChevronLeft,
+  Droplets,
+  Plus,
+  Minus,
+  Zap,
+  Waves,
   CircleHelp,
   GlassWater,
   CupSoda,
   Beer
 } from 'lucide-react-native';
+import { loadTodayHydration, saveHydration } from '../services/hydrationService';
 
 const { width } = Dimensions.get('window');
 
-export const HydrationScreen = ({ onBack }) => {
+// How long to wait after the last change before writing to Supabase — the
+// +/- stepper can fire many times in quick succession, so this avoids a
+// network write per tap.
+const SAVE_DEBOUNCE_MS = 800;
+
+export const HydrationScreen = ({ onBack, user, getToken }) => {
   const { t } = useTranslation();
-  const [amount, setAmount] = useState(1250);
-  const goal = 2500;
-  const progress = (amount / goal) * 100;
+  const [amount, setAmount] = useState(0);
+  const [goal, setGoal] = useState(2500);
+  const [isLoading, setIsLoading] = useState(true);
+  const entriesRef = useRef([]);
+  const saveTimerRef = useRef(null);
+  const hasLoadedRef = useRef(false);
+  const progress = goal > 0 ? (amount / goal) * 100 : 0;
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+      const today = await loadTodayHydration(getToken, user.id);
+      if (!isMounted) return;
+      if (today) {
+        setAmount(today.amount_ml || 0);
+        setGoal(today.goal_ml || 2500);
+        entriesRef.current = Array.isArray(today.entries) ? today.entries : [];
+      }
+      hasLoadedRef.current = true;
+      setIsLoading(false);
+    };
+    load();
+    return () => {
+      isMounted = false;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [user?.id]);
+
+  const persist = (nextAmount) => {
+    if (!user?.id || !hasLoadedRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveHydration(getToken, user.id, nextAmount, goal, entriesRef.current);
+    }, SAVE_DEBOUNCE_MS);
+  };
+
+  const addAmount = (delta, sourceLabel) => {
+    const next = Math.max(0, amount + delta);
+    setAmount(next);
+    if (sourceLabel) {
+      entriesRef.current = [
+        ...entriesRef.current,
+        { amount_ml: delta, source_label: sourceLabel, logged_at: new Date().toISOString() },
+      ];
+    }
+    persist(next);
+  };
 
   const quickAdds = [
     { id: 250, name: t('hydration.containers.glass'), size: '250ml', icon: <GlassWater size={20} color={colors.primary} /> },
     { id: 500, name: t('hydration.containers.bottle'), size: '500ml', icon: <CupSoda size={20} color={colors.primary} /> },
     { id: 1000, name: t('hydration.containers.thermos'), size: '1L', icon: <Droplets size={20} color={colors.primary} /> },
   ];
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView 
@@ -66,9 +129,9 @@ export const HydrationScreen = ({ onBack }) => {
         </View>
 
         <View style={styles.counterRow}>
-          <Pressable 
+          <Pressable
             style={styles.counterBtn}
-            onPress={() => setAmount(Math.max(0, amount - 50))}
+            onPress={() => addAmount(-50)}
           >
             <Minus size={24} color={colors.on_surface} />
           </Pressable>
@@ -76,9 +139,9 @@ export const HydrationScreen = ({ onBack }) => {
             <Text style={styles.mainAmount}>{amount / 1000}L</Text>
             <Text style={styles.amountLabel}>{t('hydration.total_consumption')}</Text>
           </View>
-          <Pressable 
+          <Pressable
             style={styles.counterBtn}
-            onPress={() => setAmount(amount + 50)}
+            onPress={() => addAmount(50)}
           >
             <Plus size={24} color={colors.on_surface} />
           </Pressable>
@@ -91,10 +154,10 @@ export const HydrationScreen = ({ onBack }) => {
 
       <View style={styles.quickAddGrid}>
         {quickAdds.map((item) => (
-          <Pressable 
-            key={item.id} 
+          <Pressable
+            key={item.id}
             style={styles.quickAddCard}
-            onPress={() => setAmount(amount + item.id)}
+            onPress={() => addAmount(item.id, item.name)}
           >
             <View style={styles.quickIconCircle}>
               {item.icon}
