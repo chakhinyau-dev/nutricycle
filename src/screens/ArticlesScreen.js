@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Image, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
-import { ChevronLeft, Clock, Bookmark, Share2 } from 'lucide-react-native';
+import { ChevronLeft, Clock, Bookmark, Share2, Info } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ARTICLE_LIBRARY } from '../utils/articleData';
 import { translateContent } from '../services/translationService';
@@ -67,6 +67,11 @@ export const ArticlesScreen = ({ onBack, articles = ARTICLE_LIBRARY, user }) => 
           <ChevronLeft size={24} color={colors.on_surface} />
         </Pressable>
         <Text style={styles.title}>{t('articles.title')}</Text>
+      </View>
+
+      <View style={styles.sourceNote}>
+        <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
+        <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
       </View>
 
       <View style={styles.featuredArea}>
@@ -149,6 +154,26 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: colors.on_surface,
     marginBottom: 20,
+  },
+  sourceNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F1F1E8',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 24,
+  },
+  sourceNoteText: {
+    flex: 1,
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.on_surface_variant,
+    opacity: 0.75,
   },
   articleCard: {
     backgroundColor: '#FFFFFF',

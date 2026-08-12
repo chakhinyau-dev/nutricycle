@@ -32,13 +32,14 @@ import {
   Info,
   Crown,
   Lock,
+  Trash2,
 } from 'lucide-react-native';
 
 import { colors } from '../theme/colors';
 
 const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200';
 
-export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhaseKey = 'follicular', cycleInfo, isAdmin, isPremium }) => {
+export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, isDeletingAccount, user, currentPhaseKey = 'follicular', cycleInfo, isAdmin, isPremium }) => {
   const { t, i18n } = useTranslation();
   const [notifs, setNotifs] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -167,6 +168,33 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
     } finally {
       setIsPasswordSaving(false);
     }
+  };
+
+  const handleDeleteAccountPress = () => {
+    if (isDeletingAccount) return;
+
+    Alert.alert(
+      t('settings.delete_account_title'),
+      t('settings.delete_account_warning'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.delete_account_confirm'),
+          style: 'destructive',
+          onPress: () => {
+            // Second, final confirmation — this action can't be undone.
+            Alert.alert(
+              t('settings.delete_account_title'),
+              t('settings.delete_account_final_warning'),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('settings.delete_account_confirm'), style: 'destructive', onPress: onDeleteAccount },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const SettingRow = ({ icon: Icon, title, sub, type = 'chevron', value, onValueChange, onPress }) => (
@@ -348,6 +376,22 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, user, currentPhas
           <Pressable style={styles.logoutRow} onPress={onLogout} hitSlop={10}>
             <LogOut size={20} color="#EB5757" />
             <Text style={styles.logoutRowText}>{t('settings.logout')}</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.deleteAccountRow}
+            onPress={handleDeleteAccountPress}
+            disabled={isDeletingAccount}
+            hitSlop={10}
+          >
+            {isDeletingAccount ? (
+              <ActivityIndicator size="small" color="#EB5757" />
+            ) : (
+              <>
+                <Trash2 size={14} color="#EB5757" />
+                <Text style={styles.deleteAccountText}>{t('settings.delete_account')}</Text>
+              </>
+            )}
           </Pressable>
         </View>
 
@@ -628,6 +672,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_700Bold',
     fontSize: 16,
     color: '#EB5757',
+  },
+  deleteAccountRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    height: 44,
+    marginTop: 12,
+  },
+  deleteAccountText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: '#EB5757',
+    opacity: 0.65,
   },
   passwordForm: {
     backgroundColor: '#FFFFFF',

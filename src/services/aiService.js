@@ -30,6 +30,10 @@ RULES:
 3. Keep responses concise and formatted for mobile (bullet points are good).
 4. Do not provide medical prescriptions, but suggest nutritional and lifestyle adjustments.
 5. In predictions, analyze patterns in their daily logs to suggest if their cycle might be shifting.
+6. Whenever you give a health, nutrition, or lifestyle recommendation, end your reply with a short
+   "Sources:" line (use "Fuentes:" if replying in Spanish) naming the type of evidence behind it —
+   e.g. recognized bodies such as ACOG, NIH, WHO, or Mayo Clinic, or "general nutritional science
+   consensus". Never invent a specific study, statistic, or citation you cannot verify.
 `;
 
 /** 
@@ -98,6 +102,9 @@ export const getCyclePredictionAI = async (profile, logs) => {
         Logs (Last 10 days): ${JSON.stringify(logs)}
 
         Provide a 3-sentence scientific prediction of when their next phase will start and what they should prepare for (nutrition/activity).
+        End with a short "Sources:" line naming the type of evidence behind the recommendation
+        (e.g. ACOG, NIH, WHO, Mayo Clinic, or general nutritional science consensus). Never invent
+        a specific study, statistic, or citation you cannot verify.
         Format: Return only the text.
       `;
 

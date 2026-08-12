@@ -25,6 +25,7 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, isPremium }) => {
       id: '1',
       role: 'model',
       text: t('chat.initial_greeting', { phase: cycleInfo?.currentPhaseKey || '' }),
+      isGreeting: true,
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -39,11 +40,17 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, isPremium }) => {
     setInputText('');
     setIsTyping(true);
 
-    // Prepare history for Gemini
-    const history = messages.map((m) => ({
-      role: m.role,
-      parts: [{ text: m.text }],
-    }));
+    // Prepare history for Gemini.
+    // The seeded greeting bubble is UI-only (role: 'model') and is never sent to
+    // Gemini — aiService already opens the chat with its own user/model turn pair,
+    // so including this greeting would put two 'model' turns back to back and Gemini
+    // rejects that with a 400 (roles must strictly alternate user/model).
+    const history = messages
+      .filter((m) => !m.isGreeting)
+      .map((m) => ({
+        role: m.role,
+        parts: [{ text: m.text }],
+      }));
 
     const responseText = await getGeminiChatResponse(history, inputText, {
       currentPhase: cycleInfo?.currentPhaseKey,

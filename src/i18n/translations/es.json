@@ -25,7 +25,8 @@
     "save_recipe": "Guardar Receta",
     "saved": "Guardada",
     "success": "Éxito",
-    "saved_success": "¡Receta guardada en tus favoritos!"
+    "saved_success": "¡Receta guardada en tus favoritos!",
+    "nutrition_source_note": "Basado en orientación general de nutrición y salud menstrual (ACOG, NIH, OMS, Mayo Clinic). No sustituye el consejo de tu propio profesional de la salud."
   },
   "nav": {
     "home": "Inicio",
@@ -105,7 +106,13 @@
     "profile_image_updated": "¡Foto de perfil actualizada con éxito!",
     "profile_image_error": "No se pudo actualizar la foto de perfil. Inténtalo de nuevo.",
     "export_desc": "Exportar Datos genera un informe detallado de tus registros de ciclo, síntomas y métricas de salud. Puedes usar este archivo para tus propios registros o compartirlo con tu profesional de la salud.",
-    "profile_connected": "{{title}} se conectará a tu gestión de perfil segura en la próxima actualización."
+    "profile_connected": "{{title}} se conectará a tu gestión de perfil segura en la próxima actualización.",
+    "delete_account": "Eliminar Cuenta",
+    "delete_account_title": "¿Eliminar tu cuenta?",
+    "delete_account_warning": "Esto elimina permanentemente tu cuenta de NutriCycle y todos los datos asociados: historial de ciclo, registros diarios, recetas guardadas y tu suscripción. Esta acción no se puede deshacer.",
+    "delete_account_final_warning": "¿Estás completamente segura? Una vez eliminada, tu cuenta y tus datos no se pueden recuperar.",
+    "delete_account_confirm": "Eliminar Cuenta",
+    "delete_account_error": "No pudimos eliminar tu cuenta. Verifica tu conexión e inténtalo de nuevo, o contáctanos en hola@nutricycle.com."
   },
   "dashboard": {
     "cycle_center": "TU CICLO EN EL CENTRO",
@@ -604,7 +611,9 @@
     "ai_failed": "Error al contactar con el motor de IA. Por favor inténtalo de nuevo.",
     "powered_by": "POTENCIADO POR GEMINI",
     "general_checkin": "Consulta general diaria",
-    "analysis_fallback": "Análisis Personalizado"
+    "analysis_fallback": "Análisis Personalizado",
+    "sources_label": "Fuentes:",
+    "default_source": "Orientación general de nutrición y salud menstrual (p. ej. ACOG, NIH, OMS)."
   },
   "wellness": {
     "title": "Bienestar\nsincronizado",

@@ -41,10 +41,13 @@ export const AIPredictorScreen = ({ onBack, cycleInfo, user, onNavigate, isPremi
       - Cycle Day: ${cycleInfo.cycleDay}
       - Symptoms mentioned in prompt: ${userPrompt}
       
-      Task: Provide a short, professional, and encouraging health prediction or recommendation for this specific cycle phase. 
-      Focus on nutrition, energy levels, and wellness. 
+      Task: Provide a short, professional, and encouraging health prediction or recommendation for this specific cycle phase.
+      Focus on nutrition, energy levels, and wellness.
       IMPORTANT: Respond in the following language: ${(i18n.resolvedLanguage || i18n.language || '').toLowerCase().startsWith('es') ? 'Spanish' : 'English'}.
-      Format the response in JSON: {"title": "Summary", "advice": "Main advice", "vitality": "Energy level 1-10"}.
+      Also include a short "source" field naming the type of evidence behind the advice (e.g. a
+      recognized body such as ACOG, NIH, WHO, or Mayo Clinic, or "general nutritional science
+      consensus"). Never invent a specific study, statistic, or citation you cannot verify.
+      Format the response in JSON: {"title": "Summary", "advice": "Main advice", "vitality": "Energy level 1-10", "source": "Brief attribution"}.
     `;
 
     const modelIds = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
@@ -60,8 +63,15 @@ export const AIPredictorScreen = ({ onBack, cycleInfo, user, onNavigate, isPremi
         
         if (text) {
           const jsonMatch = text.match(/\{.*\}/s);
-          const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { title: t('ai.analysis_fallback'), advice: text, vitality: '7' };
-          
+          const parsed = jsonMatch
+            ? JSON.parse(jsonMatch[0])
+            : { title: t('ai.analysis_fallback'), advice: text, vitality: '7' };
+
+          // The model doesn't always fill in every field — never show a blank source.
+          if (!parsed.source) {
+            parsed.source = t('ai.default_source');
+          }
+
           setPrediction(parsed);
           setLoading(false);
           return; // Success!
@@ -175,6 +185,10 @@ export const AIPredictorScreen = ({ onBack, cycleInfo, user, onNavigate, isPremi
                   <Zap size={16} color="#F59E0B" fill="#F59E0B" />
                   <Text style={styles.vitalityText}>{t('ai.vitality', { score: prediction.vitality })}</Text>
                </View>
+
+               {prediction.source ? (
+                 <Text style={styles.sourceText}>{t('ai.sources_label')} {prediction.source}</Text>
+               ) : null}
             </View>
           ) : null}
         </View>
@@ -338,6 +352,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_700Bold',
     fontSize: 13,
     color: '#F59E0B',
+  },
+  sourceText: {
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 11,
+    color: colors.on_surface_variant,
+    opacity: 0.7,
+    marginTop: 16,
+    fontStyle: 'italic',
   },
   inputContainer: {
     marginTop: 8,

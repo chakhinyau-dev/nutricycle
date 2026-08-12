@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Leaf, Plus, Check } from 'lucide-react-native';
+import { ChevronLeft, Leaf, Plus, Check, Info } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
@@ -91,6 +91,12 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
             </Pressable>
           ))}
         </ScrollView>
+
+        {/* Source / citation note for the hormone-benefit claims below */}
+        <View style={styles.sourceNote}>
+          <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
+          <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
+        </View>
 
         {/* Food categories */}
         {categories.length === 0 ? (
@@ -242,6 +248,26 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: '#FFFFFF',
+  },
+  sourceNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 24,
+  },
+  sourceNoteText: {
+    flex: 1,
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.on_surface_variant,
+    opacity: 0.75,
   },
   categorySection: {
     marginBottom: 28,

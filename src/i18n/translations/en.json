@@ -22,7 +22,8 @@
     "user_fallback": "beautiful",
     "unit_min": "min",
     "unit_kcal": "kcal",
-    "see_all": "See all"
+    "see_all": "See all",
+    "nutrition_source_note": "Based on general nutrition & menstrual-health guidance (ACOG, NIH, WHO, Mayo Clinic). Not a substitute for advice from your own healthcare provider."
   },
   "nav": {
     "home": "Home",
@@ -102,7 +103,13 @@
     "profile_image_updated": "Profile photo updated successfully!",
     "profile_image_error": "Unable to update the profile photo. Please try again.",
     "export_desc": "Export Data generates a detailed report of your cycle logs, symptoms, and health metrics. You can use this file for your own records or share it with your healthcare professional.",
-    "profile_connected": "{{title}} will connect to your secure profile management in the next update."
+    "profile_connected": "{{title}} will connect to your secure profile management in the next update.",
+    "delete_account": "Delete Account",
+    "delete_account_title": "Delete your account?",
+    "delete_account_warning": "This permanently deletes your NutriCycle account and all associated data — cycle history, daily logs, saved recipes, and subscription record. This cannot be undone.",
+    "delete_account_final_warning": "Are you absolutely sure? Once deleted, your account and data cannot be recovered.",
+    "delete_account_confirm": "Delete Account",
+    "delete_account_error": "We couldn't delete your account. Please check your connection and try again, or contact support at hola@nutricycle.com."
   },
   "dashboard": {
     "cycle_center": "YOUR CYCLE AT THE CENTER",
@@ -592,7 +599,9 @@
     "ai_failed": "Failed to reach the AI engine. Please try again.",
     "powered_by": "POWERED BY GEMINI",
     "general_checkin": "General daily check-in",
-    "analysis_fallback": "Personalized Analysis"
+    "analysis_fallback": "Personalized Analysis",
+    "sources_label": "Sources:",
+    "default_source": "General nutritional and menstrual-health guidance (e.g. ACOG, NIH, WHO)."
   },
   "wellness": {
     "title": "Synced\nWellness",

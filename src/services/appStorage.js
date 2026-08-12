@@ -26,6 +26,16 @@ const setItem = async (key, value) => {
   }
 };
 
+const removeItem = async (key) => {
+  if (isWeb) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  } else {
+    await SecureStore.deleteItemAsync(key);
+  }
+};
+
 export const getOnboardingComplete = async () => {
   const value = await getItem(ONBOARDING_KEY);
   return value === 'true';
@@ -131,4 +141,19 @@ export const setAIPrediction = async (userId, text) => {
     date: new Date().toDateString(),
   };
   await setItem(aiPredictionKey(userId), JSON.stringify(data));
+};
+
+/**
+ * Wipes every locally-cached value tied to this user (profile, daily logs,
+ * cycle wizard flag, cached AI prediction). Used by the "Delete Account" flow
+ * so nothing lingers on-device after the account itself is gone.
+ */
+export const clearLocalUserData = async (userId) => {
+  if (!userId) return;
+  await Promise.all([
+    removeItem(profileKey(userId)),
+    removeItem(dailyLogsKey(userId)),
+    removeItem(cycleWizardKey(userId)),
+    removeItem(aiPredictionKey(userId)),
+  ]);
 };

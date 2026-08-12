@@ -47,6 +47,16 @@ export const loginRevenueCat = async (userId) => {
   }
 };
 
+export const logoutRevenueCat = async () => {
+  const RC = await getRC();
+  if (!RC) return;
+  try {
+    await RC.logOut();
+  } catch (e) {
+    console.warn('[RC] logOut error:', e?.message);
+  }
+};
+
 export const getOfferings = async () => {
   const RC = await getRC();
   if (!RC) return null;

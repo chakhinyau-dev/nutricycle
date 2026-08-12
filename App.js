@@ -19,7 +19,7 @@ import {
 } from '@expo-google-fonts/outfit';
 import { Home, CircleDot, User, PlaySquare, Soup } from 'lucide-react-native';
 
-import { configureRevenueCat } from './src/services/revenuecatService';
+import { configureRevenueCat, logoutRevenueCat } from './src/services/revenuecatService';
 
 import { colors } from './src/theme/colors';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -58,7 +58,9 @@ import {
   setOnboardingComplete,
   getCycleWizardSeen,
   setCycleWizardSeen,
+  clearLocalUserData,
 } from './src/services/appStorage';
+import { deleteUserAccountData } from './src/services/accountService';
 import { loadUserProfile, saveUserProfile } from './src/services/profileService';
 import { loadDailyLogs, deleteDailyLog } from './src/services/dailyLogService';
 import { loadRecipes } from './src/services/recipeService';
@@ -558,6 +560,41 @@ const AppShell = () => {
     setNavigationParams({});
   };
 
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+
+    // Demo/App-review account has nothing stored server-side — just exit demo mode.
+    if (isDemoMode) {
+      await handleLogout();
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const { success } = await deleteUserAccountData(getToken, user.id);
+      await clearLocalUserData(user.id);
+      await logoutRevenueCat();
+
+      if (!success) {
+        // Some rows may not have been removed (e.g. an RLS policy blocked one
+        // table) — surface this instead of silently deleting the login itself
+        // and leaving orphaned data with no way for the user to try again.
+        throw new Error('Some account data could not be deleted');
+      }
+
+      await user.delete();
+      // Clerk destroys the session; the isSignedIn effect above resets all
+      // app state back to logged-out, same as a normal sign-out.
+    } catch (error) {
+      console.error('[Account Deletion] Failed:', error);
+      Alert.alert(t('settings.error'), t('settings.delete_account_error'));
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const isAdmin = useMemo(() => {
     if (!user) return false;
     const role = user.publicMetadata?.role;
@@ -613,7 +650,7 @@ const AppShell = () => {
         case 'notifications':
           return <NotificationsScreen onBack={goBack} onNavigate={navigateTo} {...sharedScreenProps} />;
         case 'settings':
-          return <SettingsScreen onBack={goBack} onNavigate={navigateTo} onLogout={handleLogout} isPremium={canAccessPremium} {...sharedScreenProps} />;
+          return <SettingsScreen onBack={goBack} onNavigate={navigateTo} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} isDeletingAccount={isDeletingAccount} isPremium={canAccessPremium} {...sharedScreenProps} />;
         case 'recipeDetail':
           return (
             <RecipeDetailScreen
@@ -746,7 +783,7 @@ const AppShell = () => {
           />
         );
       case 'profile':
-        return <SettingsScreen onBack={() => setActiveTab('today')} onNavigate={navigateTo} onLogout={handleLogout} {...sharedScreenProps} />;
+        return <SettingsScreen onBack={() => setActiveTab('today')} onNavigate={navigateTo} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} isDeletingAccount={isDeletingAccount} isPremium={canAccessPremium} {...sharedScreenProps} />;
       default:
         return <DashboardScreen onNavigate={navigateTo} isPremium={canAccessPremium} {...sharedScreenProps} />;
     }

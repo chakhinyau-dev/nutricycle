@@ -17,7 +17,8 @@ import {
   Bookmark,
   CheckCircle2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Info
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { translateContent } from '../services/translationService';
@@ -242,6 +243,12 @@ export const RecipeDetailScreen = ({ recipe, onBack, isSaved = false, onToggleSa
               </View>
             )}
           </View>
+
+          {/* Source / citation note for the nutritional claims above */}
+          <View style={styles.sourceNote}>
+            <Info size={14} color="#8C8C7E" style={{ opacity: 0.7 }} />
+            <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
+          </View>
         </View>
 
         <View style={{ height: 24 }} />
@@ -281,6 +288,26 @@ const styles = StyleSheet.create({
   keyIngredientsContainer: {
     marginTop: 20,
     gap: 16,
+  },
+  sourceNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#F9F9F2',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 24,
+  },
+  sourceNoteText: {
+    flex: 1,
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#1A1A1A',
+    opacity: 0.6,
   },
   ingredientCard: {
     flexDirection: 'row',
