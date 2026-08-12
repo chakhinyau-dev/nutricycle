@@ -149,7 +149,11 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
 
       if (isPremiumActive(customerInfo)) {
         const planType = getActivePlanType(customerInfo);
-        onUpgrade({
+        // Must be awaited: onUpgrade writes to Supabase and can fail after a real
+        // purchase already went through. Without awaiting, that failure becomes an
+        // unhandled rejection this try/catch never sees, and `finally` below resets
+        // the loading state as if everything succeeded.
+        await onUpgrade({
           planKey: planType || selectedPlan,
           planType: planType === 'monthly' ? 'monthly' : 'yearly',
           status: 'active',
@@ -173,13 +177,15 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
       const customerInfo = await restorePurchases();
       if (isPremiumActive(customerInfo)) {
         const planType = getActivePlanType(customerInfo);
-        onUpgrade({
+        // Awaited for the same reason as handleCheckout above. Also: no separate
+        // success alert here — onUpgrade (App.js's handleUpgrade) already shows one
+        // on success, so this used to pop two "success" alerts back to back.
+        await onUpgrade({
           planKey: planType || 'annual',
           planType: planType === 'monthly' ? 'monthly' : 'yearly',
           status: 'active',
           rcCustomerInfo: customerInfo,
         });
-        Alert.alert('', t('subscription.success_title'));
       } else {
         Alert.alert('', 'No se encontró ninguna suscripción activa.');
       }
