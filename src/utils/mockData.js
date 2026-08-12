@@ -264,7 +264,7 @@ export const MOCK_RECIPES = [
       { name: 'Limón', quantity: 1, unit: 'unidad', category: 'Fruits' }
     ],
     keyIngredients: [
-      { name: 'Pavo molido', image: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=150', note: 'Proteína magra de fácil digestión rica en triptófano para regular el estado de ánimo.' },
+      { name: 'Pavo molido', image: 'https://images.unsplash.com/photo-1574672280600-4accfa5b6f98?w=150', note: 'Proteína magra de fácil digestión rica en triptófano para regular el estado de ánimo.' },
       { name: 'Col morada', image: 'https://images.unsplash.com/photo-1611105637889-3dfa1052643a?w=150', note: 'Rica en fitoestrógenos que ayudan a regular de forma natural las curvas de estrógeno.' }
     ],
     instructions: [
@@ -374,7 +374,7 @@ export const MOCK_RECIPES = [
       { name: 'Aceite de oliva y limón', quantity: 1, unit: 'aderezo', category: 'Pantry' }
     ],
     keyIngredients: [
-      { name: 'Pepitas de calabaza', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=150', note: 'Altas en zinc, que ayuda a mitigar la aparición de brotes de acné hormonal.' },
+      { name: 'Pepitas de calabaza', image: 'https://images.unsplash.com/photo-1545447859-6a9eca16e6ed?w=150', note: 'Altas en zinc, que ayuda a mitigar la aparición de brotes de acné hormonal.' },
       { name: 'Naranja', image: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=150', note: 'La vitamina C favorece la síntesis de colágeno y la absorción de hierro.' }
     ],
     instructions: [
@@ -414,7 +414,7 @@ export const MOCK_RECIPES = [
     ],
     keyIngredients: [
       { name: 'Leche de coco', image: 'https://images.unsplash.com/photo-1563865436874-9aef32095ffd?w=150', note: 'Grasas saludables de fácil absorción que brindan saciedad y reducen antojos dulces.' },
-      { name: 'Garbanzos', image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150', note: 'Carbohidratos complejos de absorción lenta que estabilizan la glucemia.' }
+      { name: 'Garbanzos', image: 'https://images.unsplash.com/photo-1644432757699-bb5a01e8fb0e?w=150', note: 'Carbohidratos complejos de absorción lenta que estabilizan la glucemia.' }
     ],
     instructions: [
       'Sofrie la cebolla y el ajo.',
@@ -579,7 +579,7 @@ export const MOCK_RECIPES = [
       { name: 'Arándanos', quantity: 0.5, unit: 'taza', category: 'Fruits' }
     ],
     keyIngredients: [
-      { name: 'Semillas de girasol', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=150', note: 'Altas en vitamina E, vital para apoyar la síntesis de progesterona.' }
+      { name: 'Semillas de girasol', image: 'https://images.unsplash.com/photo-1635843111961-06c71c3ed8cf?w=150', note: 'Altas en vitamina E, vital para apoyar la síntesis de progesterona.' }
     ],
     instructions: [
       'Sirve el yogur griego en un tazón.',
@@ -709,8 +709,8 @@ export const MOCK_RECIPES = [
       { name: 'Aceite de oliva', quantity: 1, unit: 'cucharada', category: 'Pantry' }
     ],
     keyIngredients: [
-      { name: 'Calabacín', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=150', note: 'Vegetal de bajo índice glucémico y alto contenido de agua purificante.' },
-      { name: 'Crema de almendras', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=150', note: 'Aporta grasas monoinsaturadas y vitamina E para la salud dérmica.' }
+      { name: 'Calabacín', image: 'https://images.unsplash.com/photo-1691480291894-75229c2bfd44?w=150', note: 'Vegetal de bajo índice glucémico y alto contenido de agua purificante.' },
+      { name: 'Crema de almendras', image: 'https://images.unsplash.com/photo-1654747781271-a2b6992c7b52?w=150', note: 'Aporta grasas monoinsaturadas y vitamina E para la salud dérmica.' }
     ],
     instructions: [
       'Saltea la cebolla picada en aceite de oliva.',
@@ -775,7 +775,7 @@ export const MOCK_RECIPES = [
       { name: 'Zanahoria', quantity: 0.5, unit: 'unidad', category: 'Vegetables' }
     ],
     keyIngredients: [
-      { name: 'Brotes de alfalfa', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=150', note: 'Altamente enzimáticos y ricos en clorofila para la purificación de la piel.' }
+      { name: 'Brotes de alfalfa', image: 'https://images.unsplash.com/photo-1476005484258-bd38fa5bc155?w=150', note: 'Altamente enzimáticos y ricos en clorofila para la purificación de la piel.' }
     ],
     instructions: [
       'Extiende las tortillas integrales.',
