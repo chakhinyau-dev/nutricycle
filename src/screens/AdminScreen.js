@@ -133,6 +133,10 @@ export const AdminScreen = ({
     imageUrl: '',
     ingredients: '',
     instructions: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
   });
 
   // Reset video form when switching to the Videos tab without an active edit
@@ -293,6 +297,10 @@ export const AdminScreen = ({
       imageUrl: '',
       ingredients: '',
       instructions: '',
+      protein: '',
+      carbs: '',
+      fat: '',
+      fiber: '',
     });
   };
 
@@ -500,6 +508,10 @@ export const AdminScreen = ({
       imageUrl: rec.image_url || rec.imageUrl || rec.image?.uri || rec.image?.url || '',
       ingredients: Array.isArray(rec.ingredients) ? rec.ingredients.join('\n') : '',
       instructions: Array.isArray(rec.instructions) ? rec.instructions.join('\n') : '',
+      protein: rec.protein != null ? String(rec.protein) : '',
+      carbs: rec.carbs != null ? String(rec.carbs) : '',
+      fat: rec.fat != null ? String(rec.fat) : '',
+      fiber: rec.fiber != null ? String(rec.fiber) : '',
     });
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     if (showToast) showToast(t('admin.editing_recipe', { title: rec.title }));
@@ -559,6 +571,10 @@ export const AdminScreen = ({
         imageUrl: finalImageUrl,
         ingredients: newRecipe.ingredients.split('\n').filter(Boolean),
         instructions: newRecipe.instructions.split('\n').filter(Boolean),
+        protein: newRecipe.protein,
+        carbs: newRecipe.carbs,
+        fat: newRecipe.fat,
+        fiber: newRecipe.fiber,
       };
 
       if (editingRecipeId) {
@@ -855,8 +871,44 @@ export const AdminScreen = ({
                         </View>
                     </View>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.label}>{t('admin.calories_time')}</Text>
-                        <TextInput style={styles.input} value={newRecipe.calories} onChangeText={t => setNewRecipe({...newRecipe, calories: t})} />
+                        <Text style={styles.label}>{t('admin.calories', { defaultValue: 'Calorías (kcal)' })}</Text>
+                        <TextInput style={styles.input} value={newRecipe.calories} keyboardType="numeric" onChangeText={t => setNewRecipe({...newRecipe, calories: t})} />
+                    </View>
+                </View>
+
+                {/* Previously "time" (prep minutes) had no input at all despite being
+                    validated and saved — every recipe silently got time_minutes=20. */}
+                <Text style={styles.label}>{t('admin.time_minutes', { defaultValue: 'Tiempo de preparación (min)' })}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newRecipe.time}
+                  keyboardType="numeric"
+                  placeholder="20"
+                  onChangeText={t => setNewRecipe({...newRecipe, time: t})}
+                />
+
+                {/* Optional — recipes with no real macro data fall back to a shared
+                    calorie-based estimate (src/utils/nutrition.js) so this screen and
+                    Recipe Detail always agree on the same numbers. */}
+                <Text style={styles.label}>{t('admin.macros_optional', { defaultValue: 'Macros (opcional — se estima automáticamente si se deja vacío)' })}</Text>
+                <View style={styles.row}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={styles.label}>{t('admin.protein', { defaultValue: 'Proteína (g)' })}</Text>
+                        <TextInput style={styles.input} value={newRecipe.protein} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, protein: t})} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.label}>{t('admin.carbs', { defaultValue: 'Carbohidratos (g)' })}</Text>
+                        <TextInput style={styles.input} value={newRecipe.carbs} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, carbs: t})} />
+                    </View>
+                </View>
+                <View style={styles.row}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={styles.label}>{t('admin.fat', { defaultValue: 'Grasa (g)' })}</Text>
+                        <TextInput style={styles.input} value={newRecipe.fat} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, fat: t})} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.label}>{t('admin.fiber', { defaultValue: 'Fibra (g)' })}</Text>
+                        <TextInput style={styles.input} value={newRecipe.fiber} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, fiber: t})} />
                     </View>
                 </View>
 

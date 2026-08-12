@@ -23,6 +23,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { translateContent } from '../services/translationService';
 import { getRecipeImageSource } from '../services/recipeService';
+import { getRecipeMacros } from '../utils/nutrition';
 
 const { width } = Dimensions.get('window');
 
@@ -168,12 +169,13 @@ export const RecipeDetailScreen = ({ recipe, onBack, isSaved = false, onToggleSa
           )}
           <Text style={styles.statText}>
             {(() => {
-              const prot = data.protein || Math.max(10, Math.round(Number(data.calories) * 0.08));
-              const fat = data.fat || Math.max(5, Math.round(Number(data.calories) * 0.035));
-              const carbs = data.carbs || Math.max(15, Math.round((Number(data.calories) - (prot * 4) - (fat * 9)) / 4));
+              // Shared with NutritionScreen.js (src/utils/nutrition.js) — this used
+              // to be its own separate estimate formula, so the same recipe could
+              // show a different macro breakdown here than on the Nutrition tab.
+              const { protein, carbs, fat } = getRecipeMacros(data);
               return currentLanguage.toLowerCase().startsWith('es')
-                ? `${data.time} min • ${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g grasa`
-                : `${data.time} min • ${data.calories} kcal • ${prot}g prot • ${carbs}g carb • ${fat}g fat`;
+                ? `${data.time} min • ${data.calories} kcal • ${protein}g prot • ${carbs}g carb • ${fat}g grasa`
+                : `${data.time} min • ${data.calories} kcal • ${protein}g prot • ${carbs}g carb • ${fat}g fat`;
             })()}
           </Text>
         </View>

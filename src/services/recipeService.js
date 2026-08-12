@@ -78,6 +78,13 @@ const normalizeRecipe = (recipe) => ({
   videoUrl: recipe.video_url || recipe.videoUrl || '',
   ingredients: toArray(recipe.ingredients),
   instructions: toArray(recipe.instructions),
+  // Real macro values when the admin filled them in; null when not, so
+  // getRecipeMacros() (src/utils/nutrition.js) knows to fall back to its
+  // shared estimate instead of every screen guessing independently.
+  protein: recipe.protein ?? null,
+  carbs: recipe.carbs ?? null,
+  fat: recipe.fat ?? null,
+  fiber: recipe.fiber ?? null,
 });
 
 export const loadRecipes = async (getToken) => {
@@ -105,6 +112,14 @@ export const saveRecipe = async (getToken, recipe) => {
     const supabase = createClerkSupabaseClient(getToken);
     if (!supabase) return null;
 
+    // Optional — left as null (not 0) when blank, so getRecipeMacros() falls
+    // back to its estimate instead of treating an empty field as "zero grams".
+    const parseOptionalNumber = (value) => {
+      if (value === '' || value === null || value === undefined) return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
     const payload = {
       title: recipe.title || 'Untitled',
       category: recipe.category || 'General',
@@ -121,6 +136,10 @@ export const saveRecipe = async (getToken, recipe) => {
         '',
       ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
       instructions: Array.isArray(recipe.instructions) ? recipe.instructions : [],
+      protein: parseOptionalNumber(recipe.protein),
+      carbs: parseOptionalNumber(recipe.carbs),
+      fat: parseOptionalNumber(recipe.fat),
+      fiber: parseOptionalNumber(recipe.fiber),
       updated_at: new Date().toISOString(),
     };
 

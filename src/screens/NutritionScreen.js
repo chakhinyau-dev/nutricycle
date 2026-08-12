@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Play, ShoppingBag, Utensils, Crown, RefreshCw, X } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
+import { getCyclePhaseKey } from '../utils/cycle';
+import { getRecipeMacros } from '../utils/nutrition';
 
 const DAYS = [
   { index: 0, key: 'mon' },
@@ -34,14 +36,18 @@ const MEAL_EMOJIS = {
   dinner: '🐟',
 };
 
+// Turns a strip day index into its actual day-in-cycle number, reused by both
+// the week-strip coloring and the selected-day phase, so both always agree
+// with each other and with getCyclePhaseKey — the same formula
+// Dashboard/Calendar use. This used to be a separate, hand-rolled formula
+// duplicated per-usage, which could disagree with the rest of the app about
+// which phase a given day was in.
+const cycleDayForStripIndex = (dayIndex, defaultDay, cycleLen, todayCycleDay) => {
+  const offset = dayIndex - defaultDay;
+  return ((todayCycleDay - 1 + offset + cycleLen * 2) % cycleLen) + 1;
+};
 
 
-const computeMacros = (calories) => ({
-  p: Math.round((calories * 0.24) / 4),
-  c: Math.round((calories * 0.46) / 4),
-  g: Math.round((calories * 0.30) / 9),
-  f: Math.round(calories * 0.014),
-});
 
 const MACRO_COLORS = {
   p: { bg: '#EBF3EC', text: '#4A7D5A' },
@@ -78,7 +84,6 @@ export const NutritionScreen = ({
 }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
-  const phaseKey = currentPhaseKey || 'follicular';
 const defaultDay = useMemo(() => {
     const day = new Date().getDay();
     return day === 0 ? 6 : day - 1;
@@ -103,18 +108,28 @@ const defaultDay = useMemo(() => {
   const weekDayPhases = useMemo(() => {
     const cycleLen = cycleProfile?.cycleLength || 28;
     const periodLen = cycleProfile?.periodLength || 5;
-    const fertileStart = cycleLen - 16;
-    const fertileEnd   = cycleLen - 11;
-    const currentDay   = cycleDay || 1;
-    return DAYS.map(day => {
-      const offset    = day.index - defaultDay;
-      const targetDay = ((currentDay + offset - 1 + cycleLen * 2) % cycleLen) + 1;
-      if (targetDay <= periodLen)                          return 'menstrual';
-      if (targetDay >= fertileStart && targetDay <= fertileEnd) return 'ovulation';
-      if (targetDay > fertileEnd)                          return 'luteal';
-      return 'follicular';
-    });
+    const todayCycleDay = cycleDay || 1;
+    return DAYS.map(day =>
+      getCyclePhaseKey(cycleDayForStripIndex(day.index, defaultDay, cycleLen, todayCycleDay), cycleLen, periodLen)
+    );
   }, [cycleDay, cycleProfile, defaultDay]);
+
+  // The phase (and day-in-cycle) for whichever day is currently selected in
+  // the strip — NOT necessarily today. Selecting a different day now actually
+  // previews that day's phase-appropriate meal plan, instead of always
+  // showing today's phase regardless of which day pill is tapped.
+  const selectedDayInfo = useMemo(() => {
+    const cycleLen = cycleProfile?.cycleLength || 28;
+    const periodLen = cycleProfile?.periodLength || 5;
+    const todayCycleDay = cycleDay || 1;
+    const dayInCycle = cycleDayForStripIndex(selectedDay, defaultDay, cycleLen, todayCycleDay);
+    return {
+      cycleDay: dayInCycle,
+      phaseKey: getCyclePhaseKey(dayInCycle, cycleLen, periodLen),
+    };
+  }, [cycleDay, cycleProfile, selectedDay, defaultDay]);
+
+  const phaseKey = selectedDayInfo.phaseKey || currentPhaseKey || 'follicular';
 
   // Top 3 foods for today's phase (shown in the focus card)
   const phaseKeyFoods = useMemo(() => {
@@ -179,9 +194,15 @@ const defaultDay = useMemo(() => {
   const dailyTotals = useMemo(() => {
     const vals = Object.values(mealRecipes).filter(Boolean);
     return vals.reduce((acc, r) => {
-      const m = computeMacros(r.calories || 0);
-      return { calories: acc.calories + (r.calories || 0), p: acc.p + m.p, c: acc.c + m.c, g: acc.g + m.g, f: acc.f + m.f };
-    }, { calories: 0, p: 0, c: 0, g: 0, f: 0 });
+      const m = getRecipeMacros(r);
+      return {
+        calories: acc.calories + (r.calories || 0),
+        protein: acc.protein + m.protein,
+        carbs: acc.carbs + m.carbs,
+        fat: acc.fat + m.fat,
+        fiber: acc.fiber + m.fiber,
+      };
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
   }, [mealRecipes]);
 
   // Alternative recipes for the swap modal
@@ -309,7 +330,7 @@ const defaultDay = useMemo(() => {
               <View style={[styles.phaseDot, { backgroundColor: phaseColor }]} />
               <Text style={styles.headerMetaText}>
                 {t(`phases.${phaseKey}`)}
-                {cycleDay ? ` · ${t('nutrition.day_label')} ${cycleDay}` : ''}
+                {selectedDayInfo.cycleDay ? ` · ${t('nutrition.day_label')} ${selectedDayInfo.cycleDay}` : ''}
               </Text>
             </View>
           </View>
@@ -392,7 +413,7 @@ const defaultDay = useMemo(() => {
         <View style={styles.mealList}>
           {ALL_MEAL_SLOTS.map((time, slotIndex) => {
             const recipe    = mealRecipes[time];
-            const macros    = computeMacros(recipe?.calories || 0);
+            const macros    = getRecipeMacros(recipe || {});
             const timeLabel = t(`dailylog.meal_types.${time}`).toUpperCase();
             const sa        = mealSlotAnims[slotIndex];
 
@@ -419,10 +440,10 @@ const defaultDay = useMemo(() => {
                           <Text style={[styles.macroChipText, { color: colors.on_surface_variant }]}>{recipe.calories} kcal</Text>
                         </View>
                         {[
-                          { key: 'p', label: `P ${macros.p}g` },
-                          { key: 'c', label: `C ${macros.c}g` },
-                          { key: 'g', label: `G ${macros.g}g` },
-                          { key: 'f', label: `F ${macros.f}g` },
+                          { key: 'p', label: `P ${macros.protein}g` },
+                          { key: 'c', label: `C ${macros.carbs}g` },
+                          { key: 'g', label: `G ${macros.fat}g` },
+                          { key: 'f', label: `F ${macros.fiber}g` },
                         ].map(m => (
                           <View key={m.key} style={[styles.macroChip, { backgroundColor: MACRO_COLORS[m.key].bg }]}>
                             <Text style={[styles.macroChipText, { color: MACRO_COLORS[m.key].text }]}>{m.label}</Text>
@@ -459,10 +480,10 @@ const defaultDay = useMemo(() => {
                 <Text style={[styles.macroChipText, { color: colors.on_surface_variant }]}>{dailyTotals.calories} kcal</Text>
               </View>
               {[
-                { key: 'p', label: `P ${dailyTotals.p}g` },
-                { key: 'c', label: `C ${dailyTotals.c}g` },
-                { key: 'g', label: `G ${dailyTotals.g}g` },
-                { key: 'f', label: `F ${dailyTotals.f}g` },
+                { key: 'p', label: `P ${dailyTotals.protein}g` },
+                { key: 'c', label: `C ${dailyTotals.carbs}g` },
+                { key: 'g', label: `G ${dailyTotals.fat}g` },
+                { key: 'f', label: `F ${dailyTotals.fiber}g` },
               ].map(m => (
                 <View key={m.key} style={[styles.macroChip, { backgroundColor: MACRO_COLORS[m.key].bg }]}>
                   <Text style={[styles.macroChipText, { color: MACRO_COLORS[m.key].text }]}>{m.label}</Text>
@@ -523,7 +544,7 @@ const defaultDay = useMemo(() => {
                 </View>
               ) : (
                 alternatives.map(alt => {
-                  const altMacros = computeMacros(alt.calories || 0);
+                  const altMacros = getRecipeMacros(alt);
                   return (
                     <Pressable key={alt.id} style={styles.altCard} onPress={() => handleSelectSwap(String(alt.id))}>
                       <View style={styles.altInfo}>
@@ -533,8 +554,8 @@ const defaultDay = useMemo(() => {
                             <Text style={[styles.macroChipText, { color: colors.on_surface_variant }]}>{alt.calories} kcal</Text>
                           </View>
                           {[
-                            { key: 'p', label: `P ${altMacros.p}g` },
-                            { key: 'c', label: `C ${altMacros.c}g` },
+                            { key: 'p', label: `P ${altMacros.protein}g` },
+                            { key: 'c', label: `C ${altMacros.carbs}g` },
                           ].map(m => (
                             <View key={m.key} style={[styles.macroChip, { backgroundColor: MACRO_COLORS[m.key].bg }]}>
                               <Text style={[styles.macroChipText, { color: MACRO_COLORS[m.key].text }]}>{m.label}</Text>
