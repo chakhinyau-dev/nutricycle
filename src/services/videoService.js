@@ -84,6 +84,11 @@ export const saveVideo = async (getToken, videoData) => {
     video_url: videoData.video_url || videoData.videoUrl || '',
     duration: videoData.duration || '5:00',
     thumbnail: videoData.thumbnail || '',
+    // AdminScreen.js correctly computes this (true for a YouTube link, false
+    // for an uploaded file) — it was being silently dropped here and never
+    // reaching the database, so every video fell back to the column's
+    // default (true), even real uploads with no youtube_url at all.
+    is_youtube: Boolean(videoData.is_youtube ?? videoData.isYoutube ?? Boolean(videoData.youtube_url || videoData.youtubeUrl)),
     meal_type: videoData.meal_type || videoData.mealType || 'none',
     updated_at: new Date().toISOString(),
     ingredients: Array.isArray(videoData.ingredients)

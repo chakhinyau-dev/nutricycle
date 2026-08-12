@@ -106,6 +106,7 @@ export const AdminScreen = ({
   const [newVideo, setNewVideo] = useState({
     title: '',
     description: '',
+    category: '',
     phaseKey: 'menstrual',
     mealType: 'none',
     youtubeUrl: '',
@@ -140,6 +141,7 @@ export const AdminScreen = ({
       setNewVideo({
         title: '',
         description: '',
+        category: '',
         phaseKey: 'menstrual',
         mealType: 'none',
         youtubeUrl: '',
@@ -158,6 +160,7 @@ export const AdminScreen = ({
     setNewVideo({
       title: '',
       description: '',
+      category: '',
       phaseKey: 'menstrual',
       mealType: 'none',
       youtubeUrl: '',
@@ -229,7 +232,12 @@ export const AdminScreen = ({
       let finalImageUrl = newFood.imageUrl || '';
       if (localFoodImage) {
         const uploaded = await uploadRecipeImage(getToken, localFoodImage, `food_${Date.now()}.jpg`);
+        // Previously silently kept going with no image on a failed upload — the
+        // food item would still save successfully with an empty image_url, with
+        // no indication anything went wrong. Now matches handleSaveRecipe's
+        // safer pattern: abort the save and tell the admin to retry.
         if (uploaded) finalImageUrl = uploaded;
+        else throw new Error(t('admin.recipe_image_upload_failed'));
       }
       const result = await saveKeyFood(getToken, { ...newFood, imageUrl: finalImageUrl, benefits: newFood.benefits?.trim() || '', id: editingFoodId });
       if (result) {
@@ -238,7 +246,7 @@ export const AdminScreen = ({
         if (onRefresh) onRefresh();
       }
     } catch (err) {
-      if (showToast) showToast(t('admin.food_save_error', { defaultValue: 'Error al guardar' }), 'error');
+      if (showToast) showToast(err.message || t('admin.food_save_error', { defaultValue: 'Error al guardar' }), 'error');
     } finally {
       setIsSaving(false);
     }
@@ -352,6 +360,7 @@ export const AdminScreen = ({
       id: vid.id,
       title: vid.title,
       description: vid.description,
+      category: vid.category && vid.category !== 'General' ? vid.category : '',
       phaseKey: vid.phase_key || vid.phaseKey || 'follicular',
       mealType: vid.meal_type || vid.mealType || 'none',
       youtubeUrl: vid.youtubeUrl || vid.youtube_url || '',
@@ -421,6 +430,7 @@ export const AdminScreen = ({
         id: editingVideoId,
         title: newVideo.title,
         description: newVideo.description,
+        category: newVideo.category?.trim() || 'General',
         youtube_url: newVideo.youtubeUrl,
         video_url: finalVideoUrl,
         phase_key: newVideo.phaseKey,
@@ -738,6 +748,14 @@ export const AdminScreen = ({
                 </View>
 
                 <Text style={styles.label}>{t('videos.category')}</Text>
+                <TextInput
+                   style={styles.input}
+                   value={newVideo.category}
+                   placeholder={t('admin.video_category_placeholder', { defaultValue: 'e.g. Meditación, Sonidos, Fase folicular' })}
+                   onChangeText={v => setNewVideo({...newVideo, category: v})}
+                />
+
+                <Text style={styles.label}>{t('admin.meal_type')}</Text>
                 <View style={styles.mealTypeSelector}>
                     {[
                       { id: 'none', icon: LayoutGrid, label: t('admin.my_phase') },
