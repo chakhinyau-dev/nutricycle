@@ -518,6 +518,7 @@
     "edit_recipe": "Editar Receta",
     "new_recipe": "Nueva Receta",
     "video_required": "Se requiere titulo o archivo/URL del video",
+    "video_category_placeholder": "ej. Meditación, Sonidos, Fase folicular",
     "recipe_required": "Se requiere el titulo de la receta",
     "video_updated": "Video actualizado",
     "video_saved": "Video guardado",
@@ -609,7 +610,7 @@
     "maybe_later": "Quizás más tarde",
     "ai_unconfigured": "El servicio de IA no está configurado. Por favor añade la clave de API de Gemini.",
     "ai_failed": "Error al contactar con el motor de IA. Por favor inténtalo de nuevo.",
-    "powered_by": "POTENCIADO POR GEMINI",
+    "powered_by": "NUTRICYCLE AI",
     "general_checkin": "Consulta general diaria",
     "analysis_fallback": "Análisis Personalizado",
     "sources_label": "Fuentes:",
@@ -862,7 +863,13 @@
   },
   "chat": {
     "title": "COACH DE BIENESTAR IA",
-    "initial_greeting": "¡Hola! Soy tu asistente NutriCycle. Veo que estás en tu fase {{phase}}. ¿En qué puedo ayudarte hoy con tu nutrición o bienestar?",
+    "initial_greeting": "Hola 🌿 Veo que estás en tu fase {{phase}} — {{energy}}. ¿En qué te puedo ayudar?",
+    "phase_energy": {
+      "menstrual": "momento de calma y descanso",
+      "follicular": "energía en aumento",
+      "ovulation": "tu energía está en su punto máximo",
+      "luteal": "momento de bajar el ritmo"
+    },
     "placeholder": "Escribe tu duda nutricional...",
     "locked_title": "Coach de Bienestar IA",
     "locked_sub": "Desbloquea chats personalizados de IA y conocimientos predictivos de salud actualizando a NutriCycle Pro.",

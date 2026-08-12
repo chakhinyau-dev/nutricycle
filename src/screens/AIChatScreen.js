@@ -20,11 +20,18 @@ const { width } = Dimensions.get('window');
 
 export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, isPremium }) => {
   const { t } = useTranslation();
+  const phaseKey = cycleInfo?.currentPhaseKey || 'follicular';
   const [messages, setMessages] = useState([
     {
       id: '1',
       role: 'model',
-      text: t('chat.initial_greeting', { phase: cycleInfo?.currentPhaseKey || '' }),
+      // Was interpolating the raw internal phase key (e.g. "follicular") straight
+      // into the Spanish sentence, untranslated. Now uses the actual translated
+      // phase name plus a short phase-specific energy note.
+      text: t('chat.initial_greeting', {
+        phase: t(`phases.${phaseKey}`),
+        energy: t(`chat.phase_energy.${phaseKey}`),
+      }),
       isGreeting: true,
     },
   ]);

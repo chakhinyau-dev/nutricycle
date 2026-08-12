@@ -503,6 +503,7 @@
     "calories_invalid": "Enter a valid calorie amount.",
     "time_invalid": "Enter a valid preparation time.",
     "video_required": "Title or video file/URL is required",
+    "video_category_placeholder": "e.g. Meditation, Sounds, Follicular Phase",
     "recipe_required": "Recipe title is required",
     "video_updated": "Video updated!",
     "video_saved": "Video saved!",
@@ -597,7 +598,7 @@
     "maybe_later": "Maybe later",
     "ai_unconfigured": "AI service is not configured. Please add Gemini API key.",
     "ai_failed": "Failed to reach the AI engine. Please try again.",
-    "powered_by": "POWERED BY GEMINI",
+    "powered_by": "NUTRICYCLE AI",
     "general_checkin": "General daily check-in",
     "analysis_fallback": "Personalized Analysis",
     "sources_label": "Sources:",
@@ -866,7 +867,13 @@
   },
   "chat": {
     "title": "AI WELLNESS COACH",
-    "initial_greeting": "Hello! I'm your NutriCycle assistant. I see you're in your {{phase}} phase. How can I help with your nutrition or wellness today?",
+    "initial_greeting": "Hi 🌿 I see you're in your {{phase}} phase — {{energy}}. How can I help?",
+    "phase_energy": {
+      "menstrual": "a time for rest and calm",
+      "follicular": "energy on the rise",
+      "ovulation": "your energy at its peak",
+      "luteal": "time to slow things down"
+    },
     "placeholder": "Ask your nutrition question...",
     "locked_title": "AI Wellness Coach",
     "locked_sub": "Unlock personalized AI chats and predictive health insights by upgrading to NutriCycle Pro.",

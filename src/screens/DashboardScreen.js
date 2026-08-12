@@ -7,7 +7,7 @@ const AnimatedRect    = Animated.createAnimatedComponent(Rect);
 const AnimatedPath    = Animated.createAnimatedComponent(Path);
 const AnimatedLine    = Animated.createAnimatedComponent(Line);
 const AnimatedCircle  = Animated.createAnimatedComponent(Circle);
-import { Play, Heart, ChevronRight, Crown, Sparkles, BrainCircuit } from 'lucide-react-native';
+import { Play, Heart, ChevronRight, Crown, CircleDot, CheckCircle2 } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
@@ -371,14 +371,14 @@ export const DashboardScreen = ({
       <View style={styles.aiShortcutRow}>
         <Pressable style={styles.aiShortcutCard} onPress={() => onNavigate('aiChat')}>
           <View style={[styles.aiShortcutIcon, { backgroundColor: '#EEE8FA' }]}>
-            <Sparkles size={20} color="#8B5CF6" />
+            <CircleDot size={20} color="#8B5CF6" />
           </View>
           <Text style={styles.aiShortcutLabel}>{t('dashboard.ai_chat_shortcut', { defaultValue: 'NutriCycle AI' })}</Text>
           <ChevronRight size={14} color={colors.on_surface_variant} style={{ opacity: 0.4 }} />
         </Pressable>
         <Pressable style={styles.aiShortcutCard} onPress={() => onNavigate('aiPredictor')}>
           <View style={[styles.aiShortcutIcon, { backgroundColor: '#E8F4EA' }]}>
-            <BrainCircuit size={20} color="#4B8C52" />
+            <CheckCircle2 size={20} color="#4B8C52" />
           </View>
           <Text style={styles.aiShortcutLabel}>{t('dashboard.ai_predictor_shortcut', { defaultValue: 'Predictor IA' })}</Text>
           <ChevronRight size={14} color={colors.on_surface_variant} style={{ opacity: 0.4 }} />
