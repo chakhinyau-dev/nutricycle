@@ -233,12 +233,25 @@ export const uploadVideoThumbnail = async (getToken, fileUri, fileName) => {
   if (!supabase) return null;
 
   try {
-    const response = await fetch(fileUri);
-    const blob = await response.blob();
     const fileExt = fileName.split('.').pop() || 'jpg';
+    const contentType = `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
     const path = `thumbnails/${Date.now()}.${fileExt}`;
 
-    const { data, error } = await supabase.storage.from('video-content').upload(path, blob);
+    let uploadBody;
+    if (Platform.OS === 'web') {
+      const response = await fetch(fileUri);
+      uploadBody = await response.blob();
+    } else {
+      // fetch(fileUri).blob() is unreliable for local file:// URIs on native
+      // (it was silently failing here, leaving the broken local path saved as
+      // the thumbnail). Pass the file reference directly instead, same as
+      // uploadVideoFile does for the video itself.
+      uploadBody = { uri: fileUri, name: fileName, type: contentType };
+    }
+
+    const { data, error } = await supabase.storage
+      .from('video-content')
+      .upload(path, uploadBody, { contentType });
     if (error) throw error;
 
     const { data: urlData } = supabase.storage.from('video-content').getPublicUrl(data?.path || path);
