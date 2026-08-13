@@ -58,19 +58,13 @@ export const loadVideos = async (getToken) => {
     return VIDEO_LIBRARY;
   }
 
-  const dbVideos = data.map(normalizeVideo);
-  
-  // Merge DB videos with normalized Library videos, avoiding duplicates by title
-  const allVideos = [...dbVideos];
-  
-  VIDEO_LIBRARY.forEach(libVid => {
-    const normalizedLib = normalizeVideo(libVid);
-    if (!allVideos.find(v => v.title === normalizedLib.title)) {
-        allVideos.push(normalizedLib);
-    }
-  });
-
-  return allVideos;
+  // VIDEO_LIBRARY is a last-resort fallback for when Supabase itself is
+  // unreachable (the two branches above) — it used to also get merged in
+  // here on every successful load, so admin-added videos always shared
+  // space with a handful of permanent demo/placeholder entries the
+  // database has no record of. Once the real query succeeds, show only
+  // what's actually in the database.
+  return data.map(normalizeVideo);
 };
 
 export const saveVideo = async (getToken, videoData) => {
