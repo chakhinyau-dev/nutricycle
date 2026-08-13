@@ -501,6 +501,7 @@
     "thumbnail_preview": "Thumbnail Preview",
     "change_thumbnail": "Change Thumbnail",
     "upload_progress": "{{pct}}% uploaded",
+    "compressing_video": "Compressing video… {{pct}}%",
     "calories_invalid": "Enter a valid calorie amount.",
     "time_invalid": "Enter a valid preparation time.",
     "video_required": "Title or video file/URL is required",

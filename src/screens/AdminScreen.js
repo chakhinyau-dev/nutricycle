@@ -46,6 +46,7 @@ import * as VideoThumbnails from 'expo-video-thumbnails';
 import { saveRecipe, deleteRecipe, uploadRecipeImage, getRecipeImageSource } from '../services/recipeService';
 import { saveKeyFood, deleteKeyFood } from '../services/keyFoodsService';
 import { prepareImageForUpload } from '../utils/imagePrep';
+import { prepareVideoForUpload } from '../utils/videoPrep';
 
 const { width } = Dimensions.get('window');
 
@@ -104,6 +105,8 @@ export const AdminScreen = ({
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [localVideoFile, setLocalVideoFile] = useState(null);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [isCompressingVideo, setIsCompressingVideo] = useState(false);
+  const [videoCompressionProgress, setVideoCompressionProgress] = useState(0);
   const [newVideo, setNewVideo] = useState({
     title: '',
     description: '',
@@ -320,7 +323,7 @@ export const AdminScreen = ({
     });
     
     if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
+      let asset = result.assets[0];
       const MAX_SIZE_MB = 2048; // Allow large uploads with resumable transfer
       const sizeInMB = asset.fileSize ? asset.fileSize / (1024 * 1024) : 0;
       if (sizeInMB > MAX_SIZE_MB) {
@@ -333,8 +336,22 @@ export const AdminScreen = ({
         return;
       }
 
+      // Compress before upload — uploading the raw phone-camera file as-is
+      // (previously the only path) is a common cause of stuttering/buffering
+      // playback on mobile connections. See src/utils/videoPrep.js. No-op on
+      // web and for already-small files.
+      setIsCompressingVideo(true);
+      setVideoCompressionProgress(0);
+      try {
+        asset = await prepareVideoForUpload(asset, {
+          onProgress: (progress) => setVideoCompressionProgress(progress || 0),
+        });
+      } finally {
+        setIsCompressingVideo(false);
+      }
+
       setLocalVideoFile(asset);
-      
+
       // Generate thumbnail automatically from video
       try {
         if (Platform.OS === 'web') {
@@ -701,14 +718,25 @@ export const AdminScreen = ({
                 />
 
                 <Text style={styles.label}>{t('admin.video_source')}</Text>
-                <Pressable onPress={handlePickVideo} style={styles.uploadBox}>
-                    <CloudUpload size={24} color={localVideoFile ? colors.primary : '#64748B'} />
-                    <Text style={[styles.uploadText, localVideoFile && { color: colors.primary }]}>
-                        {localVideoFile ? t('admin.file_ready') : t('admin.upload_file')}
-                    </Text>
-                    {localVideoFile && <Text style={styles.uploadSubtext}>{t('admin.ready_to_upload')}</Text>}
+                <Pressable onPress={handlePickVideo} style={styles.uploadBox} disabled={isCompressingVideo}>
+                    {isCompressingVideo ? (
+                      <>
+                        <ActivityIndicator color={colors.primary} />
+                        <Text style={[styles.uploadText, { color: colors.primary }]}>
+                          {t('admin.compressing_video', { pct: Math.round(videoCompressionProgress) })}
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <CloudUpload size={24} color={localVideoFile ? colors.primary : '#64748B'} />
+                        <Text style={[styles.uploadText, localVideoFile && { color: colors.primary }]}>
+                            {localVideoFile ? t('admin.file_ready') : t('admin.upload_file')}
+                        </Text>
+                        {localVideoFile && <Text style={styles.uploadSubtext}>{t('admin.ready_to_upload')}</Text>}
+                      </>
+                    )}
                 </Pressable>
-                
+
                 <Text style={styles.warningHint}>
                   {t('admin.video_upload_hint')}
                 </Text>
@@ -830,7 +858,7 @@ export const AdminScreen = ({
                   onChangeText={v => setNewVideo({...newVideo, instructions: v})}
                 />
 
-                <Pressable style={styles.saveBtn} onPress={handleSaveVideo} disabled={isSaving}>
+                <Pressable style={styles.saveBtn} onPress={handleSaveVideo} disabled={isSaving || isCompressingVideo}>
                     {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{editingVideoId ? t('admin.update_video') : t('admin.save_video')}</Text>}
                 </Pressable>
                 {isSaving && videoUploadProgress > 0 ? (

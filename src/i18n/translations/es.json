@@ -567,6 +567,7 @@
     "thumbnail_preview": "Vista previa de miniatura",
     "change_thumbnail": "Cambiar miniatura",
     "upload_progress": "{{pct}}% subido",
+    "compressing_video": "Comprimiendo video… {{pct}}%",
     "calories_invalid": "Ingresa una cantidad de calorías válida.",
     "time_invalid": "Ingresa un tiempo de preparación válido.",
     "no_thumbnail": "Sin miniatura",
