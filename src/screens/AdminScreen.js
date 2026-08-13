@@ -45,6 +45,7 @@ import {
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { saveRecipe, deleteRecipe, uploadRecipeImage, getRecipeImageSource } from '../services/recipeService';
 import { saveKeyFood, deleteKeyFood } from '../services/keyFoodsService';
+import { prepareImageForUpload } from '../utils/imagePrep';
 
 const { width } = Dimensions.get('window');
 
@@ -207,7 +208,7 @@ export const AdminScreen = ({
       base64: true,
     });
     if (!result.canceled) {
-      setLocalFoodImage(result.assets[0]);
+      setLocalFoodImage(await prepareImageForUpload(result.assets[0]));
     }
   };
 
@@ -362,9 +363,10 @@ export const AdminScreen = ({
       aspect: [16, 9],
       quality: 0.8,
     });
-    
+
     if (!result.canceled && result.assets[0]) {
-      setNewVideo(prev => ({ ...prev, thumbnail: result.assets[0].uri }));
+      const prepared = await prepareImageForUpload(result.assets[0]);
+      setNewVideo(prev => ({ ...prev, thumbnail: prepared.uri }));
     }
   };
 
@@ -537,7 +539,7 @@ export const AdminScreen = ({
       base64: true,
     });
     if (!result.canceled) {
-      setLocalRecipeImage(result.assets[0]);
+      setLocalRecipeImage(await prepareImageForUpload(result.assets[0]));
     }
   };
 
