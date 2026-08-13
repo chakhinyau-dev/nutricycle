@@ -2,6 +2,8 @@ import { createClerkSupabaseClient } from '../lib/supabase';
 import { env } from '../lib/env';
 import { VIDEO_LIBRARY } from '../utils/videoData';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 const tus = require('tus-js-client');
 
 export const extractYouTubeId = (url) => {
@@ -247,11 +249,16 @@ export const uploadVideoThumbnail = async (getToken, fileUri, fileName) => {
       const response = await fetch(fileUri);
       uploadBody = await response.blob();
     } else {
-      // fetch(fileUri).blob() is unreliable for local file:// URIs on native
-      // (it was silently failing here, leaving the broken local path saved as
-      // the thumbnail). Pass the file reference directly instead, same as
-      // uploadVideoFile does for the video itself.
-      uploadBody = { uri: fileUri, name: fileName, type: contentType };
+      // Passing a raw { uri, name, type } object as the upload body (the
+      // previous approach here) isn't a type @supabase/storage-js recognizes
+      // (Blob/ArrayBuffer/FormData/string/File) — it silently got coerced to
+      // its JSON string representation and uploaded as a ~170-byte "image",
+      // so every native-uploaded thumbnail was actually just uploaded text,
+      // not a photo. Read the file into base64 via expo-file-system and
+      // decode it into a real ArrayBuffer instead — the same proven pattern
+      // recipeService.js already uses for recipe image uploads.
+      const diskB64 = await FileSystem.readAsStringAsync(fileUri, { encoding: 'base64' });
+      uploadBody = decode(diskB64);
     }
 
     const { data, error } = await supabase.storage
