@@ -9,6 +9,7 @@ const normalizeLog = (log) => {
     id: String(log.id || loggedAt || Date.now()),
     clerk_user_id: log.clerk_user_id,
     mood: log.mood || 'neutral',
+    energy_level: log.energy_level || 'media',
     symptoms: Array.isArray(log.symptoms) ? log.symptoms : [],
     notes: log.notes || '',
     cycle_day: log.cycle_day || null,
@@ -66,6 +67,7 @@ export const saveDailyLog = async (getToken, clerkUserId, input) => {
       {
         clerk_user_id: clerkUserId,
         mood: payload.mood,
+        energy_level: payload.energy_level,
         symptoms: payload.symptoms,
         notes: payload.notes,
         cycle_day: payload.cycle_day,

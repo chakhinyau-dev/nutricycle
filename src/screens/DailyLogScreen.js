@@ -106,6 +106,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
       if (latest && latestDate === todayStr) {
         // Today's entry already exists — pre-fill for editing
         setMood(latest.mood || 'excelente');
+        setEnergyLevel(latest.energy_level || 'media');
         setSymptoms(latest.symptoms || []);
         setNotes(latest.notes || '');
         setEditingLogDate(latest.log_date || latest.logged_at);
