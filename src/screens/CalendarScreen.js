@@ -14,6 +14,7 @@ import {
   isSameDay,
   startOfWeek,
   eachDayOfInterval,
+  parseISO,
 } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Leaf, Plus, Trash2 } from 'lucide-react-native';
@@ -76,7 +77,13 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
 
   const getLogForDate = (date) => {
     return dailyLogs.find((log) => {
-      const logDate = new Date(log.log_date || log.logged_at);
+      // log_date is a bare "yyyy-MM-dd" string with no time/timezone info.
+      // The native Date constructor treats a date-only string as UTC
+      // midnight, not local midnight — for anyone west of UTC that quietly
+      // shifts it back a calendar day, so a real log stopped matching the
+      // day it was actually logged on. parseISO reads it as local time,
+      // matching how dailyLogService.js saved it.
+      const logDate = log.log_date ? parseISO(log.log_date) : new Date(log.logged_at);
       return isSameDay(logDate, date);
     });
   };
