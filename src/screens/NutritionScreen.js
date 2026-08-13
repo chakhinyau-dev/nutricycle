@@ -432,7 +432,7 @@ const defaultDay = useMemo(() => {
                 </View>
 
                 {recipe ? (
-                  <View style={styles.mealRecipeCard}>
+                  <Pressable style={styles.mealRecipeCard} onPress={() => onNavigate('recipeDetail', recipe)}>
                     <View style={styles.mealRecipeEmoji}>
                       <Text style={styles.mealRecipeEmojiText}>{MEAL_EMOJIS[time]}</Text>
                     </View>
@@ -454,14 +454,15 @@ const defaultDay = useMemo(() => {
                         ))}
                       </View>
                     </View>
-                    {/* Swap button */}
+                    {/* Swap button — stopPropagation so it doesn't also trigger the
+                        card's own onPress and navigate away while swapping */}
                     <Pressable
                       style={styles.swapBtn}
-                      onPress={() => { setActiveSwapMeal(time); setShowSwapModal(true); }}
+                      onPress={(e) => { e.stopPropagation?.(); setActiveSwapMeal(time); setShowSwapModal(true); }}
                     >
                       <RefreshCw size={16} color={colors.primary} />
                     </Pressable>
-                  </View>
+                  </Pressable>
                 ) : (
                   <Pressable style={styles.emptyMealCard} onPress={() => onNavigate('recipes')}>
                     <Utensils size={22} color={colors.on_surface_variant} style={{ opacity: 0.3, marginBottom: 8 }} />
