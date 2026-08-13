@@ -105,6 +105,7 @@
     "export_desc": "Export Data generates a detailed report of your cycle logs, symptoms, and health metrics. You can use this file for your own records or share it with your healthcare professional.",
     "profile_connected": "{{title}} will connect to your secure profile management in the next update.",
     "delete_account": "Delete Account",
+    "delete_account_sub": "Permanently remove your account and data",
     "delete_account_title": "Delete your account?",
     "delete_account_warning": "This permanently deletes your NutriCycle account and all associated data — cycle history, daily logs, saved recipes, and subscription record. This cannot be undone.",
     "delete_account_final_warning": "Are you absolutely sure? Once deleted, your account and data cannot be recovered.",

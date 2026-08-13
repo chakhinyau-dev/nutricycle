@@ -197,13 +197,14 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
     );
   };
 
-  const SettingRow = ({ icon: Icon, title, sub, type = 'chevron', value, onValueChange, onPress }) => (
-    <Pressable 
+  const SettingRow = ({ icon: Icon, title, sub, type = 'chevron', value, onValueChange, onPress, danger = false, loading = false, disabled = false }) => (
+    <Pressable
       style={({ pressed }) => [
         styles.settingRow,
-        pressed && { backgroundColor: 'rgba(0,0,0,0.05)' }
-      ]} 
+        pressed && !disabled && { backgroundColor: 'rgba(0,0,0,0.05)' }
+      ]}
       onPress={() => {
+        if (disabled) return;
         console.log(`[Settings] Row clicked: ${title}`);
         if (onPress) onPress();
         else handleAction(title);
@@ -211,16 +212,18 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
       hitSlop={20}
     >
       <View style={styles.rowLeft}>
-        <View style={styles.iconBox}>
-          <Icon size={20} color={colors.on_surface_variant} strokeWidth={2} />
+        <View style={[styles.iconBox, danger && styles.iconBoxDanger]}>
+          <Icon size={20} color={danger ? '#EB5757' : colors.on_surface_variant} strokeWidth={2} />
         </View>
         <View>
-          <Text style={styles.rowTitle}>{title}</Text>
+          <Text style={[styles.rowTitle, danger && styles.rowTitleDanger]}>{title}</Text>
           {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
         </View>
       </View>
-      {type === 'chevron' ? (
-        <ChevronRight size={18} color="#CBD5E1" />
+      {loading ? (
+        <ActivityIndicator size="small" color="#EB5757" />
+      ) : type === 'chevron' ? (
+        <ChevronRight size={18} color={danger ? '#EB5757' : '#CBD5E1'} />
       ) : (
         <Switch
           value={value}
@@ -378,21 +381,16 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
             <Text style={styles.logoutRowText}>{t('settings.logout')}</Text>
           </Pressable>
 
-          <Pressable
-            style={styles.deleteAccountRow}
-            onPress={handleDeleteAccountPress}
-            disabled={isDeletingAccount}
-            hitSlop={10}
-          >
-            {isDeletingAccount ? (
-              <ActivityIndicator size="small" color="#EB5757" />
-            ) : (
-              <>
-                <Trash2 size={14} color="#EB5757" />
-                <Text style={styles.deleteAccountText}>{t('settings.delete_account')}</Text>
-              </>
-            )}
-          </Pressable>
+          <View style={[styles.groupOutline, { marginTop: 12 }]}>
+            <SettingRow
+              icon={Trash2}
+              title={t('settings.delete_account')}
+              sub={t('settings.delete_account_sub')}
+              danger
+              loading={isDeletingAccount}
+              onPress={handleDeleteAccountPress}
+            />
+          </View>
         </View>
 
         <View style={{ height: 24 }} />
@@ -623,10 +621,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
+  iconBoxDanger: {
+    backgroundColor: '#FDEEEE',
+  },
   rowTitle: {
     fontFamily: 'Outfit_700Bold',
     fontSize: 15,
     color: colors.on_surface,
+  },
+  rowTitleDanger: {
+    color: '#EB5757',
   },
   rowSub: {
     fontFamily: 'Outfit_500Medium',
@@ -672,20 +676,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_700Bold',
     fontSize: 16,
     color: '#EB5757',
-  },
-  deleteAccountRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    height: 44,
-    marginTop: 12,
-  },
-  deleteAccountText: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 13,
-    color: '#EB5757',
-    opacity: 0.65,
   },
   passwordForm: {
     backgroundColor: '#FFFFFF',
