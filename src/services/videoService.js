@@ -234,45 +234,101 @@ export const uploadVideoFile = async (getToken, fileUri, fileName, options = {})
   }
 };
 
-export const uploadVideoThumbnail = async (getToken, fileUri, fileName) => {
+// Rebuilt to use the exact same read/upload logic as recipeService.js's
+// uploadRecipeImage() (recipe + food images), which is confirmed working —
+// several narrower fixes here (raw {uri,name,type} object as upload body,
+// then a single FileSystem-only read) each solved one symptom but the
+// underlying upload kept failing in ways that were hard to fully verify
+// without a device. Rather than keep guessing at the difference, this now
+// mirrors that proven implementation directly: same fallback order, same
+// upload() call shape, just pointed at the video-content bucket. Accepts
+// either a plain uri string (how every caller here uses it today) or an
+// { uri, base64, mimeType } object, same as uploadRecipeImage.
+export const uploadVideoThumbnail = async (getToken, fileInput, fileName) => {
   const supabase = createClerkSupabaseClient(getToken);
   if (!supabase) return null;
 
   try {
-    const fileExt = fileName.split('.').pop() || 'jpg';
-    const contentType = `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
-    const path = `thumbnails/${Date.now()}.${fileExt}`;
+    const fileUri = typeof fileInput === 'string' ? fileInput : fileInput?.uri;
+    const pickerBase64 = typeof fileInput === 'object' ? fileInput?.base64 : null;
+    const mimeType =
+      typeof fileInput === 'object' && fileInput?.mimeType
+        ? fileInput.mimeType
+        : 'image/jpeg';
 
-    let uploadBody;
-    if (Platform.OS === 'web') {
-      const response = await fetch(fileUri);
-      uploadBody = await response.blob();
-    } else {
-      // Passing a raw { uri, name, type } object as the upload body (the
-      // previous approach here) isn't a type @supabase/storage-js recognizes
-      // (Blob/ArrayBuffer/FormData/string/File) — it silently got coerced to
-      // its JSON string representation and uploaded as a ~170-byte "image",
-      // so every native-uploaded thumbnail was actually just uploaded text,
-      // not a photo. Read the file into base64 via expo-file-system and
-      // decode it into a real ArrayBuffer instead — the same proven pattern
-      // recipeService.js already uses for recipe image uploads.
-      const diskB64 = await FileSystem.readAsStringAsync(fileUri, { encoding: 'base64' });
-      uploadBody = decode(diskB64);
+    let uploadBody = null;
+
+    const base64ToArrayBuffer = (raw) => {
+      const trimmed = String(raw || '').trim();
+      if (!trimmed) return null;
+      const dataPart = trimmed.includes(',') ? trimmed.split(',')[1] : trimmed;
+      try {
+        return decode(dataPart);
+      } catch (e) {
+        console.warn('[VideoThumbnail] base64 decode failed:', e?.message);
+        return null;
+      }
+    };
+
+    if (pickerBase64) {
+      uploadBody = base64ToArrayBuffer(pickerBase64);
     }
 
-    const { data, error } = await supabase.storage
-      .from('video-content')
-      .upload(path, uploadBody, { contentType });
-    if (error) throw error;
+    if (!uploadBody && fileUri && Platform.OS !== 'web') {
+      try {
+        const diskB64 = await FileSystem.readAsStringAsync(fileUri, {
+          encoding: 'base64',
+        });
+        uploadBody = base64ToArrayBuffer(diskB64);
+      } catch (e) {
+        console.warn('[VideoThumbnail] FileSystem.readAsStringAsync failed:', e?.message);
+      }
+    }
+
+    if (!uploadBody && fileUri) {
+      try {
+        const response = await fetch(fileUri);
+        uploadBody = await response.blob();
+      } catch (e) {
+        console.warn('[VideoThumbnail] fetch(uri) failed:', e?.message);
+      }
+    }
+
+    if (!uploadBody && pickerBase64) {
+      const dataUrl = pickerBase64.startsWith('data:')
+        ? pickerBase64
+        : `data:${mimeType};base64,${pickerBase64}`;
+      try {
+        const response = await fetch(dataUrl);
+        uploadBody = await response.blob();
+      } catch (e) {
+        console.warn('[VideoThumbnail] fetch(dataUrl) failed:', e?.message);
+      }
+    }
+
+    if (!uploadBody) {
+      throw new Error('Unable to read the selected thumbnail.');
+    }
+
+    const fileExt = (fileName && fileName.includes('.') && fileName.split('.').pop()) || 'jpg';
+    const path = `thumbnails/${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage.from('video-content').upload(path, uploadBody, {
+      contentType: mimeType,
+      upsert: false,
+    });
+    if (error) {
+      console.error('[Supabase] Video Thumbnail Upload Error:', error.message);
+      throw error;
+    }
 
     const { data: urlData } = supabase.storage.from('video-content').getPublicUrl(data?.path || path);
+    console.log('[Supabase] Video thumbnail uploaded successfully:', urlData.publicUrl);
     return urlData.publicUrl;
   } catch (error) {
     console.error('[Supabase] Video Thumbnail Upload Error:', error);
     // Re-throw (rather than returning null) so the admin sees the actual
-    // Supabase error — e.g. a storage policy rejection vs. a network
-    // failure — instead of a generic "couldn't upload" message that gives
-    // no way to tell what's actually wrong.
+    // Supabase error instead of a generic "couldn't upload" message.
     throw new Error(error?.message || 'Unknown thumbnail upload error');
   }
 };
