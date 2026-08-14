@@ -524,6 +524,7 @@
     "video_too_large_msg": "Direct uploads are limited to {{limit}}MB to avoid errors. Please use a YouTube link.",
     "video_upload_failed": "Video upload failed. Please try again.",
     "recipe_image_upload_failed": "Unable to upload the selected image.",
+    "thumbnail_upload_failed": "Couldn't upload the thumbnail. Please try again.",
     "pro_active": "PRO ACTIVE",
     "upgrade": "UPGRADE",
     "ready_to_upload": "Ready to upload",

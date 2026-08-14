@@ -451,12 +451,20 @@ export const AdminScreen = ({
       const needsThumbUpload = finalThumbnail &&
         (finalThumbnail.startsWith('file') || finalThumbnail.startsWith('data:') || finalThumbnail.startsWith('blob:'));
       if (needsThumbUpload) {
-        const thumbUrl = await uploadVideoThumbnail(
+        // uploadVideoThumbnail now throws (with the real Supabase error
+        // message) instead of returning null on failure — previously this
+        // fell through silently, leaving finalThumbnail as the local device
+        // file:// path, which then got saved straight into the database. It
+        // looked fine on the device that picked it (that device can still
+        // resolve its own local file) but was broken everywhere else. The
+        // outer try/catch below surfaces whatever error message comes back,
+        // so a real failure now shows the actual cause instead of a generic
+        // one.
+        finalThumbnail = await uploadVideoThumbnail(
           getToken,
           finalThumbnail,
           `thumb_${Date.now()}.jpg`
         );
-        if (thumbUrl) finalThumbnail = thumbUrl;
       }
       
       const payload = {

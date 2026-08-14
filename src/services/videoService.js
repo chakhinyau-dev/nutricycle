@@ -264,6 +264,10 @@ export const uploadVideoThumbnail = async (getToken, fileUri, fileName) => {
     return urlData.publicUrl;
   } catch (error) {
     console.error('[Supabase] Video Thumbnail Upload Error:', error);
-    return null;
+    // Re-throw (rather than returning null) so the admin sees the actual
+    // Supabase error — e.g. a storage policy rejection vs. a network
+    // failure — instead of a generic "couldn't upload" message that gives
+    // no way to tell what's actually wrong.
+    throw new Error(error?.message || 'Unknown thumbnail upload error');
   }
 };

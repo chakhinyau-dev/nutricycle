@@ -538,6 +538,7 @@
     "video_too_large_msg": "Las subidas directas estan limitadas a {{limit}}MB para evitar errores. Usa un enlace de YouTube.",
     "video_upload_failed": "La subida del video fallo. Intentalo de nuevo.",
     "recipe_image_upload_failed": "No se pudo subir la imagen seleccionada.",
+    "thumbnail_upload_failed": "No se pudo subir la miniatura. Intenta de nuevo.",
     "pro_active": "PRO ACTIVO",
     "upgrade": "MEJORAR",
     "ready_to_upload": "Listo para subir",
