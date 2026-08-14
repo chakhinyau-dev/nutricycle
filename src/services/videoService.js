@@ -41,6 +41,7 @@ const normalizeVideo = (video) => {
     instructions: Array.isArray(video.instructions)
       ? video.instructions
       : (video.instructions ? String(video.instructions).split('\n').filter(Boolean) : []),
+    coachingTips: video.coaching_tips || video.coachingTips || '',
   };
 };
 
@@ -93,6 +94,7 @@ export const saveVideo = async (getToken, videoData) => {
     instructions: Array.isArray(videoData.instructions)
       ? videoData.instructions
       : (videoData.instructions ? String(videoData.instructions).split('\n').filter(Boolean) : []),
+    coaching_tips: videoData.coaching_tips || videoData.coachingTips || '',
     calories: parseInt(videoData.calories) || 0,
   };
 

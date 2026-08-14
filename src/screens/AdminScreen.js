@@ -120,6 +120,7 @@ export const AdminScreen = ({
     thumbnail: '',
     ingredients: '',
     instructions: '',
+    coachingTips: '',
   });
 
   // Recipe State
@@ -137,6 +138,7 @@ export const AdminScreen = ({
     imageUrl: '',
     ingredients: '',
     instructions: '',
+    coachingTips: '',
     protein: '',
     carbs: '',
     fat: '',
@@ -159,6 +161,7 @@ export const AdminScreen = ({
         thumbnail: '',
         ingredients: '',
         instructions: '',
+        coachingTips: '',
       });
       setLocalVideoFile(null);
     }
@@ -178,6 +181,7 @@ export const AdminScreen = ({
       thumbnail: '',
       ingredients: '',
       instructions: '',
+      coachingTips: '',
     });
     setLocalVideoFile(null);
     setEditingVideoId(null);
@@ -307,6 +311,7 @@ export const AdminScreen = ({
       imageUrl: '',
       ingredients: '',
       instructions: '',
+      coachingTips: '',
       protein: '',
       carbs: '',
       fat: '',
@@ -403,6 +408,7 @@ export const AdminScreen = ({
       thumbnail: vid.thumbnail || '',
       ingredients: Array.isArray(vid.ingredients) ? vid.ingredients.join('\n') : '',
       instructions: Array.isArray(vid.instructions) ? vid.instructions.join('\n') : '',
+      coachingTips: vid.coaching_tips || vid.coachingTips || '',
     });
     setLocalVideoFile(null);
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -483,6 +489,7 @@ export const AdminScreen = ({
         updated_at: new Date().toISOString(),
         ingredients: newVideo.ingredients ? newVideo.ingredients.split('\n').filter(Boolean) : [],
         instructions: newVideo.instructions ? newVideo.instructions.split('\n').filter(Boolean) : [],
+        coaching_tips: newVideo.coachingTips?.trim() || '',
       };
 
       const success = await saveVideo(getToken, payload);
@@ -546,6 +553,7 @@ export const AdminScreen = ({
       imageUrl: rec.image_url || rec.imageUrl || rec.image?.uri || rec.image?.url || '',
       ingredients: Array.isArray(rec.ingredients) ? rec.ingredients.join('\n') : '',
       instructions: Array.isArray(rec.instructions) ? rec.instructions.join('\n') : '',
+      coachingTips: rec.coaching_tips || rec.coachingTips || '',
       protein: rec.protein != null ? String(rec.protein) : '',
       carbs: rec.carbs != null ? String(rec.carbs) : '',
       fat: rec.fat != null ? String(rec.fat) : '',
@@ -609,6 +617,7 @@ export const AdminScreen = ({
         imageUrl: finalImageUrl,
         ingredients: newRecipe.ingredients.split('\n').filter(Boolean),
         instructions: newRecipe.instructions.split('\n').filter(Boolean),
+        coaching_tips: newRecipe.coachingTips?.trim() || '',
         protein: newRecipe.protein,
         carbs: newRecipe.carbs,
         fat: newRecipe.fat,
@@ -866,6 +875,16 @@ export const AdminScreen = ({
                   onChangeText={v => setNewVideo({...newVideo, instructions: v})}
                 />
 
+                <Text style={styles.label}>{t('admin.coaching_tips')}</Text>
+                <TextInput
+                  multiline
+                  numberOfLines={4}
+                  placeholder={t('admin.coaching_tips_placeholder')}
+                  style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
+                  value={newVideo.coachingTips}
+                  onChangeText={v => setNewVideo({...newVideo, coachingTips: v})}
+                />
+
                 <Pressable style={styles.saveBtn} onPress={handleSaveVideo} disabled={isSaving || isCompressingVideo}>
                     {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{editingVideoId ? t('admin.update_video') : t('admin.save_video')}</Text>}
                 </Pressable>
@@ -1001,6 +1020,9 @@ export const AdminScreen = ({
 
                 <Text style={styles.label}>{t('admin.instructions')}</Text>
                 <TextInput multiline numberOfLines={4} style={[styles.input, { height: 80 }]} value={newRecipe.instructions} onChangeText={t => setNewRecipe({...newRecipe, instructions: t})} />
+
+                <Text style={styles.label}>{t('admin.coaching_tips')}</Text>
+                <TextInput multiline numberOfLines={4} placeholder={t('admin.coaching_tips_placeholder')} style={[styles.input, { height: 80 }]} value={newRecipe.coachingTips} onChangeText={t => setNewRecipe({...newRecipe, coachingTips: t})} />
 
                 <Pressable style={styles.saveBtn} onPress={handleSaveRecipe} disabled={isSaving}>
                     {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{t('admin.save_recipe')}</Text>}

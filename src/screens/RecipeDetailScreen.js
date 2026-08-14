@@ -211,6 +211,15 @@ export const RecipeDetailScreen = ({ recipe, onBack, isSaved = false, onToggleSa
             ))}
           </View>
 
+          {/* Coaching Tips — personal note from the coach, only shown when set */}
+          {data.coachingTips ? (
+            <View style={[styles.section, styles.coachingTipsBox]}>
+              <Text style={styles.sectionTitle}>{t('recipe_detail.coaching_tips')}</Text>
+              <View style={{ height: 12 }} />
+              <Text style={styles.stepText}>{data.coachingTips}</Text>
+            </View>
+          ) : null}
+
           {/* Key Ingredients Collapsible Section */}
           <View style={[styles.section, { marginTop: 40, borderTopWidth: 1, borderTopColor: '#F1F1E8', paddingTop: 32 }]}>
             <Pressable 
@@ -276,6 +285,12 @@ const styles = StyleSheet.create({
   statText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: '#64748B', opacity: 0.7, letterSpacing: 0.5 },
   mainContent: { paddingHorizontal: 28, paddingTop: 16 },
   sectionTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 28, color: '#1A1A1A' },
+  coachingTipsBox: {
+    backgroundColor: '#F4F2EC',
+    borderRadius: 24,
+    padding: 24,
+    marginTop: 8,
+  },
   instructionStep: { marginBottom: 32, flexDirection: 'row' },
   stepNumber: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 18, color: '#A3B3A5', marginRight: 16, width: 24 },
   stepText: { flex: 1, fontFamily: 'Outfit_500Medium', fontSize: 16, color: '#1A1A1A', lineHeight: 26, opacity: 0.8 },

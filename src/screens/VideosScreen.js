@@ -113,12 +113,6 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
     return t(`dailylog.meal_types.${mealType}`);
   };
 
-  const getLocalizedVideoLabel = (v) => {
-    if (!v) return '';
-    const typeKey = v.contentType || 'recipe';
-    return t(`videos.types.${typeKey}`, { defaultValue: v.category });
-  };
-
   React.useEffect(() => {
     const runId = ++translationRunId.current;
     setDisplayLibrary(videos);
@@ -284,6 +278,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
     const recipeIngredients = videoIngredients || linkedRecipe?.ingredients || [];
     const recipeInstructions = videoInstructions || linkedRecipe?.instructions || [];
     const hasRecipeContent = !!(recipeIngredients.length || recipeInstructions.length);
+    const coachingTips = activeVideo?.coachingTips || linkedRecipe?.coachingTips || null;
 
     const videoCals  = linkedRecipe?.calories || activeVideo?.calories || 0;
     const videoMacros = computeMacros(videoCals);
@@ -391,6 +386,14 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                 )}
               </View>
             )}
+
+            {coachingTips ? (
+              <View style={styles.coachingTipsBox}>
+                <Text style={styles.recipeSectionTitle}>{t('recipe_detail.coaching_tips')}</Text>
+                <View style={{ height: 12 }} />
+                <Text style={styles.stepText}>{coachingTips}</Text>
+              </View>
+            ) : null}
           </View>
         </ScrollView>
       </View>
@@ -524,7 +527,6 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                     </View>
                   </View>
                   <View style={styles.videoInfo}>
-                    <Text style={styles.videoCategory}>{getLocalizedVideoLabel(video)}</Text>
                     <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
                   </View>
                 </Pressable>
@@ -629,4 +631,10 @@ const styles = StyleSheet.create({
   stepRow: { flexDirection: 'row', marginBottom: 16, gap: 12 },
   stepNumber: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 18, color: '#A3B3A5', width: 20 },
   stepText: { flex: 1, fontFamily: 'Outfit_500Medium', fontSize: 15, color: colors.on_surface, lineHeight: 24, opacity: 0.85 },
+  coachingTipsBox: {
+    backgroundColor: '#F4F2EC',
+    borderRadius: 24,
+    padding: 24,
+    marginTop: 32,
+  },
 });

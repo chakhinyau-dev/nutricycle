@@ -78,6 +78,7 @@ const normalizeRecipe = (recipe) => ({
   videoUrl: recipe.video_url || recipe.videoUrl || '',
   ingredients: toArray(recipe.ingredients),
   instructions: toArray(recipe.instructions),
+  coachingTips: recipe.coaching_tips || recipe.coachingTips || '',
   // Real macro values when the admin filled them in; null when not, so
   // getRecipeMacros() (src/utils/nutrition.js) knows to fall back to its
   // shared estimate instead of every screen guessing independently.
@@ -136,6 +137,7 @@ export const saveRecipe = async (getToken, recipe) => {
         '',
       ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
       instructions: Array.isArray(recipe.instructions) ? recipe.instructions : [],
+      coaching_tips: recipe.coaching_tips || recipe.coachingTips || '',
       protein: parseOptionalNumber(recipe.protein),
       carbs: parseOptionalNumber(recipe.carbs),
       fat: parseOptionalNumber(recipe.fat),
