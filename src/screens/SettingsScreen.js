@@ -71,7 +71,10 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        // MediaTypeOptions is deprecated in this SDK — matching the array
+        // syntax already used everywhere else (AdminScreen.js) rather than
+        // leaving this one spot on the old API.
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,
