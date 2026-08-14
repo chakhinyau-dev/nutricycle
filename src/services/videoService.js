@@ -2,7 +2,10 @@ import { createClerkSupabaseClient } from '../lib/supabase';
 import { env } from '../lib/env';
 import { VIDEO_LIBRARY } from '../utils/videoData';
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+// See recipeService.js — expo-file-system's main entrypoint (SDK 54 / v19)
+// throws on the classic readAsStringAsync API; the legacy submodule keeps
+// the same signature.
+import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 const tus = require('tus-js-client');
 

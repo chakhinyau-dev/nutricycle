@@ -1,5 +1,8 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+// See recipeService.js — expo-file-system's main entrypoint (SDK 54 / v19)
+// throws on the classic getInfoAsync API; the legacy submodule keeps the
+// same signature.
+import * as FileSystem from 'expo-file-system/legacy';
 import { Video as VideoCompressor } from 'react-native-compressor';
 
 // Admin-uploaded videos are picked straight from the phone's camera roll at

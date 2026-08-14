@@ -1,5 +1,9 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+// expo-file-system's main entrypoint (SDK 54 / v19) throws on the classic
+// readAsStringAsync/getInfoAsync-style API now — it's been moved to a
+// legacy submodule with the exact same signatures for anyone not yet
+// migrated to the new File/Directory classes.
+import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 
 import { createClerkSupabaseClient } from '../lib/supabase';
