@@ -433,9 +433,13 @@ const defaultDay = useMemo(() => {
 
                 {recipe ? (
                   <Pressable style={styles.mealRecipeCard} onPress={() => onNavigate('recipeDetail', recipe)}>
-                    <View style={styles.mealRecipeEmoji}>
-                      <Text style={styles.mealRecipeEmojiText}>{MEAL_EMOJIS[time]}</Text>
-                    </View>
+                    {recipe.imageUrl ? (
+                      <Image source={{ uri: recipe.imageUrl }} style={styles.mealRecipeImage} resizeMode="cover" />
+                    ) : (
+                      <View style={styles.mealRecipeEmoji}>
+                        <Text style={styles.mealRecipeEmojiText}>{MEAL_EMOJIS[time]}</Text>
+                      </View>
+                    )}
                     <View style={styles.mealRecipeInfo}>
                       <Text style={styles.mealRecipeName} numberOfLines={2}>{recipe.title}</Text>
                       <View style={styles.macroChipsRow}>
@@ -1013,6 +1017,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F2EC',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  mealRecipeImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#F4F2EC',
   },
   mealRecipeEmojiText: {
     fontSize: 26,
