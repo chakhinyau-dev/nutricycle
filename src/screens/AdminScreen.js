@@ -3,7 +3,7 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
+  FlatList,
   Pressable,
   TextInput,
   ActivityIndicator,
@@ -96,7 +96,10 @@ export const AdminScreen = ({
   const { t } = useTranslation();
   const { getToken: getTokenAuth } = useAuth();
   const getToken = getTokenProp || getTokenAuth;
-  const scrollViewRef = useRef(null);
+  // Single shared ref — only one of the three admin lists (Videos/Recipes/
+  // Foods) is ever mounted at a time, so one ref covers all three tabs'
+  // "scroll to top after edit" calls.
+  const adminListRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState('videos');
   const [isSaving, setIsSaving] = useState(false);
@@ -231,7 +234,7 @@ export const AdminScreen = ({
       benefits:    food.benefits    || '',
       imageUrl:    food.imageUrl || food.image || '',
     });
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    adminListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
   const handleSaveFood = async () => {
@@ -295,6 +298,26 @@ export const AdminScreen = ({
       );
     }
   };
+
+  // Flattened for FlatList — the saved-foods list was previously a plain
+  // ScrollView + nested .map(), which mounts every item's <Image> at once
+  // regardless of scroll position. On Android especially, that means image
+  // decode memory pressure grows with every food added, and once too many
+  // are mounted simultaneously some silently fail to render — the "images
+  // disappear as more are added" symptom. A FlatList only mounts what's
+  // near the visible viewport, so memory use stays roughly constant no
+  // matter how many foods exist.
+  const flattenedFoods = useMemo(() => {
+    const rows = [];
+    ['menstrual', 'follicular', 'ovulation', 'luteal'].forEach(phase => {
+      (keyFoods[phase] || []).forEach(cat => {
+        cat.items.forEach(food => {
+          rows.push({ ...food, phaseKey: phase, categoryKey: cat.categoryKey });
+        });
+      });
+    });
+    return rows;
+  }, [keyFoods]);
 
   const resetRecipeForm = () => {
     setLocalRecipeImage(null);
@@ -411,7 +434,7 @@ export const AdminScreen = ({
       coachingTips: vid.coaching_tips || vid.coachingTips || '',
     });
     setLocalVideoFile(null);
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    adminListRef.current?.scrollToOffset({ offset: 0, animated: true });
     if (showToast) showToast(t('admin.editing_video', { title: vid.title }));
   };
 
@@ -559,7 +582,7 @@ export const AdminScreen = ({
       fat: rec.fat != null ? String(rec.fat) : '',
       fiber: rec.fiber != null ? String(rec.fiber) : '',
     });
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    adminListRef.current?.scrollToOffset({ offset: 0, animated: true });
     if (showToast) showToast(t('admin.editing_recipe', { title: rec.title }));
   };
 
@@ -670,6 +693,68 @@ export const AdminScreen = ({
     }
   };
 
+  const renderVideoItem = ({ item: v }) => (
+    <View style={styles.itemCard}>
+      <Image source={{ uri: v.thumbnail || (v.youtube_url ? `https://img.youtube.com/vi/${extractYouTubeId(v.youtube_url)}/0.jpg` : 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800') }} style={styles.itemThumb} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.itemTitle}>{v.title}</Text>
+        <Text style={styles.itemSub}>
+          {(v.meal_type || v.mealType) && (v.meal_type !== 'none' && v.mealType !== 'none') ? `${t(`dailylog.meal_types.${v.meal_type || v.mealType}`)} • ` : ''}
+          {t(`phases.${v.phase_key || v.phaseKey || 'all'}`)}
+        </Text>
+      </View>
+      <View style={styles.itemActions}>
+        <Pressable onPress={() => handleEditVideo(v)} style={styles.itemActionBtn}><Pencil size={18} color={colors.primary}/></Pressable>
+        <Pressable onPress={() => handleDeleteVideo(v.id)} style={styles.itemActionBtn}><Trash2 size={18} color="#EB5757"/></Pressable>
+      </View>
+    </View>
+  );
+
+  const renderRecipeItem = ({ item: r }) => (
+    <View style={styles.itemCard}>
+      <Image source={getRecipeImageSource(r)} style={styles.itemThumb} />
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemTitle}>{r.title}</Text>
+        <Text style={styles.itemSub}>
+          {r.mealType && r.mealType !== 'none' ? t(`dailylog.meal_types.${r.mealType}`) : t('admin.my_phase')}
+          {' • '}
+          {t(`phases.${r.phase_key || r.phaseKey || 'all'}`)}
+        </Text>
+      </View>
+      <View style={styles.itemActions}>
+        <Pressable onPress={() => handleEditRecipe(r)} style={styles.itemActionBtn}><Pencil size={18} color={colors.primary}/></Pressable>
+        <Pressable onPress={() => handleDeleteRecipe(r.id)} style={styles.itemActionBtn}><Trash2 size={18} color="#EB5757"/></Pressable>
+      </View>
+    </View>
+  );
+
+  const renderFoodItem = ({ item: food }) => (
+    <View style={styles.itemCard}>
+      {food.image ? (
+        <Image source={{ uri: food.image }} style={styles.itemThumb} />
+      ) : (
+        <View style={[styles.itemThumb, { backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }]}>
+          <Apple size={20} color="#CBD5E1" />
+        </View>
+      )}
+      <View style={{ flex: 1 }}>
+        <Text style={styles.itemTitle}>{food.name || food.key}</Text>
+        <Text style={styles.itemSub}>{food.phaseKey} · {food.categoryKey}</Text>
+        {food.benefits ? (
+          <Text style={styles.itemBenefits} numberOfLines={1}>{food.benefits}</Text>
+        ) : null}
+      </View>
+      <View style={styles.itemActions}>
+        <Pressable onPress={() => handleEditFood(food)} style={styles.itemActionBtn}>
+          <Pencil size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable onPress={() => handleDeleteFood(food.key)} style={styles.itemActionBtn}>
+          <Trash2 size={18} color="#EB5757" />
+        </Pressable>
+      </View>
+    </View>
+  );
+
   if (!isAdmin) {
     return (
       <View style={styles.centered}>
@@ -678,6 +763,435 @@ export const AdminScreen = ({
       </View>
     );
   }
+
+  // Rendered as each FlatList's ListHeaderComponent below — plain elements
+  // (not function/class components), so React diffs them structurally like
+  // any other JSX each render instead of remounting them, which would drop
+  // focus out of the TextInputs on every keystroke.
+  const videoFormHeader = (
+    <View>
+      <View style={styles.formCard}>
+          <Text style={styles.formTitle}>{editingVideoId ? t('admin.edit_video') : t('admin.add_video')}</Text>
+
+          <Text style={styles.label}>{t('videos.video_title')}</Text>
+          <TextInput
+            style={styles.input}
+            value={newVideo.title}
+            onChangeText={t => setNewVideo({...newVideo, title: t})}
+          />
+
+          <Text style={styles.label}>{t('admin.video_source')}</Text>
+          <Pressable onPress={handlePickVideo} style={styles.uploadBox} disabled={isCompressingVideo}>
+              {isCompressingVideo ? (
+                <>
+                  <ActivityIndicator color={colors.primary} />
+                  <Text style={[styles.uploadText, { color: colors.primary }]}>
+                    {t('admin.compressing_video', { pct: Math.round(videoCompressionProgress) })}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <CloudUpload size={24} color={localVideoFile ? colors.primary : '#64748B'} />
+                  <Text style={[styles.uploadText, localVideoFile && { color: colors.primary }]}>
+                      {localVideoFile ? t('admin.file_ready') : t('admin.upload_file')}
+                  </Text>
+                  {localVideoFile && <Text style={styles.uploadSubtext}>{t('admin.ready_to_upload')}</Text>}
+                </>
+              )}
+          </Pressable>
+
+          <Text style={styles.warningHint}>
+            {t('admin.video_upload_hint')}
+          </Text>
+
+          <View style={styles.thumbnailPreviewContainer}>
+            <Text style={styles.label}>{t('admin.thumbnail_preview')}</Text>
+            {newVideo.thumbnail ? (
+              <Image source={{ uri: newVideo.thumbnail }} style={styles.thumbnailPreview} />
+            ) : (
+              <View style={[styles.thumbnailPreview, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' }]}>
+                <Text style={{ color: '#666', fontFamily: 'Outfit_500Medium', fontSize: 13 }}>{t('admin.no_thumbnail', { defaultValue: 'Sin miniatura' })}</Text>
+              </View>
+            )}
+            <Pressable onPress={handlePickCustomThumbnail} style={styles.changeThumbBtn}>
+              <Text style={styles.changeThumbText}>
+                {newVideo.thumbnail ? t('admin.change_thumbnail') : t('admin.choose_thumbnail', { defaultValue: 'Elegir miniatura' })}
+              </Text>
+            </Pressable>
+          </View>
+
+          <Text style={styles.label}>{t('videos.enter_youtube_url')}</Text>
+          <View style={styles.inputWrapper}>
+              <Tv size={18} color={colors.primary} style={{ marginRight: 8 }} />
+              <TextInput
+                style={[styles.input, { flex: 1, borderBottomWidth: 0, marginBottom: 0 }]}
+                value={newVideo.youtubeUrl}
+                placeholder={t('admin.youtube_placeholder')}
+                onChangeText={t => setNewVideo({...newVideo, youtubeUrl: t, videoUrl: ''})}
+              />
+          </View>
+
+          <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.label}>{t('videos.phase')}</Text>
+                  <View style={styles.phaseSelector}>
+                      {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
+                          <Pressable
+                              key={p}
+                              onPress={() => setNewVideo({...newVideo, phaseKey: p})}
+                              style={[styles.phaseBtn, newVideo.phaseKey === p && { backgroundColor: colors.primary }]}
+                          >
+                              <Text style={[styles.phaseBtnText, newVideo.phaseKey === p && { color: '#FFF' }]}>
+                                  {p.charAt(0).toUpperCase()}
+                              </Text>
+                          </Pressable>
+                      ))}
+                  </View>
+              </View>
+              <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>{t('videos.duration')}</Text>
+                  <TextInput
+                     style={styles.input}
+                     value={newVideo.duration}
+                     placeholder="5:00"
+                     onChangeText={t => setNewVideo({...newVideo, duration: t})}
+                  />
+              </View>
+          </View>
+
+          <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>{t('admin.calories', { defaultValue: 'Calorías (kcal)' })}</Text>
+                  <TextInput
+                     style={styles.input}
+                     value={newVideo.calories}
+                     placeholder="320"
+                     keyboardType="numeric"
+                     onChangeText={v => setNewVideo({...newVideo, calories: v.replace(/[^0-9]/g, '')})}
+                  />
+              </View>
+          </View>
+
+          <Text style={styles.label}>{t('videos.category')}</Text>
+          <TextInput
+             style={styles.input}
+             value={newVideo.category}
+             placeholder={t('admin.video_category_placeholder', { defaultValue: 'e.g. Meditación, Sonidos, Fase folicular' })}
+             onChangeText={v => setNewVideo({...newVideo, category: v})}
+          />
+
+          <Text style={styles.label}>{t('admin.meal_type')}</Text>
+          <View style={styles.mealTypeSelector}>
+              {[
+                { id: 'none', icon: LayoutGrid, label: t('admin.my_phase') },
+                { id: 'breakfast', icon: Coffee, label: t('dailylog.meal_types.breakfast') },
+                { id: 'lunch', icon: Utensils, label: t('dailylog.meal_types.lunch') },
+                { id: 'snack', icon: Apple, label: t('dailylog.meal_types.snack') },
+                { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') },
+                { id: 'prep', icon: ChefHat, label: t('dailylog.meal_types.prep') }
+              ].map(m => (
+                  <Pressable
+                      key={m.id}
+                      onPress={() => setNewVideo({...newVideo, mealType: m.id})}
+                      style={[styles.mealBtn, newVideo.mealType === m.id && styles.mealBtnActive]}
+                  >
+                      <m.icon size={14} color={newVideo.mealType === m.id ? '#FFF' : colors.on_surface_variant} style={{ marginRight: 6 }} />
+                      <Text style={[styles.mealBtnText, newVideo.mealType === m.id && styles.mealBtnTextActive]}>
+                          {m.label}
+                      </Text>
+                  </Pressable>
+              ))}
+          </View>
+
+          <Text style={styles.label}>{t('admin.ingredients')}</Text>
+          <TextInput
+            multiline
+            numberOfLines={4}
+            style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
+            value={newVideo.ingredients}
+            onChangeText={v => setNewVideo({...newVideo, ingredients: v})}
+          />
+
+          <Text style={styles.label}>{t('admin.instructions')}</Text>
+          <TextInput
+            multiline
+            numberOfLines={4}
+            style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
+            value={newVideo.instructions}
+            onChangeText={v => setNewVideo({...newVideo, instructions: v})}
+          />
+
+          <Text style={styles.label}>{t('admin.coaching_tips')}</Text>
+          <TextInput
+            multiline
+            numberOfLines={4}
+            placeholder={t('admin.coaching_tips_placeholder')}
+            style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
+            value={newVideo.coachingTips}
+            onChangeText={v => setNewVideo({...newVideo, coachingTips: v})}
+          />
+
+          <Pressable style={styles.saveBtn} onPress={handleSaveVideo} disabled={isSaving || isCompressingVideo}>
+              {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{editingVideoId ? t('admin.update_video') : t('admin.save_video')}</Text>}
+          </Pressable>
+          {isSaving && videoUploadProgress > 0 ? (
+            <Text style={styles.uploadProgressText}>{t('admin.upload_progress', { pct: Math.round(videoUploadProgress) })}</Text>
+          ) : null}
+          {editingVideoId && (
+              <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetVideoForm}>
+                  <Text style={{ color: '#475569' }}>{t('common.cancel')}</Text>
+              </Pressable>
+          )}
+      </View>
+
+      <Text style={styles.sectionTitle}>{t('admin.existing_videos')} ({videos.length})</Text>
+    </View>
+  );
+
+  const recipeFormHeader = (
+    <View>
+      <View style={styles.formCard}>
+          <Text style={styles.formTitle}>{editingRecipeId ? t('admin.edit_recipe') : t('admin.add_recipe')}</Text>
+
+          <Text style={styles.label}>{t('admin.recipe_title')}</Text>
+          <TextInput style={styles.input} value={newRecipe.title} onChangeText={t => setNewRecipe({...newRecipe, title: t})} />
+
+          <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.label}>{t('admin.phase')}</Text>
+                  <View style={styles.phaseSelector}>
+                      {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
+                          <Pressable
+                              key={p}
+                              onPress={() => setNewRecipe({...newRecipe, phaseKey: p})}
+                              style={[styles.phaseBtn, newRecipe.phaseKey === p && { backgroundColor: colors.primary }]}
+                          >
+                              <Text style={[styles.phaseBtnText, newRecipe.phaseKey === p && { color: '#FFF' }]}>
+                                  {p.charAt(0).toUpperCase()}
+                              </Text>
+                          </Pressable>
+                      ))}
+                  </View>
+              </View>
+              <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>{t('admin.calories', { defaultValue: 'Calorías (kcal)' })}</Text>
+                  <TextInput style={styles.input} value={newRecipe.calories} keyboardType="numeric" onChangeText={t => setNewRecipe({...newRecipe, calories: t})} />
+              </View>
+          </View>
+
+          <Text style={styles.label}>{t('admin.time_minutes', { defaultValue: 'Tiempo de preparación (min)' })}</Text>
+          <TextInput
+            style={styles.input}
+            value={newRecipe.time}
+            keyboardType="numeric"
+            placeholder="20"
+            onChangeText={t => setNewRecipe({...newRecipe, time: t})}
+          />
+
+          <Text style={styles.label}>{t('admin.macros_optional', { defaultValue: 'Macros (opcional — se estima automáticamente si se deja vacío)' })}</Text>
+          <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.label}>{t('admin.protein', { defaultValue: 'Proteína (g)' })}</Text>
+                  <TextInput style={styles.input} value={newRecipe.protein} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, protein: t})} />
+              </View>
+              <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>{t('admin.carbs', { defaultValue: 'Carbohidratos (g)' })}</Text>
+                  <TextInput style={styles.input} value={newRecipe.carbs} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, carbs: t})} />
+              </View>
+          </View>
+          <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.label}>{t('admin.fat', { defaultValue: 'Grasa (g)' })}</Text>
+                  <TextInput style={styles.input} value={newRecipe.fat} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, fat: t})} />
+              </View>
+              <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>{t('admin.fiber', { defaultValue: 'Fibra (g)' })}</Text>
+                  <TextInput style={styles.input} value={newRecipe.fiber} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, fiber: t})} />
+              </View>
+          </View>
+
+          <Text style={styles.label}>{t('admin.meal_type')}</Text>
+          <View style={styles.mealTypeSelector}>
+              {[
+                { id: 'breakfast', icon: Coffee, label: t('dailylog.meal_types.breakfast') },
+                { id: 'lunch', icon: Utensils, label: t('dailylog.meal_types.lunch') },
+                { id: 'snack', icon: Apple, label: t('dailylog.meal_types.snack') },
+                { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') },
+                { id: 'prep', icon: ChefHat, label: t('dailylog.meal_types.prep') }
+              ].map(m => (
+                  <Pressable
+                      key={m.id}
+                      onPress={() => setNewRecipe({...newRecipe, mealType: m.id})}
+                      style={[styles.mealBtn, newRecipe.mealType === m.id && styles.mealBtnActive]}
+                  >
+                      <m.icon size={14} color={newRecipe.mealType === m.id ? '#FFF' : colors.on_surface_variant} style={{ marginRight: 6 }} />
+                      <Text style={[styles.mealBtnText, newRecipe.mealType === m.id && styles.mealBtnTextActive]}>
+                          {m.label}
+                      </Text>
+                  </Pressable>
+              ))}
+          </View>
+
+          <Pressable onPress={handlePickRecipeImage} style={styles.imagePicker}>
+            {localRecipeImage || newRecipe.image_url ? (
+                  <Image source={{ uri: localRecipeImage?.uri || newRecipe.image_url || newRecipe.imageUrl }} style={styles.pickedImage} />
+            ) : (
+                  <Text style={{ color: colors.primary }}>{t('admin.select_recipe_image')}</Text>
+            )}
+          </Pressable>
+
+          <Text style={styles.label}>{t('admin.ingredients')}</Text>
+          <TextInput multiline numberOfLines={4} style={[styles.input, { height: 80 }]} value={newRecipe.ingredients} onChangeText={t => setNewRecipe({...newRecipe, ingredients: t})} />
+
+          <Text style={styles.label}>{t('admin.instructions')}</Text>
+          <TextInput multiline numberOfLines={4} style={[styles.input, { height: 80 }]} value={newRecipe.instructions} onChangeText={t => setNewRecipe({...newRecipe, instructions: t})} />
+
+          <Text style={styles.label}>{t('admin.coaching_tips')}</Text>
+          <TextInput multiline numberOfLines={4} placeholder={t('admin.coaching_tips_placeholder')} style={[styles.input, { height: 80 }]} value={newRecipe.coachingTips} onChangeText={t => setNewRecipe({...newRecipe, coachingTips: t})} />
+
+          <Pressable style={styles.saveBtn} onPress={handleSaveRecipe} disabled={isSaving}>
+              {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{t('admin.save_recipe')}</Text>}
+          </Pressable>
+          {editingRecipeId && (
+              <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetRecipeForm}>
+                  <Text style={{ color: '#475569' }}>{t('admin.cancel_edit')}</Text>
+              </Pressable>
+          )}
+      </View>
+
+      <Text style={styles.sectionTitle}>{t('admin.existing_recipes')} ({recipes.length})</Text>
+    </View>
+  );
+
+  const foodFormHeader = (
+    <View>
+      <View style={styles.formCard}>
+        <Text style={styles.sectionTitle}>{t('admin.add_food', { defaultValue: 'Agregar alimento' })}</Text>
+
+        <Text style={styles.label}>{t('admin.food_name_label', { defaultValue: 'Nombre del alimento *' })}</Text>
+        <TextInput
+          style={styles.input}
+          value={newFood.name}
+          placeholder={t('admin.food_name_placeholder', { defaultValue: 'Ej: Espinacas, Salmón, Lentejas...' })}
+          onChangeText={v => setNewFood({ ...newFood, name: v })}
+        />
+
+        <Text style={styles.label}>{t('admin.phase')}</Text>
+        <View style={styles.phaseSelector}>
+          {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
+            <Pressable
+              key={p}
+              onPress={() => setNewFood({ ...newFood, phaseKey: p })}
+              style={[styles.phaseBtn, newFood.phaseKey === p && { backgroundColor: colors.primary }]}
+            >
+              <Text style={[styles.phaseBtnText, newFood.phaseKey === p && { color: '#FFF' }]}>
+                {p.charAt(0).toUpperCase()}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.label}>{t('admin.food_category', { defaultValue: 'Categoría' })}</Text>
+        <View style={styles.mealTypeSelector}>
+          {[
+            { id: 'proteins',   label: t('admin.cat_proteins',   { defaultValue: 'Proteínas' }) },
+            { id: 'fats',       label: t('admin.cat_fats',       { defaultValue: 'Grasas' }) },
+            { id: 'carbs',      label: t('admin.cat_carbs',      { defaultValue: 'Carbos' }) },
+            { id: 'veg_fruits', label: t('admin.cat_veg_fruits', { defaultValue: 'Veg/Fruta' }) },
+            { id: 'grains',     label: t('admin.cat_grains',     { defaultValue: 'Granos' }) },
+            { id: 'extras',     label: t('admin.cat_extras',     { defaultValue: 'Extras' }) },
+            { id: 'herbs',      label: t('admin.cat_herbs',      { defaultValue: 'Hierbas & Adaptógenos' }) },
+          ].map(c => (
+            <Pressable
+              key={c.id}
+              onPress={() => setNewFood({ ...newFood, categoryKey: c.id })}
+              style={[styles.mealBtn, newFood.categoryKey === c.id && styles.mealBtnActive]}
+            >
+              <Text style={[styles.mealBtnText, newFood.categoryKey === c.id && styles.mealBtnTextActive]}>
+                {c.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.label}>{t('admin.hormone_benefit', { defaultValue: 'Beneficio hormonal' })}</Text>
+        <View style={styles.mealTypeSelector}>
+          {[
+            { id: 'estrogen',         label: t('admin.tag_estrogen',         { defaultValue: 'Estrógeno' }) },
+            { id: 'progesterone',     label: t('admin.tag_progesterone',     { defaultValue: 'Progesterona' }) },
+            { id: 'antiinflammatory', label: t('admin.tag_antiinflammatory', { defaultValue: 'Antiinflamatorio' }) },
+            { id: 'energy',           label: t('admin.tag_energy',           { defaultValue: 'Energía' }) },
+          ].map(h => (
+            <Pressable
+              key={h.id}
+              onPress={() => setNewFood({ ...newFood, hormoneTag: h.id })}
+              style={[styles.mealBtn, newFood.hormoneTag === h.id && styles.mealBtnActive]}
+            >
+              <Text style={[styles.mealBtnText, newFood.hormoneTag === h.id && styles.mealBtnTextActive]}>
+                {h.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.label}>{t('admin.food_meal_type', { defaultValue: 'Tipo de comida' })}</Text>
+        <View style={styles.mealTypeSelector}>
+          {[
+            { id: 'breakfast', label: t('dailylog.meal_types.breakfast') },
+            { id: 'lunch',     label: t('dailylog.meal_types.lunch') },
+            { id: 'snack',     label: t('dailylog.meal_types.snack') },
+            { id: 'dinner',    label: t('dailylog.meal_types.dinner') },
+          ].map(m => (
+            <Pressable
+              key={m.id}
+              onPress={() => setNewFood({ ...newFood, mealType: m.id })}
+              style={[styles.mealBtn, newFood.mealType === m.id && styles.mealBtnActive]}
+            >
+              <Text style={[styles.mealBtnText, newFood.mealType === m.id && styles.mealBtnTextActive]}>
+                {m.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.label}>{t('admin.food_benefits', { defaultValue: 'Beneficios' })}</Text>
+        <TextInput
+          multiline
+          numberOfLines={4}
+          style={[styles.input, { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
+          value={newFood.benefits}
+          placeholder={t('admin.food_benefits_placeholder', { defaultValue: 'Ej: Rico en hierro, ayuda a reducir la inflamación...' })}
+          placeholderTextColor="#94A3B8"
+          onChangeText={v => setNewFood({ ...newFood, benefits: v })}
+        />
+
+        <Text style={styles.label}>{t('admin.food_image_label', { defaultValue: 'Imagen (opcional)' })}</Text>
+        <Pressable onPress={handlePickFoodImage} style={styles.imagePicker}>
+          {localFoodImage || newFood.imageUrl ? (
+            <Image
+              source={{ uri: localFoodImage?.uri || newFood.imageUrl }}
+              style={styles.pickedImage}
+            />
+          ) : (
+            <Text style={{ color: colors.primary }}>{t('admin.select_food_image', { defaultValue: 'Seleccionar imagen' })}</Text>
+          )}
+        </Pressable>
+
+        <Pressable style={styles.saveBtn} onPress={handleSaveFood} disabled={isSaving}>
+          {isSaving
+            ? <ActivityIndicator color="#FFF" />
+            : <Text style={styles.saveBtnText}>{editingFoodId ? t('admin.update_food', { defaultValue: 'Actualizar alimento' }) : t('admin.save_food', { defaultValue: 'Guardar alimento' })}</Text>}
+        </Pressable>
+        {editingFoodId && (
+          <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetFoodForm}>
+            <Text style={{ color: '#475569' }}>{t('common.cancel')}</Text>
+          </Pressable>
+        )}
+      </View>
+
+      <Text style={styles.sectionTitle}>{t('admin.saved_foods', { defaultValue: 'Alimentos guardados' })}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -721,509 +1235,44 @@ export const AdminScreen = ({
         </Pressable>
       </View>
 
-      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollContent}>
-        {activeTab === 'videos' && (
-          <View>
-            <View style={styles.formCard}>
-                <Text style={styles.formTitle}>{editingVideoId ? t('admin.edit_video') : t('admin.add_video')}</Text>
-                
-                <Text style={styles.label}>{t('videos.video_title')}</Text>
-                <TextInput 
-                  style={styles.input} 
-                  value={newVideo.title} 
-                  onChangeText={t => setNewVideo({...newVideo, title: t})}
-                />
-
-                <Text style={styles.label}>{t('admin.video_source')}</Text>
-                <Pressable onPress={handlePickVideo} style={styles.uploadBox} disabled={isCompressingVideo}>
-                    {isCompressingVideo ? (
-                      <>
-                        <ActivityIndicator color={colors.primary} />
-                        <Text style={[styles.uploadText, { color: colors.primary }]}>
-                          {t('admin.compressing_video', { pct: Math.round(videoCompressionProgress) })}
-                        </Text>
-                      </>
-                    ) : (
-                      <>
-                        <CloudUpload size={24} color={localVideoFile ? colors.primary : '#64748B'} />
-                        <Text style={[styles.uploadText, localVideoFile && { color: colors.primary }]}>
-                            {localVideoFile ? t('admin.file_ready') : t('admin.upload_file')}
-                        </Text>
-                        {localVideoFile && <Text style={styles.uploadSubtext}>{t('admin.ready_to_upload')}</Text>}
-                      </>
-                    )}
-                </Pressable>
-
-                <Text style={styles.warningHint}>
-                  {t('admin.video_upload_hint')}
-                </Text>
-
-                <View style={styles.thumbnailPreviewContainer}>
-                  <Text style={styles.label}>{t('admin.thumbnail_preview')}</Text>
-                  {newVideo.thumbnail ? (
-                    <Image source={{ uri: newVideo.thumbnail }} style={styles.thumbnailPreview} />
-                  ) : (
-                    <View style={[styles.thumbnailPreview, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' }]}>
-                      <Text style={{ color: '#666', fontFamily: 'Outfit_500Medium', fontSize: 13 }}>{t('admin.no_thumbnail', { defaultValue: 'Sin miniatura' })}</Text>
-                    </View>
-                  )}
-                  <Pressable onPress={handlePickCustomThumbnail} style={styles.changeThumbBtn}>
-                    <Text style={styles.changeThumbText}>
-                      {newVideo.thumbnail ? t('admin.change_thumbnail') : t('admin.choose_thumbnail', { defaultValue: 'Elegir miniatura' })}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <Text style={styles.label}>{t('videos.enter_youtube_url')}</Text>
-                <View style={styles.inputWrapper}>
-                    <Tv size={18} color={colors.primary} style={{ marginRight: 8 }} />
-                    <TextInput 
-                      style={[styles.input, { flex: 1, borderBottomWidth: 0, marginBottom: 0 }]} 
-                      value={newVideo.youtubeUrl} 
-                      placeholder={t('admin.youtube_placeholder')}
-                      onChangeText={t => setNewVideo({...newVideo, youtubeUrl: t, videoUrl: ''})}
-                    />
-                </View>
-
-                <View style={styles.row}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                        <Text style={styles.label}>{t('videos.phase')}</Text>
-                        <View style={styles.phaseSelector}>
-                            {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
-                                <Pressable 
-                                    key={p} 
-                                    onPress={() => setNewVideo({...newVideo, phaseKey: p})}
-                                    style={[styles.phaseBtn, newVideo.phaseKey === p && { backgroundColor: colors.primary }]}
-                                >
-                                    <Text style={[styles.phaseBtnText, newVideo.phaseKey === p && { color: '#FFF' }]}>
-                                        {p.charAt(0).toUpperCase()}
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </View>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.label}>{t('videos.duration')}</Text>
-                        <TextInput
-                           style={styles.input}
-                           value={newVideo.duration}
-                           placeholder="5:00"
-                           onChangeText={t => setNewVideo({...newVideo, duration: t})}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.row}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.label}>{t('admin.calories', { defaultValue: 'Calorías (kcal)' })}</Text>
-                        <TextInput
-                           style={styles.input}
-                           value={newVideo.calories}
-                           placeholder="320"
-                           keyboardType="numeric"
-                           onChangeText={v => setNewVideo({...newVideo, calories: v.replace(/[^0-9]/g, '')})}
-                        />
-                    </View>
-                </View>
-
-                <Text style={styles.label}>{t('videos.category')}</Text>
-                <TextInput
-                   style={styles.input}
-                   value={newVideo.category}
-                   placeholder={t('admin.video_category_placeholder', { defaultValue: 'e.g. Meditación, Sonidos, Fase folicular' })}
-                   onChangeText={v => setNewVideo({...newVideo, category: v})}
-                />
-
-                <Text style={styles.label}>{t('admin.meal_type')}</Text>
-                <View style={styles.mealTypeSelector}>
-                    {[
-                      { id: 'none', icon: LayoutGrid, label: t('admin.my_phase') },
-                      { id: 'breakfast', icon: Coffee, label: t('dailylog.meal_types.breakfast') },
-                      { id: 'lunch', icon: Utensils, label: t('dailylog.meal_types.lunch') },
-                      { id: 'snack', icon: Apple, label: t('dailylog.meal_types.snack') },
-                      { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') },
-                      { id: 'prep', icon: ChefHat, label: t('dailylog.meal_types.prep') }
-                    ].map(m => (
-                        <Pressable
-                            key={m.id}
-                            onPress={() => setNewVideo({...newVideo, mealType: m.id})}
-                            style={[styles.mealBtn, newVideo.mealType === m.id && styles.mealBtnActive]}
-                        >
-                            <m.icon size={14} color={newVideo.mealType === m.id ? '#FFF' : colors.on_surface_variant} style={{ marginRight: 6 }} />
-                            <Text style={[styles.mealBtnText, newVideo.mealType === m.id && styles.mealBtnTextActive]}>
-                                {m.label}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </View>
-
-                <Text style={styles.label}>{t('admin.ingredients')}</Text>
-                <TextInput
-                  multiline
-                  numberOfLines={4}
-                  style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
-                  value={newVideo.ingredients}
-                  onChangeText={v => setNewVideo({...newVideo, ingredients: v})}
-                />
-
-                <Text style={styles.label}>{t('admin.instructions')}</Text>
-                <TextInput
-                  multiline
-                  numberOfLines={4}
-                  style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
-                  value={newVideo.instructions}
-                  onChangeText={v => setNewVideo({...newVideo, instructions: v})}
-                />
-
-                <Text style={styles.label}>{t('admin.coaching_tips')}</Text>
-                <TextInput
-                  multiline
-                  numberOfLines={4}
-                  placeholder={t('admin.coaching_tips_placeholder')}
-                  style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 12 }]}
-                  value={newVideo.coachingTips}
-                  onChangeText={v => setNewVideo({...newVideo, coachingTips: v})}
-                />
-
-                <Pressable style={styles.saveBtn} onPress={handleSaveVideo} disabled={isSaving || isCompressingVideo}>
-                    {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{editingVideoId ? t('admin.update_video') : t('admin.save_video')}</Text>}
-                </Pressable>
-                {isSaving && videoUploadProgress > 0 ? (
-                  <Text style={styles.uploadProgressText}>{t('admin.upload_progress', { pct: Math.round(videoUploadProgress) })}</Text>
-                ) : null}
-                {editingVideoId && (
-                    <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetVideoForm}>
-                        <Text style={{ color: '#475569' }}>{t('common.cancel')}</Text>
-                    </Pressable>
-                )}
-            </View>
-
-            <Text style={styles.sectionTitle}>{t('admin.existing_videos')} ({videos.length})</Text>
-            {videos.map(v => (
-                <View key={v.id} style={styles.itemCard}>
-                    <Image source={{ uri: v.thumbnail || (v.youtube_url ? `https://img.youtube.com/vi/${extractYouTubeId(v.youtube_url)}/0.jpg` : 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800') }} style={styles.itemThumb} />
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.itemTitle}>{v.title}</Text>
-                        <Text style={styles.itemSub}>
-                          {(v.meal_type || v.mealType) && (v.meal_type !== 'none' && v.mealType !== 'none') ? `${t(`dailylog.meal_types.${v.meal_type || v.mealType}`)} • ` : ''}
-                          {t(`phases.${v.phase_key || v.phaseKey || 'all'}`)}
-                        </Text>
-                    </View>
-                    <View style={styles.itemActions}>
-                        <Pressable onPress={() => handleEditVideo(v)} style={styles.itemActionBtn}><Pencil size={18} color={colors.primary}/></Pressable>
-                        <Pressable onPress={() => handleDeleteVideo(v.id)} style={styles.itemActionBtn}><Trash2 size={18} color="#EB5757"/></Pressable>
-                    </View>
-                </View>
-            ))}
-          </View>
-        )}
-
-        {activeTab === 'recipes' && (
-          <View>
-            <View style={styles.formCard}>
-                <Text style={styles.formTitle}>{editingRecipeId ? t('admin.edit_recipe') : t('admin.add_recipe')}</Text>
-                
-                <Text style={styles.label}>{t('admin.recipe_title')}</Text>
-                <TextInput style={styles.input} value={newRecipe.title} onChangeText={t => setNewRecipe({...newRecipe, title: t})} />
-
-                <View style={styles.row}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                        <Text style={styles.label}>{t('admin.phase')}</Text>
-                        <View style={styles.phaseSelector}>
-                            {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
-                                <Pressable 
-                                    key={p} 
-                                    onPress={() => setNewRecipe({...newRecipe, phaseKey: p})}
-                                    style={[styles.phaseBtn, newRecipe.phaseKey === p && { backgroundColor: colors.primary }]}
-                                >
-                                    <Text style={[styles.phaseBtnText, newRecipe.phaseKey === p && { color: '#FFF' }]}>
-                                        {p.charAt(0).toUpperCase()}
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </View>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.label}>{t('admin.calories', { defaultValue: 'Calorías (kcal)' })}</Text>
-                        <TextInput style={styles.input} value={newRecipe.calories} keyboardType="numeric" onChangeText={t => setNewRecipe({...newRecipe, calories: t})} />
-                    </View>
-                </View>
-
-                {/* Previously "time" (prep minutes) had no input at all despite being
-                    validated and saved — every recipe silently got time_minutes=20. */}
-                <Text style={styles.label}>{t('admin.time_minutes', { defaultValue: 'Tiempo de preparación (min)' })}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={newRecipe.time}
-                  keyboardType="numeric"
-                  placeholder="20"
-                  onChangeText={t => setNewRecipe({...newRecipe, time: t})}
-                />
-
-                {/* Optional — recipes with no real macro data fall back to a shared
-                    calorie-based estimate (src/utils/nutrition.js) so this screen and
-                    Recipe Detail always agree on the same numbers. */}
-                <Text style={styles.label}>{t('admin.macros_optional', { defaultValue: 'Macros (opcional — se estima automáticamente si se deja vacío)' })}</Text>
-                <View style={styles.row}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                        <Text style={styles.label}>{t('admin.protein', { defaultValue: 'Proteína (g)' })}</Text>
-                        <TextInput style={styles.input} value={newRecipe.protein} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, protein: t})} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.label}>{t('admin.carbs', { defaultValue: 'Carbohidratos (g)' })}</Text>
-                        <TextInput style={styles.input} value={newRecipe.carbs} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, carbs: t})} />
-                    </View>
-                </View>
-                <View style={styles.row}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                        <Text style={styles.label}>{t('admin.fat', { defaultValue: 'Grasa (g)' })}</Text>
-                        <TextInput style={styles.input} value={newRecipe.fat} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, fat: t})} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.label}>{t('admin.fiber', { defaultValue: 'Fibra (g)' })}</Text>
-                        <TextInput style={styles.input} value={newRecipe.fiber} keyboardType="numeric" placeholder="—" onChangeText={t => setNewRecipe({...newRecipe, fiber: t})} />
-                    </View>
-                </View>
-
-                <Text style={styles.label}>{t('admin.meal_type')}</Text>
-                <View style={styles.mealTypeSelector}>
-                    {[
-                      { id: 'breakfast', icon: Coffee, label: t('dailylog.meal_types.breakfast') },
-                      { id: 'lunch', icon: Utensils, label: t('dailylog.meal_types.lunch') },
-                      { id: 'snack', icon: Apple, label: t('dailylog.meal_types.snack') },
-                      { id: 'dinner', icon: Moon, label: t('dailylog.meal_types.dinner') },
-                      { id: 'prep', icon: ChefHat, label: t('dailylog.meal_types.prep') }
-                    ].map(m => (
-                        <Pressable
-                            key={m.id}
-                            onPress={() => setNewRecipe({...newRecipe, mealType: m.id})}
-                            style={[styles.mealBtn, newRecipe.mealType === m.id && styles.mealBtnActive]}
-                        >
-                            <m.icon size={14} color={newRecipe.mealType === m.id ? '#FFF' : colors.on_surface_variant} style={{ marginRight: 6 }} />
-                            <Text style={[styles.mealBtnText, newRecipe.mealType === m.id && styles.mealBtnTextActive]}>
-                                {m.label}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </View>
-
-                <Pressable onPress={handlePickRecipeImage} style={styles.imagePicker}>
-                  {localRecipeImage || newRecipe.image_url ? (
-                        <Image source={{ uri: localRecipeImage?.uri || newRecipe.image_url || newRecipe.imageUrl }} style={styles.pickedImage} />
-                  ) : (
-                        <Text style={{ color: colors.primary }}>{t('admin.select_recipe_image')}</Text>
-                  )}
-                </Pressable>
-
-                <Text style={styles.label}>{t('admin.ingredients')}</Text>
-                <TextInput multiline numberOfLines={4} style={[styles.input, { height: 80 }]} value={newRecipe.ingredients} onChangeText={t => setNewRecipe({...newRecipe, ingredients: t})} />
-
-                <Text style={styles.label}>{t('admin.instructions')}</Text>
-                <TextInput multiline numberOfLines={4} style={[styles.input, { height: 80 }]} value={newRecipe.instructions} onChangeText={t => setNewRecipe({...newRecipe, instructions: t})} />
-
-                <Text style={styles.label}>{t('admin.coaching_tips')}</Text>
-                <TextInput multiline numberOfLines={4} placeholder={t('admin.coaching_tips_placeholder')} style={[styles.input, { height: 80 }]} value={newRecipe.coachingTips} onChangeText={t => setNewRecipe({...newRecipe, coachingTips: t})} />
-
-                <Pressable style={styles.saveBtn} onPress={handleSaveRecipe} disabled={isSaving}>
-                    {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>{t('admin.save_recipe')}</Text>}
-                </Pressable>
-                {editingRecipeId && (
-                    <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetRecipeForm}>
-                        <Text style={{ color: '#475569' }}>{t('admin.cancel_edit')}</Text>
-                    </Pressable>
-                )}
-            </View>
-
-            <Text style={styles.sectionTitle}>{t('admin.existing_recipes')} ({recipes.length})</Text>
-            {recipes.map(r => (
-                <View key={r.id} style={styles.itemCard}>
-                    <Image source={getRecipeImageSource(r)} style={styles.itemThumb} />
-                    <View style={styles.itemInfo}>
-                        <Text style={styles.itemTitle}>{r.title}</Text>
-                        <Text style={styles.itemSub}>
-                          {r.mealType && r.mealType !== 'none' ? t(`dailylog.meal_types.${r.mealType}`) : t('admin.my_phase')}
-                          {' • '}
-                          {t(`phases.${r.phase_key || r.phaseKey || 'all'}`)}
-                        </Text>
-                    </View>
-                    <View style={styles.itemActions}>
-                        <Pressable onPress={() => handleEditRecipe(r)} style={styles.itemActionBtn}><Pencil size={18} color={colors.primary}/></Pressable>
-                        <Pressable onPress={() => handleDeleteRecipe(r.id)} style={styles.itemActionBtn}><Trash2 size={18} color="#EB5757"/></Pressable>
-                    </View>
-                </View>
-            ))}
-          </View>
-        )}
-
-        {activeTab === 'foods' && (
-
-          <View>
-            <View style={styles.formCard}>
-              <Text style={styles.sectionTitle}>{t('admin.add_food', { defaultValue: 'Agregar alimento' })}</Text>
-
-              <Text style={styles.label}>{t('admin.food_name_label', { defaultValue: 'Nombre del alimento *' })}</Text>
-              <TextInput
-                style={styles.input}
-                value={newFood.name}
-                placeholder={t('admin.food_name_placeholder', { defaultValue: 'Ej: Espinacas, Salmón, Lentejas...' })}
-                onChangeText={v => setNewFood({ ...newFood, name: v })}
-              />
-
-              <Text style={styles.label}>{t('admin.phase')}</Text>
-              <View style={styles.phaseSelector}>
-                {['menstrual', 'follicular', 'ovulation', 'luteal'].map(p => (
-                  <Pressable
-                    key={p}
-                    onPress={() => setNewFood({ ...newFood, phaseKey: p })}
-                    style={[styles.phaseBtn, newFood.phaseKey === p && { backgroundColor: colors.primary }]}
-                  >
-                    <Text style={[styles.phaseBtnText, newFood.phaseKey === p && { color: '#FFF' }]}>
-                      {p.charAt(0).toUpperCase()}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.label}>{t('admin.food_category', { defaultValue: 'Categoría' })}</Text>
-              <View style={styles.mealTypeSelector}>
-                {[
-                  { id: 'proteins',   label: t('admin.cat_proteins',   { defaultValue: 'Proteínas' }) },
-                  { id: 'fats',       label: t('admin.cat_fats',       { defaultValue: 'Grasas' }) },
-                  { id: 'carbs',      label: t('admin.cat_carbs',      { defaultValue: 'Carbos' }) },
-                  { id: 'veg_fruits', label: t('admin.cat_veg_fruits', { defaultValue: 'Veg/Fruta' }) },
-                  { id: 'grains',     label: t('admin.cat_grains',     { defaultValue: 'Granos' }) },
-                  { id: 'extras',     label: t('admin.cat_extras',     { defaultValue: 'Extras' }) },
-                  { id: 'herbs',      label: t('admin.cat_herbs',      { defaultValue: 'Hierbas & Adaptógenos' }) },
-                ].map(c => (
-                  <Pressable
-                    key={c.id}
-                    onPress={() => setNewFood({ ...newFood, categoryKey: c.id })}
-                    style={[styles.mealBtn, newFood.categoryKey === c.id && styles.mealBtnActive]}
-                  >
-                    <Text style={[styles.mealBtnText, newFood.categoryKey === c.id && styles.mealBtnTextActive]}>
-                      {c.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.label}>{t('admin.hormone_benefit', { defaultValue: 'Beneficio hormonal' })}</Text>
-              <View style={styles.mealTypeSelector}>
-                {[
-                  { id: 'estrogen',         label: t('admin.tag_estrogen',         { defaultValue: 'Estrógeno' }) },
-                  { id: 'progesterone',     label: t('admin.tag_progesterone',     { defaultValue: 'Progesterona' }) },
-                  { id: 'antiinflammatory', label: t('admin.tag_antiinflammatory', { defaultValue: 'Antiinflamatorio' }) },
-                  { id: 'energy',           label: t('admin.tag_energy',           { defaultValue: 'Energía' }) },
-                ].map(h => (
-                  <Pressable
-                    key={h.id}
-                    onPress={() => setNewFood({ ...newFood, hormoneTag: h.id })}
-                    style={[styles.mealBtn, newFood.hormoneTag === h.id && styles.mealBtnActive]}
-                  >
-                    <Text style={[styles.mealBtnText, newFood.hormoneTag === h.id && styles.mealBtnTextActive]}>
-                      {h.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.label}>{t('admin.food_meal_type', { defaultValue: 'Tipo de comida' })}</Text>
-              <View style={styles.mealTypeSelector}>
-                {[
-                  { id: 'breakfast', label: t('dailylog.meal_types.breakfast') },
-                  { id: 'lunch',     label: t('dailylog.meal_types.lunch') },
-                  { id: 'snack',     label: t('dailylog.meal_types.snack') },
-                  { id: 'dinner',    label: t('dailylog.meal_types.dinner') },
-                ].map(m => (
-                  <Pressable
-                    key={m.id}
-                    onPress={() => setNewFood({ ...newFood, mealType: m.id })}
-                    style={[styles.mealBtn, newFood.mealType === m.id && styles.mealBtnActive]}
-                  >
-                    <Text style={[styles.mealBtnText, newFood.mealType === m.id && styles.mealBtnTextActive]}>
-                      {m.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.label}>{t('admin.food_benefits', { defaultValue: 'Beneficios' })}</Text>
-              <TextInput
-                multiline
-                numberOfLines={4}
-                style={[styles.input, { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
-                value={newFood.benefits}
-                placeholder={t('admin.food_benefits_placeholder', { defaultValue: 'Ej: Rico en hierro, ayuda a reducir la inflamación...' })}
-                placeholderTextColor="#94A3B8"
-                onChangeText={v => setNewFood({ ...newFood, benefits: v })}
-              />
-
-              <Text style={styles.label}>{t('admin.food_image_label', { defaultValue: 'Imagen (opcional)' })}</Text>
-              <Pressable onPress={handlePickFoodImage} style={styles.imagePicker}>
-                {localFoodImage || newFood.imageUrl ? (
-                  <Image
-                    source={{ uri: localFoodImage?.uri || newFood.imageUrl }}
-                    style={styles.pickedImage}
-                  />
-                ) : (
-                  <Text style={{ color: colors.primary }}>{t('admin.select_food_image', { defaultValue: 'Seleccionar imagen' })}</Text>
-                )}
-              </Pressable>
-
-              <Pressable style={styles.saveBtn} onPress={handleSaveFood} disabled={isSaving}>
-                {isSaving
-                  ? <ActivityIndicator color="#FFF" />
-                  : <Text style={styles.saveBtnText}>{editingFoodId ? t('admin.update_food', { defaultValue: 'Actualizar alimento' }) : t('admin.save_food', { defaultValue: 'Guardar alimento' })}</Text>}
-              </Pressable>
-              {editingFoodId && (
-                <Pressable style={[styles.saveBtn, { backgroundColor: '#F1F5F9', marginTop: 8 }]} onPress={resetFoodForm}>
-                  <Text style={{ color: '#475569' }}>{t('common.cancel')}</Text>
-                </Pressable>
-              )}
-            </View>
-
-            <Text style={styles.sectionTitle}>{t('admin.saved_foods', { defaultValue: 'Alimentos guardados' })}</Text>
-            {Object.keys(keyFoods).length === 0 ? (
-              <Text style={{ color: '#94A3B8', textAlign: 'center', marginTop: 16 }}>
-                {t('admin.no_foods_yet', { defaultValue: 'Aún no hay alimentos. Agrega el primero arriba.' })}
-              </Text>
-            ) : (
-              ['menstrual', 'follicular', 'ovulation', 'luteal'].map(phase =>
-                (keyFoods[phase] || []).map(cat =>
-                  cat.items.map(food => (
-                    <View key={food.key} style={styles.itemCard}>
-                      {food.image ? (
-                        <Image source={{ uri: food.image }} style={styles.itemThumb} />
-                      ) : (
-                        <View style={[styles.itemThumb, { backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }]}>
-                          <Apple size={20} color="#CBD5E1" />
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.itemTitle}>{food.name || food.key}</Text>
-                        <Text style={styles.itemSub}>{phase} · {cat.categoryKey}</Text>
-                        {food.benefits ? (
-                          <Text style={styles.itemBenefits} numberOfLines={1}>{food.benefits}</Text>
-                        ) : null}
-                      </View>
-                      <View style={styles.itemActions}>
-                        <Pressable onPress={() => handleEditFood({ ...food, phaseKey: phase, categoryKey: cat.categoryKey, imageUrl: food.image })} style={styles.itemActionBtn}>
-                          <Pencil size={18} color={colors.primary} />
-                        </Pressable>
-                        <Pressable onPress={() => handleDeleteFood(food.key)} style={styles.itemActionBtn}>
-                          <Trash2 size={18} color="#EB5757" />
-                        </Pressable>
-                      </View>
-                    </View>
-                  ))
-                )
-              )
-            )}
-          </View>
-        )}
-
-        <View style={{ height: 24 }} />
-      </ScrollView>
+      {activeTab === 'foods' ? (
+        <FlatList
+          key={activeTab}
+          ref={adminListRef}
+          data={flattenedFoods}
+          keyExtractor={(item) => String(item.key)}
+          renderItem={renderFoodItem}
+          ListHeaderComponent={foodFormHeader}
+          ListEmptyComponent={
+            <Text style={{ color: '#94A3B8', textAlign: 'center', marginTop: 16 }}>
+              {t('admin.no_foods_yet', { defaultValue: 'Aún no hay alimentos. Agrega el primero arriba.' })}
+            </Text>
+          }
+          contentContainerStyle={styles.scrollContent}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          keyboardShouldPersistTaps="handled"
+          ListFooterComponent={<View style={{ height: 24 }} />}
+        />
+      ) : (
+        <FlatList
+          key={activeTab}
+          ref={adminListRef}
+          data={activeTab === 'recipes' ? recipes : videos}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={activeTab === 'recipes' ? renderRecipeItem : renderVideoItem}
+          ListHeaderComponent={activeTab === 'recipes' ? recipeFormHeader : videoFormHeader}
+          contentContainerStyle={styles.scrollContent}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          keyboardShouldPersistTaps="handled"
+          ListFooterComponent={<View style={{ height: 24 }} />}
+        />
+      )}
     </View>
   );
 };
