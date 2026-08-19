@@ -246,95 +246,107 @@ const AppShell = () => {
         return;
       }
 
-      // Initialize RevenueCat with the current user ID
-      await configureRevenueCat(user.id);
-
-      // Demo mode: skip all Supabase calls and use a pre-filled profile
-      if (isDemoMode) {
-        const d = new Date();
-        d.setDate(d.getDate() - 8);
-        const demoLastPeriod = d.toISOString().split('T')[0];
-        setCycleProfile({
-          currentPhase: 'follicular',
-          cycleLength: 28,
-          periodLength: 5,
-          lastPeriodStart: demoLastPeriod,
-          isPremium: true,
-          is_premium: true,
-          goal: 'balance',
-        });
-        setWizardComplete(true);
-        setProfileLoading(false);
-        return;
-      }
-
+      // Previously nothing below this point was wrapped in a try/catch, so
+      // a single failed call anywhere in this chain (network hiccup, an RLS
+      // edge case, etc.) left profileLoading stuck at true forever — an
+      // infinite loading spinner even though sign-in itself had already
+      // succeeded. Apple App Review hit exactly this: "activity indicator
+      // spun indefinitely after we attempted to log in with Sign in with
+      // Apple." The try/finally here guarantees setProfileLoading(false)
+      // always runs, success or failure.
       setProfileLoading(true);
+      try {
+        // Initialize RevenueCat with the current user ID
+        await configureRevenueCat(user.id);
 
-      const [localProfile, hasSeenCycleWizard] = await Promise.all([
-        getLocalProfile(user.id),
-        getCycleWizardSeen(user.id),
-      ]);
-      const normalizedLocalProfile = normalizeCycleProfile(localProfile || {});
+        // Demo mode: skip all Supabase calls and use a pre-filled profile
+        if (isDemoMode) {
+          const d = new Date();
+          d.setDate(d.getDate() - 8);
+          const demoLastPeriod = d.toISOString().split('T')[0];
+          setCycleProfile({
+            currentPhase: 'follicular',
+            cycleLength: 28,
+            periodLength: 5,
+            lastPeriodStart: demoLastPeriod,
+            isPremium: true,
+            is_premium: true,
+            goal: 'balance',
+          });
+          setWizardComplete(true);
+          return;
+        }
 
-      if (isMounted && localProfile) {
-        const localWizardComplete = Boolean(localProfile.wizardComplete);
-        setWizardComplete(localWizardComplete || hasSeenCycleWizard);
-        setCycleProfile(normalizedLocalProfile);
-        if (localWizardComplete && !hasSeenCycleWizard) {
-          await setCycleWizardSeen(user.id, true);
+        const [localProfile, hasSeenCycleWizard] = await Promise.all([
+          getLocalProfile(user.id),
+          getCycleWizardSeen(user.id),
+        ]);
+        const normalizedLocalProfile = normalizeCycleProfile(localProfile || {});
+
+        if (isMounted && localProfile) {
+          const localWizardComplete = Boolean(localProfile.wizardComplete);
+          setWizardComplete(localWizardComplete || hasSeenCycleWizard);
+          setCycleProfile(normalizedLocalProfile);
+          if (localWizardComplete && !hasSeenCycleWizard) {
+            await setCycleWizardSeen(user.id, true);
+          }
+        }
+
+        const [profileResult, recipeResult, savedIdsResult, subResult] = await Promise.all([
+          loadUserProfile(getToken, user.id),
+          loadRecipes(getToken),
+          loadSavedRecipeIds(getToken, user.id),
+          loadUserSubscription(getToken, user.id)
+        ]);
+
+        const [articlesResult, videosResult, keyFoodsResult] = await Promise.all([
+          loadArticles(getToken),
+          loadVideos(getToken),
+          loadKeyFoods(getToken),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setRecipes(recipeResult || MOCK_RECIPES);
+        setSavedRecipeIds(savedIdsResult || []);
+        setArticles(articlesResult || ARTICLE_LIBRARY);
+        setVideos(videosResult || VIDEO_LIBRARY);
+        if (keyFoodsResult) setKeyFoods(keyFoodsResult);
+        setSubscription(subResult);
+
+        // If subscription is expired, override is_premium to false so access is revoked
+        const effectiveIsPremium =
+          profileResult?.is_premium &&
+          (subResult === null || subResult?.is_active !== false);
+        const adjustedProfile = profileResult
+          ? { ...profileResult, is_premium: effectiveIsPremium }
+          : profileResult;
+
+        if (adjustedProfile?.current_phase) {
+          const normalizedRemoteProfile = normalizeCycleProfile(adjustedProfile);
+          setCycleProfile(normalizedRemoteProfile);
+          setWizardComplete(hasSeenCycleWizard);
+
+          const logs = await loadDailyLogs(getToken, user.id);
+          setDailyLogs(logs || []);
+
+          await setLocalProfile(user.id, {
+            ...normalizedRemoteProfile,
+            wizardComplete: true,
+          });
+        } else if (!localProfile) {
+          setWizardComplete(false);
+          setCycleProfile(DEFAULT_CYCLE_PROFILE);
+        }
+      } catch (error) {
+        console.error('[Bootstrap] Failed to load user data:', error);
+      } finally {
+        if (isMounted) {
+          setProfileLoading(false);
         }
       }
-
-      const [profileResult, recipeResult, savedIdsResult, subResult] = await Promise.all([
-        loadUserProfile(getToken, user.id),
-        loadRecipes(getToken),
-        loadSavedRecipeIds(getToken, user.id),
-        loadUserSubscription(getToken, user.id)
-      ]);
-
-      const [articlesResult, videosResult, keyFoodsResult] = await Promise.all([
-        loadArticles(getToken),
-        loadVideos(getToken),
-        loadKeyFoods(getToken),
-      ]);
-
-      if (!isMounted) {
-        return;
-      }
-
-      setRecipes(recipeResult || MOCK_RECIPES);
-      setSavedRecipeIds(savedIdsResult || []);
-      setArticles(articlesResult || ARTICLE_LIBRARY);
-      setVideos(videosResult || VIDEO_LIBRARY);
-      if (keyFoodsResult) setKeyFoods(keyFoodsResult);
-      setSubscription(subResult);
-
-      // If subscription is expired, override is_premium to false so access is revoked
-      const effectiveIsPremium =
-        profileResult?.is_premium &&
-        (subResult === null || subResult?.is_active !== false);
-      const adjustedProfile = profileResult
-        ? { ...profileResult, is_premium: effectiveIsPremium }
-        : profileResult;
-
-      if (adjustedProfile?.current_phase) {
-        const normalizedRemoteProfile = normalizeCycleProfile(adjustedProfile);
-        setCycleProfile(normalizedRemoteProfile);
-        setWizardComplete(hasSeenCycleWizard);
-
-        const logs = await loadDailyLogs(getToken, user.id);
-        setDailyLogs(logs || []);
-
-        await setLocalProfile(user.id, {
-          ...normalizedRemoteProfile,
-          wizardComplete: true,
-        });
-      } else if (!localProfile) {
-        setWizardComplete(false);
-        setCycleProfile(DEFAULT_CYCLE_PROFILE);
-      }
-
-      setProfileLoading(false);
     };
 
     if (isSignedIn && user?.id) {
