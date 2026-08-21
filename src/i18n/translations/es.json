@@ -199,7 +199,8 @@
     "meals_premium_sub": "Accede a tu plan diario personalizado según tu fase hormonal",
     "meals_premium_cta": "HAZTE PREMIUM",
     "ai_chat_shortcut": "NutriCycle AI",
-    "ai_predictor_shortcut": "Predictor IA"
+    "ai_predictor_shortcut": "Predictor IA",
+    "meal_analyzer_shortcut": "Analizar Plato"
   },
   "phase_menstrual_msg": "Tu cuerpo está descansando.\nHoy prioriza alimentos ricos en hierro y momentos de calma",
   "phase_follicular_msg": "Tu energía está subiendo.\nEs un buen momento para nuevos proyectos y movimiento suave.",
@@ -630,6 +631,28 @@
     "analysis_fallback": "Análisis Personalizado",
     "sources_label": "Fuentes:",
     "default_source": "Orientación general de nutrición y salud menstrual (p. ej. ACOG, NIH, OMS)."
+  },
+  "meal_analyzer": {
+    "title": "Analizar Plato",
+    "hero_title": "Analiza tu\nplato",
+    "hero_sub": "Saca o sube una foto de tu comida y estima sus macros al instante.",
+    "premium_sub": "Desbloquea el análisis de macros por foto para llevar un registro preciso de tus comidas.",
+    "analyze_btn": "Analizar plato",
+    "analyzing": "Analizando tu plato...",
+    "no_food_detected": "No pudimos identificar alimentos en esta foto. Intenta con otra imagen.",
+    "analysis_failed": "No se pudo analizar la foto. Por favor inténtalo de nuevo.",
+    "save_failed": "No se pudo guardar el registro. Verifica tu conexión e inténtalo de nuevo.",
+    "save": "Guardar en mi historial",
+    "portion_placeholder": "Porción, ej. 1 taza",
+    "calories": "Calorías",
+    "protein": "Proteína",
+    "carbs": "Carbos",
+    "fat": "Grasa",
+    "totals": "{{calories}} kcal · P {{protein}}g · C {{carbs}}g · G {{fat}}g",
+    "history_title": "Historial de comidas",
+    "no_history": "Aún no has guardado ninguna comida.",
+    "untitled_meal": "Comida sin nombre",
+    "delete_confirm": "¿Eliminar este registro de comida?"
   },
   "wellness": {
     "title": "Bienestar\nsincronizado",

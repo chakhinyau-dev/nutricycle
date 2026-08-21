@@ -194,7 +194,8 @@
     "meals_premium_sub": "Access your personalized daily plan tailored to your hormonal phase",
     "meals_premium_cta": "GET PREMIUM",
     "ai_chat_shortcut": "NutriCycle AI",
-    "ai_predictor_shortcut": "AI Predictor"
+    "ai_predictor_shortcut": "AI Predictor",
+    "meal_analyzer_shortcut": "Analyze Plate"
   },
   "phase_menstrual_msg": "Your body is resting.\nToday focus on iron-rich foods and quiet moments.",
     "phase_follicular_msg": "Your energy is gently rising.\nThis is a good time for fresh ideas and light movement.",
@@ -618,6 +619,28 @@
     "analysis_fallback": "Personalized Analysis",
     "sources_label": "Sources:",
     "default_source": "General nutritional and menstrual-health guidance (e.g. ACOG, NIH, WHO)."
+  },
+  "meal_analyzer": {
+    "title": "Analyze Plate",
+    "hero_title": "Analyze your\nplate",
+    "hero_sub": "Take or upload a photo of your meal and get an instant macro estimate.",
+    "premium_sub": "Unlock photo-based macro analysis to keep an accurate record of your meals.",
+    "analyze_btn": "Analyze plate",
+    "analyzing": "Analyzing your plate...",
+    "no_food_detected": "We couldn't identify any food in this photo. Try a different image.",
+    "analysis_failed": "Unable to analyze the photo. Please try again.",
+    "save_failed": "Couldn't save this entry. Check your connection and try again.",
+    "save": "Save to my history",
+    "portion_placeholder": "Portion, e.g. 1 cup",
+    "calories": "Calories",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "fat": "Fat",
+    "totals": "{{calories}} kcal · P {{protein}}g · C {{carbs}}g · F {{fat}}g",
+    "history_title": "Meal history",
+    "no_history": "You haven't saved any meals yet.",
+    "untitled_meal": "Untitled meal",
+    "delete_confirm": "Delete this meal entry?"
   },
   "wellness": {
     "title": "Synced\nWellness",

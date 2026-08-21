@@ -45,7 +45,7 @@ import { KeyFoodsScreen } from './src/screens/KeyFoodsScreen';
 import { ShoppingListScreen } from './src/screens/ShoppingListScreen';
 import { NutritionScreen } from './src/screens/NutritionScreen';
 import { AIChatScreen } from './src/screens/AIChatScreen';
-import { AIPredictorScreen } from './src/screens/AIPredictorScreen';
+import { MealAnalyzerScreen } from './src/screens/MealAnalyzerScreen';
 import { MOCK_RECIPES } from './src/utils/mockData';
 import { ARTICLE_LIBRARY } from './src/utils/articleData';
 import { VIDEO_LIBRARY } from './src/utils/videoData';
@@ -765,8 +765,8 @@ const AppShell = () => {
           return <ShoppingListScreen onBack={goBack} getToken={getToken} {...sharedScreenProps} />;
         case 'aiChat':
           return <AIChatScreen onBack={goBack} onNavigate={navigateTo} cycleInfo={cycleInfo} isPremium={canAccessPremium} />;
-        case 'aiPredictor':
-          return <AIPredictorScreen onBack={goBack} onNavigate={navigateTo} cycleInfo={cycleInfo} cycleProfile={cycleProfile} user={user} isPremium={canAccessPremium} />;
+        case 'mealAnalyzer':
+          return <MealAnalyzerScreen onBack={goBack} onNavigate={navigateTo} cycleInfo={cycleInfo} user={user} isPremium={canAccessPremium} />;
 
         default:
           return (
