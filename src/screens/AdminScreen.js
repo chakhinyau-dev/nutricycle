@@ -260,10 +260,10 @@ export const AdminScreen = ({
         resetFoodForm();
         if (onRefresh) onRefresh();
       } else {
-        // Same gap as Videos/Recipes — saveKeyFood() returns null rather than
-        // throwing on a database error, so a rejected write previously showed
-        // nothing at all (this was on top of the image-upload-specific fix
-        // above, which only covered the upload step, not the actual save).
+        // saveKeyFood() now throws directly with the real Postgres error
+        // message on a database error (see keyFoodsService.js), so this
+        // branch is just a fallback for the case where it returns a falsy
+        // value without throwing (e.g. Supabase isn't configured at all).
         throw new Error(t('admin.save_denied'));
       }
     } catch (err) {

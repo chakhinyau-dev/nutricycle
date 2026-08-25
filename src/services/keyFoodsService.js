@@ -51,7 +51,15 @@ export const saveKeyFood = async (getToken, food) => {
       .eq('id', food.id)
       .select()
       .single();
-    if (error) { console.error('[keyFoodsService] update error', error.message); return null; }
+    if (error) {
+      console.error('[keyFoodsService] update error', error.message);
+      // Previously swallowed and returned null, so every failure — RLS
+      // rejection, a check-constraint violation (e.g. the category_key
+      // constraint not matching the admin UI's actual category options),
+      // anything — surfaced as the same generic "check your connection or
+      // admin role" message with no way to tell what actually went wrong.
+      throw new Error(error.message);
+    }
     return normalizeFood(data);
   } else {
     const { data, error } = await supabase
@@ -59,7 +67,10 @@ export const saveKeyFood = async (getToken, food) => {
       .insert([payload])
       .select()
       .single();
-    if (error) { console.error('[keyFoodsService] insert error', error.message); return null; }
+    if (error) {
+      console.error('[keyFoodsService] insert error', error.message);
+      throw new Error(error.message);
+    }
     return normalizeFood(data);
   }
 };
