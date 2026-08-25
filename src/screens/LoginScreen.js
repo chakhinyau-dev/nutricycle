@@ -56,11 +56,22 @@ export const LoginScreen = ({ onDemoLogin }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Forgot-password: a separate mode from sign in / sign up, not another
+  // branch threaded through their existing state, to keep that flow's own
+  // conditionals from getting harder to follow.
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetCodeSent, setResetCodeSent] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPass, setShowNewPass] = useState(false);
+
   const scrollViewRef = useRef(null);
   const nameFieldRef = useRef(null);
   const emailFieldRef = useRef(null);
   const passwordFieldRef = useRef(null);
   const codeFieldRef = useRef(null);
+  const resetCodeFieldRef = useRef(null);
+  const newPasswordFieldRef = useRef(null);
 
   const scrollToField = (fieldRef) => {
     if (!fieldRef?.current || !scrollViewRef?.current) return;
@@ -95,6 +106,96 @@ export const LoginScreen = ({ onDemoLogin }) => {
     setIsLogin((current) => !current);
     setErrorMessage('');
     resetSignupStep();
+  };
+
+  const resetForgotPasswordStep = () => {
+    setResetCodeSent(false);
+    setResetCode('');
+    setNewPassword('');
+  };
+
+  const enterForgotPassword = () => {
+    setIsForgotPassword(true);
+    setErrorMessage('');
+    resetForgotPasswordStep();
+  };
+
+  const exitForgotPassword = () => {
+    setIsForgotPassword(false);
+    setErrorMessage('');
+    resetForgotPasswordStep();
+  };
+
+  const handleRequestPasswordReset = async () => {
+    if (!isReady) {
+      setErrorMessage(t('auth.service_initializing'));
+      return;
+    }
+    if (!email.trim()) {
+      setErrorMessage(t('auth.email_required', { defaultValue: 'Ingresa tu correo electrónico.' }));
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+    try {
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: email.trim(),
+      });
+      setResetCodeSent(true);
+    } catch (error) {
+      console.error('[Clerk Forgot Password Error]:', error);
+      setErrorMessage(formatClerkError(error, t));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendResetCode = async () => {
+    setIsSubmitting(true);
+    setErrorMessage('');
+    try {
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: email.trim(),
+      });
+      setErrorMessage(t('auth.resend_code_sent', { defaultValue: 'Código de verificación reenviado a tu email.' }));
+    } catch (error) {
+      setErrorMessage(formatClerkError(error, t));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetCode.trim() || !newPassword) {
+      setErrorMessage(t('auth.reset_fields_required', { defaultValue: 'Ingresa el código y tu nueva contraseña.' }));
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code: resetCode.trim(),
+        password: newPassword,
+      });
+
+      if (result.status === 'complete') {
+        // Clerk logs the user in immediately as part of a successful reset —
+        // no separate sign-in step needed after this.
+        await setSignInActive({ session: result.createdSessionId });
+      } else {
+        setErrorMessage(t('auth.reset_incomplete', { status: result.status, defaultValue: `No se pudo completar el restablecimiento (${result.status}). Intenta de nuevo.` }));
+      }
+    } catch (error) {
+      console.error('[Clerk Reset Password Error]:', error);
+      setErrorMessage(formatClerkError(error, t));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEmailAuth = async () => {
@@ -247,6 +348,10 @@ export const LoginScreen = ({ onDemoLogin }) => {
       ? t('auth.verify_btn')
       : t('auth.sign_up_btn');
 
+  const forgotPasswordSubmitLabel = resetCodeSent
+    ? t('auth.reset_password_btn')
+    : t('auth.send_reset_code_btn');
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -274,17 +379,126 @@ export const LoginScreen = ({ onDemoLogin }) => {
 
           <View style={styles.titleContainer}>
             <Text style={styles.title}>
-              {isLogin ? t('auth.welcome') : needsVerification ? t('auth.verify_email') : t('auth.create_account')}
+              {isForgotPassword
+                ? (resetCodeSent ? t('auth.reset_password_title') : t('auth.forgot_password_title'))
+                : isLogin ? t('auth.welcome') : needsVerification ? t('auth.verify_email') : t('auth.create_account')}
             </Text>
             <Text style={styles.subtitle}>
-              {isLogin
-                ? t('auth.sign_in_sub')
-                : needsVerification
-                  ? t('auth.verify_sub', { email })
-                  : t('auth.sign_up_sub')}
+              {isForgotPassword
+                ? (resetCodeSent ? t('auth.reset_password_sub', { email }) : t('auth.forgot_password_sub'))
+                : isLogin
+                  ? t('auth.sign_in_sub')
+                  : needsVerification
+                    ? t('auth.verify_sub', { email })
+                    : t('auth.sign_up_sub')}
             </Text>
           </View>
 
+          {isForgotPassword ? (
+          <View style={styles.formCard}>
+            {!resetCodeSent ? (
+              <View ref={emailFieldRef} style={styles.inputField}>
+                <View style={styles.inputIconGroup}>
+                  <Mail size={18} color={colors.primary} />
+                  <Text style={styles.inputPlaceholder}>{t('auth.email')}</Text>
+                </View>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.placeholder}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  onFocus={() => scrollToField(emailFieldRef)}
+                />
+                <View style={styles.inputBorder} />
+              </View>
+            ) : (
+              <>
+                <View ref={resetCodeFieldRef} style={styles.inputField}>
+                  <View style={styles.inputIconGroup}>
+                    <Lock size={18} color={colors.primary} />
+                    <Text style={styles.inputPlaceholder}>{t('auth.verification_code')}</Text>
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    value={resetCode}
+                    onChangeText={setResetCode}
+                    placeholder="123456"
+                    placeholderTextColor={colors.placeholder}
+                    keyboardType="number-pad"
+                    autoFocus={true}
+                    onFocus={() => scrollToField(resetCodeFieldRef)}
+                  />
+                  <View style={styles.inputBorder} />
+                  <View style={styles.verificationActions}>
+                    <Pressable onPress={handleResendResetCode} disabled={isSubmitting}>
+                      <Text style={styles.verifyLink}>{t('auth.resend_code')}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => setResetCodeSent(false)} disabled={isSubmitting}>
+                      <Text style={styles.verifyLink}>{t('auth.change_email')}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View ref={newPasswordFieldRef} style={styles.inputField}>
+                  <View style={styles.inputIconGroup}>
+                    <Lock size={18} color={colors.primary} />
+                    <Text style={styles.inputPlaceholder}>{t('auth.new_password')}</Text>
+                  </View>
+                  <View style={styles.passRow}>
+                    <TextInput
+                      style={styles.input}
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      placeholder="********"
+                      placeholderTextColor={colors.placeholder}
+                      secureTextEntry={!showNewPass}
+                      onFocus={() => scrollToField(newPasswordFieldRef)}
+                    />
+                    <Pressable onPress={() => setShowNewPass((current) => !current)}>
+                      {showNewPass ? (
+                        <Eye size={20} color={colors.primary} />
+                      ) : (
+                        <EyeOff size={20} color={colors.placeholder} />
+                      )}
+                    </Pressable>
+                  </View>
+                  <View style={styles.inputBorder} />
+                </View>
+              </>
+            )}
+
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+            <Pressable
+              style={[
+                styles.primaryButton,
+                (isSubmitting || !isReady) && styles.buttonDisabled
+              ]}
+              onPress={resetCodeSent ? handleResetPassword : handleRequestPasswordReset}
+              disabled={isSubmitting || !isReady}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color={colors.on_primary} />
+              ) : (
+                <>
+                  <Text style={styles.primaryButtonText}>{forgotPasswordSubmitLabel}</Text>
+                  <View style={styles.arrowCircle}>
+                    <ChevronRight size={20} color={colors.on_primary} />
+                  </View>
+                </>
+              )}
+            </Pressable>
+
+            <View style={styles.footer}>
+              <Pressable onPress={exitForgotPassword}>
+                <Text style={styles.footerLink}>{t('auth.back_to_signin')}</Text>
+              </Pressable>
+            </View>
+          </View>
+          ) : (
           <View style={styles.formCard}>
             {!isLogin && !needsVerification && (
               <View ref={nameFieldRef} style={styles.inputField}>
@@ -349,6 +563,11 @@ export const LoginScreen = ({ onDemoLogin }) => {
                   </Pressable>
                 </View>
                 <View style={styles.inputBorder} />
+                {isLogin && (
+                  <Pressable onPress={enterForgotPassword} style={styles.forgotPasswordLink}>
+                    <Text style={styles.forgotPasswordText}>{t('auth.forgot_password_link')}</Text>
+                  </Pressable>
+                )}
               </View>
             ) : (
               <View ref={codeFieldRef} style={styles.inputField}>
@@ -402,7 +621,10 @@ export const LoginScreen = ({ onDemoLogin }) => {
               )}
             </Pressable>
           </View>
+          )}
 
+          {!isForgotPassword && (
+          <>
           <View style={styles.socialSection}>
             <Text style={styles.socialHint}>{t('auth.google_signin')}</Text>
             <Pressable
@@ -436,6 +658,8 @@ export const LoginScreen = ({ onDemoLogin }) => {
               <Text style={styles.footerLink}>{isLogin ? t('auth.switch_signup') : t('auth.switch_signin')}</Text>
             </Pressable>
           </View>
+          </>
+          )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -656,5 +880,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.primary,
     textDecorationLine: 'underline',
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    marginTop: 12,
+  },
+  forgotPasswordText: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 13,
+    color: colors.primary,
   },
 });

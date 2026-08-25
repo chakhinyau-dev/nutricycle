@@ -406,7 +406,19 @@
     "signin_incomplete": "Sign in incomplete ({{status}}). If you haven't verified your email, please try the Sign Up flow.",
     "verification_incomplete": "Verification incomplete ({{status}}). Please try again.",
     "account_already_exists": "This account already exists. Please Sign In instead or use Google.",
-    "resend_code_sent": "Verification code resent to your email."
+    "resend_code_sent": "Verification code resent to your email.",
+    "forgot_password_link": "Forgot your password?",
+    "forgot_password_title": "Reset your\npassword",
+    "forgot_password_sub": "Enter your email and we'll send you a code to reset your password.",
+    "reset_password_title": "Create a new\npassword",
+    "reset_password_sub": "Enter the code sent to {{email}} and your new password.",
+    "send_reset_code_btn": "SEND CODE",
+    "reset_password_btn": "RESET PASSWORD",
+    "new_password": "New Password",
+    "back_to_signin": "Back to sign in",
+    "email_required": "Enter your email address.",
+    "reset_fields_required": "Enter the code and your new password.",
+    "reset_incomplete": "Couldn't complete the reset ({{status}}). Please try again."
   },
   "articles": {
     "title": "Wellness\nLibrary",

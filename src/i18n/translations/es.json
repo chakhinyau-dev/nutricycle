@@ -429,7 +429,19 @@
     "signin_incomplete": "Inicio de sesión incompleto ({{status}}). Si aún no verificaste tu email, intenta registrarte nuevamente.",
     "verification_incomplete": "Verificación incompleta ({{status}}). Por favor intenta de nuevo.",
     "account_already_exists": "Esta cuenta ya existe. Por favor inicia sesión o usa Google.",
-    "resend_code_sent": "Código de verificación reenviado a tu email."
+    "resend_code_sent": "Código de verificación reenviado a tu email.",
+    "forgot_password_link": "¿Olvidaste tu contraseña?",
+    "forgot_password_title": "Recupera tu\ncontraseña",
+    "forgot_password_sub": "Ingresa tu email y te enviaremos un código para restablecer tu contraseña.",
+    "reset_password_title": "Crea una nueva\ncontraseña",
+    "reset_password_sub": "Ingresa el código enviado a {{email}} y tu nueva contraseña.",
+    "send_reset_code_btn": "ENVIAR CÓDIGO",
+    "reset_password_btn": "RESTABLECER CONTRASEÑA",
+    "new_password": "Nueva Contraseña",
+    "back_to_signin": "Volver a iniciar sesión",
+    "email_required": "Ingresa tu correo electrónico.",
+    "reset_fields_required": "Ingresa el código y tu nueva contraseña.",
+    "reset_incomplete": "No se pudo completar el restablecimiento ({{status}}). Intenta de nuevo."
   },
   "articles": {
     "title": "Biblioteca de\nBienestar",
