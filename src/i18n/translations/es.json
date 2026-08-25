@@ -335,6 +335,8 @@
       "tips": "Consejos"
     },
     "title": "Recetas por fase",
+    "premium_locked_title": "Video Premium",
+    "premium_locked_message": "Este video es parte de NutriCycle Premium. Suscríbete para verlo.",
     "overline": "BIBLIOTECA DE VIDEOS NUTRICYCLE",
     "featured": "DESTACADO PARA {{phase}}",
     "recommended": "VIDEOS RECOMENDADOS",

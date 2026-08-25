@@ -332,6 +332,8 @@
       "tips": "Tips"
     },
     "title": "Recipes by phase",
+    "premium_locked_title": "Premium Video",
+    "premium_locked_message": "This video is part of NutriCycle Premium. Subscribe to watch it.",
     "overline": "NUTRICYCLE VIDEO LIBRARY",
     "audio_session": "Audio session",
     "search_placeholder": "Search videos or phases",

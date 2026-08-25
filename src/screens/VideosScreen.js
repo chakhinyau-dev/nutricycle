@@ -10,12 +10,13 @@ import {
   ActivityIndicator,
   Animated,
   TextInput,
+  Alert,
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-import { Play, ChevronLeft, Crown, CheckCircle, Search } from 'lucide-react-native';
+import { Play, ChevronLeft, CheckCircle, Search, Key } from 'lucide-react-native';
 import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
 import { translateContent } from '../services/translationService';
 
@@ -61,7 +62,11 @@ const getMealTypes = (t) => [
 
 export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe, initialVideo = null }) => {
   const { t, i18n } = useTranslation();
-  const [selectedVideo, setSelectedVideo] = useState(initialVideo);
+  // A locked user can reach this screen directly via a deep link (e.g.
+  // Dashboard's "Today's Meals" shortcut sets initialVideo), which used to
+  // bypass the grid's own tap-gate entirely and open the player anyway.
+  // Refusing to seed selectedVideo when locked closes that gap.
+  const [selectedVideo, setSelectedVideo] = useState(isLocked ? null : initialVideo);
   const [displayVideo, setDisplayVideo] = useState(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [activeFilterId, setActiveFilterId] = useState('all');
@@ -71,6 +76,25 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   const [searchQuery, setSearchQuery] = useState('');
   const translationRunId = useRef(0);
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
+
+  const showLockedAlert = () => {
+    Alert.alert(
+      t('videos.premium_locked_title'),
+      t('videos.premium_locked_message'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('subscription.subscribe_now'), onPress: () => { if (typeof onSubscribe === 'function') onSubscribe(); } },
+      ]
+    );
+  };
+
+  useEffect(() => {
+    if (isLocked && initialVideo) {
+      showLockedAlert();
+    }
+    // Only ever meant to run once, checking how this screen was entered.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Animation values ───────────────────────────────────────────────
   const headerAnim = useRef({
@@ -403,7 +427,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   // ── Main list view ─────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} scrollEnabled={!isLocked}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
         {/* Header slides down from above */}
         <Animated.View style={[styles.header, { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] }]}>
@@ -512,7 +536,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                 <Pressable
                   style={styles.videoCard}
                   onPress={() => {
-                    if (isLocked) { if (typeof onSubscribe === 'function') onSubscribe(); return; }
+                    if (isLocked) { showLockedAlert(); return; }
                     setSelectedVideo(video);
                   }}
                 >
@@ -522,6 +546,11 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                       style={styles.thumbnail}
                       resizeMode="cover"
                     />
+                    {isLocked && (
+                      <View style={styles.lockBadge}>
+                        <Key size={13} color="#FFF" />
+                      </View>
+                    )}
                     <View style={styles.playIconOverlay}>
                       <Play size={20} color="#FFF" fill="#FFF" />
                     </View>
@@ -537,23 +566,6 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
 
         <View style={{ height: 24 }} />
       </ScrollView>
-
-      {isLocked && (
-        <View style={styles.lockedOverlay}>
-          <View style={styles.lockCard}>
-            <View style={styles.lockIconCircle}>
-              <Crown size={32} color="#FFF" fill="#FFD700" />
-            </View>
-            <Text style={styles.lockTitle}>{t('subscription.unlock_premium_videos')}</Text>
-            <Text style={styles.lockSubtitle}>
-              {t('subscription.unlock_videos_desc')}
-            </Text>
-            <Pressable style={styles.subscribeBtn} onPress={onSubscribe}>
-              <Text style={styles.subscribeBtnText}>{(t('subscription.subscribe_now')).toUpperCase()}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
     </View>
   );
 };
@@ -613,13 +625,17 @@ const styles = StyleSheet.create({
   audioView: { flex: 1, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center' },
   audioThumb: { width: 160, height: 160, borderRadius: 80, marginBottom: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   audioSessionText: { fontFamily: 'Outfit_600SemiBold', color: 'rgba(255,255,255,0.4)', letterSpacing: 2, fontSize: 11, textTransform: 'uppercase' },
-  lockedOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(238, 242, 255, 0.85)', justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 999 },
-  lockCard: { backgroundColor: '#FFFFFF', borderRadius: 36, padding: 32, alignItems: 'center', width: '100%', shadowColor: '#6366F1', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: '#E0E7FF' },
-  lockIconCircle: { width: 68, height: 68, borderRadius: 34, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
-  lockTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 28, color: colors.on_surface, textAlign: 'center', marginBottom: 12 },
-  lockSubtitle: { fontFamily: 'Outfit_500Medium', fontSize: 14, color: colors.on_surface_variant, textAlign: 'center', lineHeight: 22, marginBottom: 28, opacity: 0.8 },
-  subscribeBtn: { width: '100%', height: 60, backgroundColor: colors.primary, borderRadius: 30, justifyContent: 'center', alignItems: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 4 },
-  subscribeBtnText: { fontFamily: 'Outfit_700Bold', fontSize: 14, color: '#FFFFFF', letterSpacing: 1.5 },
+  lockBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   floatingBackButton: { position: 'absolute', top: 60, left: 20, zIndex: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'center', alignItems: 'center' },
   recipeSection: { marginTop: 24, paddingTop: 0 },
   recipeMacroRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 8 },
