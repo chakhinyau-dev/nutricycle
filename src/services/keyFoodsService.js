@@ -86,7 +86,13 @@ export const deleteKeyFood = async (getToken, foodId) => {
 // Convert flat list → { menstrual: [{categoryKey, items:[]}], ... }
 const groupByPhase = (foods) => {
   const phases = ['menstrual', 'follicular', 'ovulation', 'luteal'];
-  const categories = ['proteins', 'fats', 'carbs', 'veg_fruits'];
+  // Was missing 'grains'/'extras'/'herbs' — the categories added to the
+  // Admin panel's picker later than this list was written. A food saved
+  // with one of those categories was written to the database correctly,
+  // but this function only ever mapped over the original four, so it
+  // silently dropped any food not in that fixed list before the screen
+  // ever saw it — a save that succeeded looked like it never happened.
+  const categories = ['proteins', 'fats', 'carbs', 'veg_fruits', 'grains', 'extras', 'herbs'];
   const result = {};
   phases.forEach(phase => {
     result[phase] = categories.map(cat => ({
