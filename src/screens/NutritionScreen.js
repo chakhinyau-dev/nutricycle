@@ -8,10 +8,11 @@ import {
   Image,
   Modal,
   Animated,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Play, ShoppingBag, Utensils, Crown, RefreshCw, X } from 'lucide-react-native';
+import { ChevronLeft, Play, ShoppingBag, Utensils, RefreshCw, X, Key } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 import { getCyclePhaseKey } from '../utils/cycle';
@@ -87,6 +88,18 @@ export const NutritionScreen = ({
 }) => {
   const { t } = useTranslation();
   const userId = user?.id || 'guest';
+
+  const showLockedAlert = () => {
+    Alert.alert(
+      t('nutrition.premium_locked_title'),
+      t('nutrition.premium_locked_message'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('subscription.subscribe_now'), onPress: () => { if (typeof onSubscribe === 'function') onSubscribe(); } },
+      ]
+    );
+  };
+
 const defaultDay = useMemo(() => {
     const day = new Date().getDay();
     return day === 0 ? 6 : day - 1;
@@ -432,14 +445,27 @@ const defaultDay = useMemo(() => {
                 </View>
 
                 {recipe ? (
-                  <Pressable style={styles.mealRecipeCard} onPress={() => onNavigate('recipeDetail', recipe)}>
-                    {recipe.imageUrl ? (
-                      <Image source={{ uri: recipe.imageUrl }} style={styles.mealRecipeImage} resizeMode="cover" />
-                    ) : (
-                      <View style={styles.mealRecipeEmoji}>
-                        <Text style={styles.mealRecipeEmojiText}>{MEAL_EMOJIS[time]}</Text>
-                      </View>
-                    )}
+                  <Pressable
+                    style={styles.mealRecipeCard}
+                    onPress={() => {
+                      if (isLocked) { showLockedAlert(); return; }
+                      onNavigate('recipeDetail', recipe);
+                    }}
+                  >
+                    <View style={{ position: 'relative' }}>
+                      {recipe.imageUrl ? (
+                        <Image source={{ uri: recipe.imageUrl }} style={styles.mealRecipeImage} resizeMode="cover" />
+                      ) : (
+                        <View style={styles.mealRecipeEmoji}>
+                          <Text style={styles.mealRecipeEmojiText}>{MEAL_EMOJIS[time]}</Text>
+                        </View>
+                      )}
+                      {isLocked && (
+                        <View style={styles.lockBadge}>
+                          <Key size={11} color="#FFF" />
+                        </View>
+                      )}
+                    </View>
                     <View style={styles.mealRecipeInfo}>
                       <Text style={styles.mealRecipeName} numberOfLines={2}>{recipe.title}</Text>
                       <View style={styles.macroChipsRow}>
@@ -462,7 +488,12 @@ const defaultDay = useMemo(() => {
                         card's own onPress and navigate away while swapping */}
                     <Pressable
                       style={styles.swapBtn}
-                      onPress={(e) => { e.stopPropagation?.(); setActiveSwapMeal(time); setShowSwapModal(true); }}
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        if (isLocked) { showLockedAlert(); return; }
+                        setActiveSwapMeal(time);
+                        setShowSwapModal(true);
+                      }}
                     >
                       <RefreshCw size={16} color={colors.primary} />
                     </Pressable>
@@ -579,21 +610,6 @@ const defaultDay = useMemo(() => {
           </View>
         </View>
       </Modal>
-
-      {isLocked && (
-        <View style={styles.lockedOverlay}>
-          <View style={styles.lockCard}>
-            <View style={styles.lockIconCircle}>
-              <Crown size={32} color="#FFF" fill="#FFD700" />
-            </View>
-            <Text style={styles.lockTitle}>{t('subscription.unlock_nutrition_title')}</Text>
-            <Text style={styles.lockSubtitle}>{t('subscription.unlock_nutrition_desc')}</Text>
-            <Pressable style={styles.subscribeBtn} onPress={onSubscribe}>
-              <Text style={styles.subscribeBtnText}>{t('subscription.unlock_nutrition_btn').toUpperCase()}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
     </View>
   );
 };
@@ -1210,71 +1226,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Paywall
-  lockedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(238, 242, 255, 0.88)',
+  lockBadge: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    zIndex: 999,
-  },
-  lockCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 36,
-    padding: 32,
-    alignItems: 'center',
-    width: '100%',
-    shadowColor: '#968DA1',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: '#E8E2F0',
-  },
-  lockIconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: '#EEE9F4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  lockTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 26,
-    color: colors.on_surface,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  lockSubtitle: {
-    fontFamily: 'Outfit_500Medium',
-    fontSize: 14,
-    color: colors.on_surface_variant,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 28,
-    opacity: 0.8,
-  },
-  subscribeBtn: {
-    width: '100%',
-    height: 60,
-    backgroundColor: colors.primary,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  subscribeBtnText: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 14,
-    color: '#FFFFFF',
-    letterSpacing: 1.5,
   },
 });

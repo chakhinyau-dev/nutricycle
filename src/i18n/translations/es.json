@@ -864,6 +864,8 @@
   },
   "nutrition": {
     "title": "Tu menú de hoy",
+    "premium_locked_title": "Receta Premium",
+    "premium_locked_message": "Esta receta es parte de NutriCycle Premium. Suscríbete para verla.",
     "day_label": "Día",
     "plan_today": "Plan de hoy",
     "calories_label": "Calorías",

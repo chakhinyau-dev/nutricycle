@@ -869,6 +869,8 @@
   },
   "nutrition": {
     "title": "Eat today",
+    "premium_locked_title": "Premium Recipe",
+    "premium_locked_message": "This recipe is part of NutriCycle Premium. Subscribe to view it.",
     "day_label": "Day",
     "plan_today": "Today's Plan",
     "calories_label": "Calories",
