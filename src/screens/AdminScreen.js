@@ -521,9 +521,10 @@ export const AdminScreen = ({
         resetVideoForm();
         if (onRefresh) onRefresh();
       } else {
-        // saveVideo() returns null (rather than throwing) on a database error —
-        // e.g. an RLS write rejection — so without this, a failed save showed
-        // absolutely nothing: no success toast, no error, just silence.
+        // saveVideo() now throws directly with the real Postgres error
+        // message on a database error, so this branch is just a fallback
+        // for the case where it returns a falsy value without throwing
+        // (e.g. Supabase isn't configured at all).
         throw new Error(t('admin.save_denied'));
       }
     } catch (err) {
@@ -657,9 +658,10 @@ export const AdminScreen = ({
         resetRecipeForm();
         if (onRefresh) onRefresh();
       } else {
-        // Same silent-failure gap as Videos/Key Foods — saveRecipe() returns
-        // null rather than throwing, so a rejected write (e.g. RLS) previously
-        // showed nothing at all.
+        // saveRecipe() now throws directly with the real Postgres error
+        // message on a database error, so this branch is just a fallback
+        // for the case where it returns a falsy value without throwing
+        // (e.g. Supabase isn't configured at all).
         throw new Error(t('admin.save_denied'));
       }
     } catch (err) {

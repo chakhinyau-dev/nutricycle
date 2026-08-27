@@ -163,7 +163,12 @@ export const saveRecipe = async (getToken, recipe) => {
 
       if (error) {
         console.error('[Supabase Update Error]:', error.message, error.details, error.hint);
-        return null;
+        // Previously swallowed and returned null, same gap as saveKeyFood
+        // had — every failure (RLS rejection, a constraint violation,
+        // anything) surfaced as the same generic "check your connection or
+        // admin role" message with no way to diagnose it remotely. Now
+        // throws the real error instead.
+        throw new Error(error.message);
       }
       return normalizeRecipe(data);
     } else {
@@ -175,13 +180,15 @@ export const saveRecipe = async (getToken, recipe) => {
 
       if (error) {
         console.error('[Supabase Insert Error]:', error.message, error.details, error.hint);
-        return null;
+        throw new Error(error.message);
       }
       return normalizeRecipe(data);
     }
   } catch (err) {
     console.error('[saveRecipe Catch]:', err);
-    return null;
+    // Re-throw (rather than swallowing into a null return) so the admin
+    // sees the actual error message instead of a generic one.
+    throw err;
   }
 };
 

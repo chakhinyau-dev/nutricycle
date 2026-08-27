@@ -114,7 +114,11 @@ export const saveVideo = async (getToken, videoData) => {
 
     if (error) {
       console.error('[Supabase] Error updating video:', error.message);
-      return null;
+      // Previously swallowed and returned null, same gap as saveKeyFood/
+      // saveRecipe had — every failure surfaced as the same generic
+      // "check your connection or admin role" message. Now throws the
+      // real error instead.
+      throw new Error(error.message);
     }
     return normalizeVideo(data);
   } else {
@@ -127,7 +131,7 @@ export const saveVideo = async (getToken, videoData) => {
 
     if (error) {
       console.error('[Supabase] Error inserting video:', error.message);
-      return null;
+      throw new Error(error.message);
     }
     return normalizeVideo(data);
   }
