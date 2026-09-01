@@ -21,6 +21,7 @@ export const deleteUserAccountData = async (getToken, clerkUserId) => {
     'shopping_list_state',
     'shopping_list_custom_items',
     'meal_logs',
+    'ai_chat_messages',
     'subscriptions',
     'profiles',
   ];

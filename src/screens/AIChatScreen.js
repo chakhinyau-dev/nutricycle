@@ -15,12 +15,29 @@ import { ChevronLeft, Send, Sparkles, User, Bot } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { getGeminiChatResponse } from '../services/aiService';
+import { loadMealHistory } from '../services/mealAnalysisService';
+import { loadRecentChatHistory, saveChatMessage } from '../services/chatHistoryService';
 
 const { width } = Dimensions.get('window');
 
-export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, isPremium }) => {
+// How much recent history to fold into every chat message's context —
+// enough for the model to see a real trend, not so much the prompt balloons.
+const RECENT_LOGS_COUNT = 5;
+const RECENT_MEALS_COUNT = 5;
+
+export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {}, user, dailyLogs = [], getToken, isPremium }) => {
   const { t } = useTranslation();
   const phaseKey = cycleInfo?.currentPhaseKey || 'follicular';
+  const [mealHistory, setMealHistory] = useState([]);
+
+  useEffect(() => {
+    if (!isPremium || !user?.id) return;
+    let isMounted = true;
+    loadMealHistory(getToken, user.id, RECENT_MEALS_COUNT).then((rows) => {
+      if (isMounted) setMealHistory(rows);
+    });
+    return () => { isMounted = false; };
+  }, [isPremium, user?.id]);
   const [messages, setMessages] = useState([
     {
       id: '1',
@@ -39,13 +56,27 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, isPremium }) => {
   const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef();
 
+  // Resume a real conversation across app sessions instead of always
+  // starting fresh with just the greeting — the greeting bubble stays only
+  // when there's genuinely no prior history yet.
+  useEffect(() => {
+    if (!isPremium || !user?.id) return;
+    let isMounted = true;
+    loadRecentChatHistory(getToken, user.id).then((rows) => {
+      if (isMounted && rows.length > 0) setMessages(rows);
+    });
+    return () => { isMounted = false; };
+  }, [isPremium, user?.id]);
+
   const handleSend = async () => {
     if (!inputText.trim() || isTyping) return;
 
-    const userMessage = { id: Date.now().toString(), role: 'user', text: inputText };
+    const sentText = inputText;
+    const userMessage = { id: Date.now().toString(), role: 'user', text: sentText };
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setIsTyping(true);
+    if (user?.id) saveChatMessage(getToken, user.id, 'user', sentText);
 
     // Prepare history for Gemini.
     // The seeded greeting bubble is UI-only (role: 'model') and is never sent to
@@ -59,15 +90,33 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, isPremium }) => {
         parts: [{ text: m.text }],
       }));
 
-    const responseText = await getGeminiChatResponse(history, inputText, {
+    const responseText = await getGeminiChatResponse(history, sentText, {
       currentPhase: cycleInfo?.currentPhaseKey,
       day: cycleInfo?.cycleDay,
+      userName: user?.firstName || user?.fullName,
+      cycleLength: cycleProfile?.cycleLength ?? cycleProfile?.cycle_length,
+      periodLength: cycleProfile?.periodLength ?? cycleProfile?.period_length,
+      recentLogs: dailyLogs.slice(0, RECENT_LOGS_COUNT).map((l) => ({
+        date: l.log_date || l.logged_at,
+        mood: l.mood,
+        energyLevel: l.energy_level,
+        symptoms: l.symptoms,
+      })),
+      recentMeals: mealHistory.map((m) => ({
+        date: m.loggedAt,
+        items: (m.items || []).map((i) => i.name),
+        calories: Math.round(m.totalCalories),
+        protein: Math.round(m.totalProtein),
+        carbs: Math.round(m.totalCarbs),
+        fat: Math.round(m.totalFat),
+      })),
     });
 
     setMessages((prev) => [
       ...prev,
       { id: (Date.now() + 1).toString(), role: 'model', text: responseText },
     ]);
+    if (user?.id) saveChatMessage(getToken, user.id, 'model', responseText);
     setIsTyping(false);
   };
 

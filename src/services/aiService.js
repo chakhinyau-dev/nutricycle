@@ -59,14 +59,67 @@ const fetchWithRetry = async (fn, maxRetries = 3, initialDelay = 2000) => {
   }
 };
 
+/**
+ * Builds the grounding block sent with every chat message. Previously this
+ * was just phase + day + whatever symptoms the user happened to type in
+ * *this* message — everything else the app already knows about the user
+ * (their actual cycle settings, recent mood/energy/symptom history, what
+ * they've actually logged eating) was simply never sent, so the model had
+ * nothing real to reference and could only speak in generalities. This pulls
+ * in the profile data and recent logs the rest of the app already has, and
+ * explicitly forbids the model from inventing anything not present here.
+ */
+const buildContextBlock = (context) => {
+  const {
+    currentPhase,
+    day,
+    userName,
+    cycleLength,
+    periodLength,
+    recentLogs = [],
+    recentMeals = [],
+    symptoms = [],
+  } = context;
+
+  const logsBlock = recentLogs.length
+    ? recentLogs
+        .map((l) => `- ${l.date}: mood=${l.mood || 'n/a'}, energy=${l.energyLevel || 'n/a'}, symptoms=${(l.symptoms || []).join(', ') || 'none'}`)
+        .join('\n')
+    : 'No recent daily logs recorded.';
+
+  const mealsBlock = recentMeals.length
+    ? recentMeals
+        .map((m) => `- ${m.date}: ${m.items.join(', ') || 'unnamed items'} — ${m.calories} kcal, ${m.protein}g protein, ${m.carbs}g carbs, ${m.fat}g fat`)
+        .join('\n')
+    : 'No meals logged recently.';
+
+  return `
+User profile:
+- Name: ${userName || 'User'}
+- Current phase: ${currentPhase || 'unknown'} (cycle day ${day ?? 'unknown'})
+- Typical cycle length: ${cycleLength || 'unknown'} days · typical period length: ${periodLength || 'unknown'} days
+
+Recent daily logs (most recent first):
+${logsBlock}
+
+Recently logged meals (most recent first):
+${mealsBlock}
+
+Symptoms mentioned in this specific message: ${symptoms.join(', ') || 'None'}
+
+IMPORTANT: Only reference specific numbers, dates, or facts that actually appear above or earlier in this
+conversation. Never invent a statistic, measurement, or logged value the user was not actually given credit for —
+if something isn't in this data, say you don't have that information instead of guessing.
+`;
+};
+
 export const getGeminiChatResponse = async (history, userMessage, context = {}) => {
   try {
     if (!env.geminiApiKey) {
       throw new Error('Gemini API Key is missing');
     }
 
-    const { currentPhase, day, symptoms = [] } = context;
-    const contextualPrompt = `User is currently in ${currentPhase} phase (Day ${day}). Symptoms reported: ${symptoms.join(', ') || 'None'}.`;
+    const contextualPrompt = buildContextBlock(context);
 
     return await fetchWithRetry(async () => {
       const chat = model.startChat({
