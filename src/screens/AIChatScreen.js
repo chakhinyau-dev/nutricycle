@@ -55,6 +55,11 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef();
+  // Guards against the history load (async, fires on mount) landing AFTER
+  // the user has already sent a message — without this, setMessages(rows)
+  // below would overwrite the just-sent message (and its optimistic bubble)
+  // with the stale pre-load history, silently dropping what they typed.
+  const hasSentRef = useRef(false);
 
   // Resume a real conversation across app sessions instead of always
   // starting fresh with just the greeting — the greeting bubble stays only
@@ -63,13 +68,14 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
     if (!isPremium || !user?.id) return;
     let isMounted = true;
     loadRecentChatHistory(getToken, user.id).then((rows) => {
-      if (isMounted && rows.length > 0) setMessages(rows);
+      if (isMounted && rows.length > 0 && !hasSentRef.current) setMessages(rows);
     });
     return () => { isMounted = false; };
   }, [isPremium, user?.id]);
 
   const handleSend = async () => {
     if (!inputText.trim() || isTyping) return;
+    hasSentRef.current = true;
 
     const sentText = inputText;
     const userMessage = { id: Date.now().toString(), role: 'user', text: sentText };

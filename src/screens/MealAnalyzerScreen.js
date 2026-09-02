@@ -235,7 +235,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
           <View style={styles.lockIconBox}>
             <Lock size={40} color={colors.primary} />
           </View>
-          <Text style={styles.lockTitle}>{t('ai.premium_title')}</Text>
+          <Text style={styles.lockTitle}>{t('meal_analyzer.premium_title')}</Text>
           <Text style={styles.lockSub}>{t('meal_analyzer.premium_sub')}</Text>
           <Pressable style={styles.upgradeBtn} onPress={() => onNavigate('subscription')}>
             <Crown size={20} color="#FFF" style={{ marginRight: 10 }} />

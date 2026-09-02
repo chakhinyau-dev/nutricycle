@@ -14,6 +14,28 @@ export const deleteUserAccountData = async (getToken, clerkUserId) => {
     return { success: false };
   }
 
+  // Deleting the meal_logs row below only clears its photo_path reference —
+  // same distinction documented in cleanup-meal-photos/index.ts: a Storage
+  // object has to be removed through the Storage API itself, raw table
+  // deletes don't touch it. Without this, a deleted user's meal photos
+  // would sit in the private meal-photos bucket forever. Uses the user's
+  // own session (same RLS the rest of this function relies on) since the
+  // storage.objects policies already scope by (storage.foldername(name))[1].
+  try {
+    const { data: files, error: listError } = await supabase.storage.from('meal-photos').list(clerkUserId);
+    if (listError) {
+      console.error('[Account Deletion] Failed to list meal photos:', listError.message);
+    } else if (files?.length) {
+      const paths = files.map((f) => `${clerkUserId}/${f.name}`);
+      const { error: removeError } = await supabase.storage.from('meal-photos').remove(paths);
+      if (removeError) {
+        console.error('[Account Deletion] Failed to remove meal photos:', removeError.message);
+      }
+    }
+  } catch (e) {
+    console.error('[Account Deletion] Meal photo cleanup threw:', e);
+  }
+
   const tables = [
     'daily_logs',
     'saved_recipes',

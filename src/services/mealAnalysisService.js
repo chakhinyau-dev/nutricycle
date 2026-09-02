@@ -143,12 +143,20 @@ export const checkAndIncrementUsage = async (getToken, clerkUserId, dailyCap = D
 
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from('meal_analysis_usage')
     .select('count')
     .eq('clerk_user_id', clerkUserId)
     .eq('usage_date', today)
     .maybeSingle();
+
+  if (lookupError) {
+    // Doesn't block the analysis (fail open, same as the upsert error below)
+    // but this was previously swallowed with no trace at all — e.g. the
+    // migration not having been run yet would silently look identical to
+    // "no usage today" instead of surfacing anywhere.
+    console.error('[MealAnalysis] Error checking usage:', lookupError.message);
+  }
 
   const currentCount = existing?.count || 0;
   if (currentCount >= dailyCap) {

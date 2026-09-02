@@ -113,6 +113,34 @@ if something isn't in this data, say you don't have that information instead of 
 `;
 };
 
+/**
+ * Gemini's startChat requires history to strictly alternate user/model turns
+ * (a repeated role back-to-back gets the whole request rejected with a 400).
+ * The seeded pair below (SYSTEM_PROMPT as 'user', the ack as 'model') assumes
+ * the next turn is 'user' — true in the normal case, but a saved chat history
+ * loaded from the DB can violate that: a 'model' save that fails to persist
+ * after its paired 'user' one succeeded leaves a dangling unanswered turn,
+ * and either that or the 20-message load window / 30-day cron cleanup can
+ * land such that the oldest kept row is a 'model' reply. Rather than trust
+ * the caller's history is clean, rebuild it keeping only turns that actually
+ * continue the alternation, starting from 'user' — dropping an occasional
+ * turn beats a hard failure that silently breaks the whole chat.
+ */
+const sanitizeHistoryForGemini = (rawHistory) => {
+  const cleaned = [];
+  for (const turn of rawHistory) {
+    if (!turn?.role || !turn?.parts) continue;
+    const prev = cleaned[cleaned.length - 1];
+    if (!prev) {
+      if (turn.role !== 'user') continue;
+    } else if (prev.role === turn.role) {
+      continue;
+    }
+    cleaned.push(turn);
+  }
+  return cleaned;
+};
+
 export const getGeminiChatResponse = async (history, userMessage, context = {}) => {
   try {
     if (!env.geminiApiKey) {
@@ -120,13 +148,14 @@ export const getGeminiChatResponse = async (history, userMessage, context = {}) 
     }
 
     const contextualPrompt = buildContextBlock(context);
+    const safeHistory = sanitizeHistoryForGemini(history);
 
     return await fetchWithRetry(async () => {
       const chat = model.startChat({
         history: [
           { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
           { role: 'model', parts: [{ text: 'Understood. I am NutriCycle AI, ready to assist.' }] },
-          ...history,
+          ...safeHistory,
         ],
       });
 
