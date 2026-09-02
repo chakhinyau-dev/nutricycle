@@ -666,7 +666,12 @@
     "history_title": "Historial de comidas",
     "no_history": "Aún no has guardado ninguna comida.",
     "untitled_meal": "Comida sin nombre",
-    "delete_confirm": "¿Eliminar este registro de comida?"
+    "delete_confirm": "¿Eliminar este registro de comida?",
+    "camera_permission": "Se necesita permiso de cámara para tomar una foto.",
+    "choose_source": "¿Cómo quieres agregar la foto?",
+    "take_photo": "Tomar foto",
+    "choose_library": "Elegir de galería",
+    "daily_cap_reached": "Alcanzaste el límite de {{cap}} análisis por día. Intenta de nuevo mañana."
   },
   "wellness": {
     "title": "Bienestar\nsincronizado",

@@ -16,7 +16,16 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History } from 'lucide-react-native';
 import { colors } from '../theme/colors';
-import { analyzeMealPhoto, saveMealLog, loadMealHistory, deleteMealLog } from '../services/mealAnalysisService';
+import { prepareImageForUpload } from '../utils/imagePrep';
+import {
+  analyzeMealPhoto,
+  saveMealLog,
+  loadMealHistory,
+  deleteMealLog,
+  checkAndIncrementUsage,
+  uploadMealPhoto,
+  MEAL_PHOTO_MAX_DIMENSION,
+} from '../services/mealAnalysisService';
 
 // "Analizar plato" — replaces Predictor IA. Reuses the same hero/premium-lock
 // visual pattern AIPredictorScreen.js used, for a consistent look across the
@@ -54,28 +63,22 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
     setAnalysisError(null);
   };
 
-  const handlePickPhoto = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('settings.error'), t('settings.gallery_permission'));
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.8,
-      base64: true,
-    });
-    if (result.canceled || !result.assets[0]) return;
-
-    const asset = result.assets[0];
+  const runAnalysis = async (asset) => {
     setPickedImage(asset);
     setItems(null);
     setPhaseNote('');
     setAnalysisError(null);
     setAnalyzing(true);
     try {
+      // Checked (and incremented) before the actual Gemini call — the cost
+      // is incurred here regardless of whether the result ever gets saved,
+      // so the cap has to gate the call itself, not the save step.
+      const usage = await checkAndIncrementUsage(getToken, user?.id);
+      if (!usage.allowed) {
+        setAnalysisError(t('meal_analyzer.daily_cap_reached', { cap: usage.cap }));
+        return;
+      }
+
       const analysis = await analyzeMealPhoto(asset, cycleInfo?.currentPhaseKey);
       if (!analysis.items.length) {
         setAnalysisError(t('meal_analyzer.no_food_detected'));
@@ -89,6 +92,58 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
     } finally {
       setAnalyzing(false);
     }
+  };
+
+  // Resized right after picking, before it ever lands in state or gets
+  // uploaded — the same imagePrep.js discipline AdminScreen.js already
+  // uses for recipe/video/food images. Without this, the raw camera/library
+  // asset (often several MB) is what ends up in Storage; this way both the
+  // Gemini call and the eventual meal-photos upload reuse one already-small
+  // asset instead of the original.
+  const handlePickFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('settings.error'), t('settings.gallery_permission'));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const prepared = await prepareImageForUpload(result.assets[0], { maxDimension: MEAL_PHOTO_MAX_DIMENSION });
+    runAnalysis(prepared);
+  };
+
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('settings.error'), t('meal_analyzer.camera_permission'));
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const prepared = await prepareImageForUpload(result.assets[0], { maxDimension: MEAL_PHOTO_MAX_DIMENSION });
+    runAnalysis(prepared);
+  };
+
+  const handleChooseSource = () => {
+    Alert.alert(
+      t('meal_analyzer.analyze_btn'),
+      t('meal_analyzer.choose_source'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('meal_analyzer.take_photo'), onPress: handleTakePhoto },
+        { text: t('meal_analyzer.choose_library'), onPress: handlePickFromLibrary },
+      ]
+    );
   };
 
   const handleItemChange = (index, field, value) => {
@@ -111,14 +166,21 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
         carbs: Number(item.carbs) || 0,
         fat: Number(item.fat) || 0,
       }));
+      // Uploaded only now, on confirmed save — not at analysis time, so a
+      // discarded/cancelled analysis never leaves an orphaned photo in
+      // storage.
+      const photoPath = pickedImage ? await uploadMealPhoto(getToken, user.id, pickedImage) : null;
+
       const saved = await saveMealLog(getToken, user.id, {
         items: normalized,
         phaseKey: cycleInfo?.currentPhaseKey,
         phaseNote,
+        photoPath,
       });
       if (!saved) {
         throw new Error(t('meal_analyzer.save_failed'));
       }
+      if (photoPath) saved.photoUrl = pickedImage.uri;
       setHistory((prev) => [saved, ...prev]);
       resetAnalysis();
     } catch (err) {
@@ -288,7 +350,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
               </Pressable>
             </View>
           ) : (
-            <Pressable style={styles.analyzeBtn} onPress={handlePickPhoto}>
+            <Pressable style={styles.analyzeBtn} onPress={handleChooseSource}>
               <Camera size={22} color="#FFF" style={{ marginRight: 10 }} />
               <Text style={styles.analyzeBtnText}>{t('meal_analyzer.analyze_btn')}</Text>
             </Pressable>
@@ -308,6 +370,9 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
           ) : (
             history.map((meal) => (
               <View key={meal.id} style={styles.historyCard}>
+                {meal.photoUrl ? (
+                  <Image source={{ uri: meal.photoUrl }} style={styles.historyThumb} />
+                ) : null}
                 <View style={{ flex: 1 }}>
                   <Text style={styles.historyCardTitle} numberOfLines={1}>
                     {meal.items.map((i) => i.name).join(', ') || t('meal_analyzer.untitled_meal')}
@@ -435,7 +500,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#F1F1E8',
+    gap: 12,
   },
+  historyThumb: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#F4F2EC' },
   historyCardTitle: { fontFamily: 'Outfit_700Bold', fontSize: 14, color: colors.on_surface, marginBottom: 4 },
   historyCardSub: { fontFamily: 'Outfit_500Medium', fontSize: 12, color: colors.on_surface_variant },
   lockContainer: {

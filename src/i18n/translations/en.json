@@ -654,7 +654,12 @@
     "history_title": "Meal history",
     "no_history": "You haven't saved any meals yet.",
     "untitled_meal": "Untitled meal",
-    "delete_confirm": "Delete this meal entry?"
+    "delete_confirm": "Delete this meal entry?",
+    "camera_permission": "Camera permission is needed to take a photo.",
+    "choose_source": "How do you want to add the photo?",
+    "take_photo": "Take Photo",
+    "choose_library": "Choose from Library",
+    "daily_cap_reached": "You've reached the {{cap}}-analysis daily limit. Try again tomorrow."
   },
   "wellness": {
     "title": "Synced\nWellness",

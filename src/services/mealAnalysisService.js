@@ -1,7 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Platform } from 'react-native';
+// expo-file-system's main entrypoint (SDK 54 / v19) throws on the classic
+// readAsStringAsync API; the legacy submodule keeps the same signature —
+// see videoService.js / recipeService.js for the same fix.
+import * as FileSystem from 'expo-file-system/legacy';
+import { decode } from 'base64-arraybuffer';
 import { env } from '../lib/env';
 import { createClerkSupabaseClient } from '../lib/supabase';
-import { prepareImageForUpload } from '../utils/imagePrep';
+
+// Cost-protection cap: each analysis is a real Gemini API call regardless of
+// whether the result ever gets saved, so this is tracked separately from
+// saved meal_logs rows (a user could analyze 50 photos and save none).
+const DAILY_ANALYSIS_CAP = 15;
+const MEAL_PHOTO_SIGNED_URL_TTL = 60 * 60; // 1 hour — regenerated each time history loads
 
 /**
  * "Analizar plato" — replaces Predictor IA. A user photographs a meal;
@@ -19,8 +30,14 @@ const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
 // Photos analyzed for food content benefit from more detail than the
 // 800px default used for admin thumbnail uploads (imagePrep.js) — a low-res
-// photo makes portion/ingredient estimation less reliable.
-const MEAL_PHOTO_MAX_DIMENSION = 1280;
+// photo makes portion/ingredient estimation less reliable. Exported so the
+// screen can run the SAME resize once, right after picking — matching
+// AdminScreen.js's pattern (prepareImageForUpload immediately on pick,
+// before the asset ever lands in state or gets uploaded) — instead of
+// storing the raw, multi-MB original and resizing a throwaway copy only
+// for the Gemini call, which is what left the full-size original to be
+// uploaded to Storage untouched.
+export const MEAL_PHOTO_MAX_DIMENSION = 1280;
 
 // Same exponential-backoff retry used by aiService.js — AIPredictorScreen.js
 // never had this and would silently give up on a single transient rate
@@ -68,21 +85,25 @@ If you cannot identify any food in the image, respond with { "items": [], "phase
  * failure (missing key, no food detected, malformed response) — the caller
  * is expected to show that error rather than silently swallow it, the same
  * "surface real failures" lesson from this session's earlier upload fixes.
+ *
+ * Expects an already-resized asset (see MEAL_PHOTO_MAX_DIMENSION above) —
+ * the caller runs prepareImageForUpload once, right after picking, and
+ * reuses that same prepared asset for both this call and uploadMealPhoto,
+ * rather than this function resizing its own throwaway copy.
  */
 export const analyzeMealPhoto = async (imageAsset, phaseKey) => {
   if (!env.geminiApiKey) {
     throw new Error('Gemini API Key is missing');
   }
 
-  const prepared = await prepareImageForUpload(imageAsset, { maxDimension: MEAL_PHOTO_MAX_DIMENSION });
-  if (!prepared?.base64) {
+  if (!imageAsset?.base64) {
     throw new Error('Unable to read the selected photo.');
   }
 
   return fetchWithRetry(async () => {
     const result = await model.generateContent([
       { text: buildPrompt(phaseKey) },
-      { inlineData: { mimeType: prepared.mimeType || 'image/jpeg', data: prepared.base64 } },
+      { inlineData: { mimeType: imageAsset.mimeType || 'image/jpeg', data: imageAsset.base64 } },
     ]);
     const response = result.response;
     const text = response.text();
@@ -109,6 +130,146 @@ export const analyzeMealPhoto = async (imageAsset, phaseKey) => {
   });
 };
 
+/**
+ * Atomically increments today's analysis count for this user and reports
+ * whether they're still under the daily cap. Checked (and incremented)
+ * BEFORE calling Gemini, since the cost is incurred at analysis time, not
+ * at save time. The upsert with `count = count + 1` is atomic in Postgres,
+ * so two near-simultaneous requests can't both slip through under the cap.
+ */
+export const checkAndIncrementUsage = async (getToken, clerkUserId, dailyCap = DAILY_ANALYSIS_CAP) => {
+  const supabase = createClerkSupabaseClient(getToken);
+  if (!supabase || !clerkUserId) return { allowed: true, count: 0, cap: dailyCap };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: existing } = await supabase
+    .from('meal_analysis_usage')
+    .select('count')
+    .eq('clerk_user_id', clerkUserId)
+    .eq('usage_date', today)
+    .maybeSingle();
+
+  const currentCount = existing?.count || 0;
+  if (currentCount >= dailyCap) {
+    return { allowed: false, count: currentCount, cap: dailyCap };
+  }
+
+  const { data, error } = await supabase
+    .from('meal_analysis_usage')
+    .upsert(
+      { clerk_user_id: clerkUserId, usage_date: today, count: currentCount + 1 },
+      { onConflict: 'clerk_user_id,usage_date' }
+    )
+    .select('count')
+    .single();
+
+  if (error) {
+    console.error('[MealAnalysis] Error tracking usage:', error.message);
+    // Fail open — a tracking hiccup shouldn't block a real analysis.
+    return { allowed: true, count: currentCount + 1, cap: dailyCap };
+  }
+
+  return { allowed: true, count: data.count, cap: dailyCap };
+};
+
+/**
+ * Uploads a meal photo to the private meal-photos bucket, scoped under the
+ * user's own clerk_user_id (the RLS policies check that path segment).
+ * Returns the storage path — not a public URL, since the bucket is private
+ * and needs a signed URL for display (see getMealPhotoSignedUrl).
+ * Same proven multi-fallback read pattern as recipeService.js's
+ * uploadRecipeImage, since fetch(file://…) is unreliable on native.
+ */
+export const uploadMealPhoto = async (getToken, clerkUserId, imageAsset) => {
+  const supabase = createClerkSupabaseClient(getToken);
+  if (!supabase || !clerkUserId) return null;
+
+  try {
+    const fileUri = typeof imageAsset === 'string' ? imageAsset : imageAsset?.uri;
+    const pickerBase64 = typeof imageAsset === 'object' ? imageAsset?.base64 : null;
+    const mimeType = (typeof imageAsset === 'object' && imageAsset?.mimeType) || 'image/jpeg';
+
+    const base64ToArrayBuffer = (raw) => {
+      const trimmed = String(raw || '').trim();
+      if (!trimmed) return null;
+      const dataPart = trimmed.includes(',') ? trimmed.split(',')[1] : trimmed;
+      try {
+        return decode(dataPart);
+      } catch (e) {
+        console.warn('[MealPhoto] base64 decode failed:', e?.message);
+        return null;
+      }
+    };
+
+    let uploadBody = pickerBase64 ? base64ToArrayBuffer(pickerBase64) : null;
+
+    if (!uploadBody && fileUri && Platform.OS !== 'web') {
+      try {
+        const diskB64 = await FileSystem.readAsStringAsync(fileUri, { encoding: 'base64' });
+        uploadBody = base64ToArrayBuffer(diskB64);
+      } catch (e) {
+        console.warn('[MealPhoto] FileSystem.readAsStringAsync failed:', e?.message);
+      }
+    }
+
+    if (!uploadBody && fileUri) {
+      try {
+        const response = await fetch(fileUri);
+        uploadBody = await response.blob();
+      } catch (e) {
+        console.warn('[MealPhoto] fetch(uri) failed:', e?.message);
+      }
+    }
+
+    if (!uploadBody && pickerBase64) {
+      const dataUrl = pickerBase64.startsWith('data:')
+        ? pickerBase64
+        : `data:${mimeType};base64,${pickerBase64}`;
+      try {
+        const response = await fetch(dataUrl);
+        uploadBody = await response.blob();
+      } catch (e) {
+        console.warn('[MealPhoto] fetch(dataUrl) failed:', e?.message);
+      }
+    }
+
+    if (!uploadBody) {
+      throw new Error('Unable to read the meal photo.');
+    }
+
+    const path = `${clerkUserId}/${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('meal-photos').upload(path, uploadBody, {
+      contentType: mimeType,
+      upsert: false,
+    });
+    if (error) {
+      console.error('[MealAnalysis] Error uploading meal photo:', error.message);
+      return null;
+    }
+    return path;
+  } catch (error) {
+    console.error('[MealAnalysis] Meal photo upload failed:', error);
+    return null;
+  }
+};
+
+export const getMealPhotoSignedUrl = async (getToken, photoPath) => {
+  if (!photoPath) return null;
+  const supabase = createClerkSupabaseClient(getToken);
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.storage
+    .from('meal-photos')
+    .createSignedUrl(photoPath, MEAL_PHOTO_SIGNED_URL_TTL);
+
+  if (error) {
+    console.error('[MealAnalysis] Error signing meal photo URL:', error.message);
+    return null;
+  }
+  return data?.signedUrl || null;
+};
+
 const normalizeMealLog = (row) => ({
   id: String(row.id),
   loggedAt: row.logged_at,
@@ -119,12 +280,16 @@ const normalizeMealLog = (row) => ({
   totalFat: row.total_fat ?? 0,
   phaseKey: row.phase_key || null,
   phaseNote: row.phase_note || '',
+  photoPath: row.photo_path || null,
+  // Resolved separately (signed URLs expire, so this is filled in by
+  // loadMealHistory rather than stored) — null until then.
+  photoUrl: null,
 });
 
 const sumMacro = (items, key) =>
   items.reduce((sum, item) => sum + (Number(item[key]) || 0), 0);
 
-export const saveMealLog = async (getToken, clerkUserId, { items, phaseKey, phaseNote }) => {
+export const saveMealLog = async (getToken, clerkUserId, { items, phaseKey, phaseNote, photoPath }) => {
   const supabase = createClerkSupabaseClient(getToken);
   if (!supabase || !clerkUserId) return null;
 
@@ -137,6 +302,7 @@ export const saveMealLog = async (getToken, clerkUserId, { items, phaseKey, phas
     total_fat: sumMacro(items, 'fat'),
     phase_key: phaseKey || null,
     phase_note: phaseNote || '',
+    photo_path: photoPath || null,
   };
 
   const { data, error } = await supabase.from('meal_logs').insert([payload]).select().single();
@@ -162,7 +328,16 @@ export const loadMealHistory = async (getToken, clerkUserId, limit = 20) => {
     console.error('[MealAnalysis] Error loading meal history:', error.message);
     return [];
   }
-  return (data || []).map(normalizeMealLog);
+
+  const normalized = (data || []).map(normalizeMealLog);
+  await Promise.all(
+    normalized.map(async (meal) => {
+      if (meal.photoPath) {
+        meal.photoUrl = await getMealPhotoSignedUrl(getToken, meal.photoPath);
+      }
+    })
+  );
+  return normalized;
 };
 
 export const deleteMealLog = async (getToken, mealLogId) => {
