@@ -44,17 +44,22 @@ export const MEAL_PHOTO_MAX_DIMENSION = 1280;
 
 // Same exponential-backoff retry used by aiService.js — AIPredictorScreen.js
 // never had this and would silently give up on a single transient rate
-// limit; don't repeat that here.
+// limit; don't repeat that here. Also retries 503 (model overloaded) —
+// confirmed via a real live call that Gemini's own "high demand, usually
+// temporary" 503s were previously not retried at all, same gap as
+// aiService.js.
 const fetchWithRetry = async (fn, maxRetries = 3, initialDelay = 2000) => {
   let attempt = 0;
   while (attempt < maxRetries) {
     try {
       return await fn();
     } catch (error) {
-      const isRateLimit = error.message?.includes('429') || error.status === 429;
-      if (isRateLimit && attempt < maxRetries - 1) {
+      const isRetryable =
+        error.message?.includes('429') || error.status === 429 ||
+        error.message?.includes('503') || error.status === 503;
+      if (isRetryable && attempt < maxRetries - 1) {
         const delay = initialDelay * Math.pow(2, attempt);
-        console.warn(`[MealAnalysis] Rate limited. Retrying in ${delay}ms... (attempt ${attempt + 1})`);
+        console.warn(`[MealAnalysis] Retryable error (429/503). Retrying in ${delay}ms... (attempt ${attempt + 1})`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         attempt++;
         continue;

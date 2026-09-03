@@ -36,7 +36,11 @@ RULES:
 
 /** 
  * Senior-level Retry Helper with Exponential Backoff
- * Handles 429 (Rate Limit) errors gracefully.
+ * Handles 429 (rate limit) and 503 (model overloaded) errors gracefully —
+ * confirmed via a real live call that 503 "high demand" responses (Google's
+ * own message: "usually temporary") were previously falling straight
+ * through to the generic fallback text instead of being retried, since only
+ * 429 was ever checked here.
  */
 const fetchWithRetry = async (fn, maxRetries = 3, initialDelay = 2000) => {
   let attempt = 0;
@@ -44,10 +48,12 @@ const fetchWithRetry = async (fn, maxRetries = 3, initialDelay = 2000) => {
     try {
       return await fn();
     } catch (error) {
-      const isRateLimit = error.message?.includes('429') || error.status === 429;
-      if (isRateLimit && attempt < maxRetries - 1) {
+      const isRetryable =
+        error.message?.includes('429') || error.status === 429 ||
+        error.message?.includes('503') || error.status === 503;
+      if (isRetryable && attempt < maxRetries - 1) {
         const delay = initialDelay * Math.pow(2, attempt);
-        console.warn(`[AI Service] Rate limited. Retrying in ${delay}ms... (Attempt ${attempt + 1})`);
+        console.warn(`[AI Service] Retryable error (429/503). Retrying in ${delay}ms... (Attempt ${attempt + 1})`);
         await new Promise(resolve => setTimeout(resolve, delay));
         attempt++;
         continue;
