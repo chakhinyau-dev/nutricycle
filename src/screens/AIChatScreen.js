@@ -10,8 +10,9 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native';
-import { ChevronLeft, Send, Sparkles, User, Bot } from 'lucide-react-native';
+import { ChevronLeft, Send, Sparkles, User, Bot, Trash2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { getGeminiChatResponse } from '../services/aiService';
@@ -38,20 +39,21 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
     });
     return () => { isMounted = false; };
   }, [isPremium, user?.id]);
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      role: 'model',
-      // Was interpolating the raw internal phase key (e.g. "follicular") straight
-      // into the Spanish sentence, untranslated. Now uses the actual translated
-      // phase name plus a short phase-specific energy note.
-      text: t('chat.initial_greeting', {
-        phase: t(`phases.${phaseKey}`),
-        energy: t(`chat.phase_energy.${phaseKey}`),
-      }),
-      isGreeting: true,
-    },
-  ]);
+  // Was interpolating the raw internal phase key (e.g. "follicular") straight
+  // into the Spanish sentence, untranslated. Now uses the actual translated
+  // phase name plus a short phase-specific energy note. Extracted so
+  // handleClearChat can rebuild the same greeting bubble.
+  const buildGreeting = () => ({
+    id: `greeting-${Date.now()}`,
+    role: 'model',
+    text: t('chat.initial_greeting', {
+      phase: t(`phases.${phaseKey}`),
+      energy: t(`chat.phase_energy.${phaseKey}`),
+    }),
+    isGreeting: true,
+  });
+
+  const [messages, setMessages] = useState(() => [buildGreeting()]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef();
@@ -126,6 +128,29 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
     setIsTyping(false);
   };
 
+  // Clears only what's shown on screen right now — never touches
+  // ai_chat_messages in Supabase, so the saved history (and the 30-day
+  // retention job) is completely unaffected. Reopening this screen later
+  // loads the real history again from the database, same as always; this
+  // just resets the current view back to a fresh greeting.
+  const handleClearChat = () => {
+    Alert.alert(
+      t('chat.clear_chat_title'),
+      t('chat.clear_chat_message'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('chat.clear_chat_confirm'),
+          style: 'destructive',
+          onPress: () => {
+            hasSentRef.current = true;
+            setMessages([buildGreeting()]);
+          },
+        },
+      ]
+    );
+  };
+
   useEffect(() => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages, isTyping]);
@@ -161,7 +186,14 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
             <Text style={styles.onlineText}>{t('ai.powered_by')}</Text>
           </View>
         </View>
-        <View style={{ width: 44 }} />
+        <Pressable
+          onPress={handleClearChat}
+          style={styles.clearButton}
+          disabled={messages.length <= 1}
+          hitSlop={8}
+        >
+          <Trash2 size={18} color={messages.length <= 1 ? colors.placeholder : colors.on_surface_variant} />
+        </Pressable>
       </View>
 
       <ScrollView
@@ -259,6 +291,13 @@ const styles = StyleSheet.create({
     borderColor: '#F1F1E8',
   },
   headerTitleContainer: {
+    alignItems: 'center',
+  },
+  clearButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {

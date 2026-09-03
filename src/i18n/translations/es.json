@@ -936,6 +936,9 @@
     "placeholder": "Escribe tu duda nutricional...",
     "locked_title": "Coach de Bienestar IA",
     "locked_sub": "Desbloquea chats personalizados de IA y conocimientos predictivos de salud actualizando a NutriCycle Pro.",
-    "discover_pro": "Descubrir Beneficios Pro"
+    "discover_pro": "Descubrir Beneficios Pro",
+    "clear_chat_title": "¿Limpiar esta conversación?",
+    "clear_chat_message": "Esto solo limpia lo que ves en pantalla. Tu historial guardado no se elimina y volverá a aparecer la próxima vez que abras el chat.",
+    "clear_chat_confirm": "Limpiar"
   }
 }

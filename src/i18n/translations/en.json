@@ -940,6 +940,9 @@
     "placeholder": "Ask your nutrition question...",
     "locked_title": "AI Wellness Coach",
     "locked_sub": "Unlock personalized AI chats and predictive health insights by upgrading to NutriCycle Pro.",
-    "discover_pro": "Discover Pro Benefits"
+    "discover_pro": "Discover Pro Benefits",
+    "clear_chat_title": "Clear this conversation?",
+    "clear_chat_message": "This only clears what's shown on screen. Your saved history isn't deleted and will reappear next time you open the chat.",
+    "clear_chat_confirm": "Clear"
   }
 }
