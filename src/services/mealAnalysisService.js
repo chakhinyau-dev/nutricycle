@@ -26,7 +26,10 @@ const MEAL_PHOTO_SIGNED_URL_TTL = 60 * 60; // 1 hour — regenerated each time h
  */
 
 const genAI = new GoogleGenerativeAI(env.geminiApiKey);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+// gemini-2.0-flash was retired by Google (calls started failing with a 404
+// telling callers to move to gemini-3.6-flash) — same fix as aiService.js,
+// confirmed via a real end-to-end test call against the live API.
+const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
 // Photos analyzed for food content benefit from more detail than the
 // 800px default used for admin thumbnail uploads (imagePrep.js) — a low-res

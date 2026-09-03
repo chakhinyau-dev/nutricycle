@@ -7,12 +7,10 @@ import { env } from '../lib/env';
  */
 
 const genAI = new GoogleGenerativeAI(env.geminiApiKey);
-/** 
- * PRO DIAGNOSTIC FIX: 
- * This API key has access to an advanced model tier (Gemini 2.0+).
- * We are using 'gemini-2.0-flash' which is verified as available for this key.
- */
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+// gemini-2.0-flash was retired by Google (calls started failing with a 404
+// telling callers to move to gemini-3.6-flash) — confirmed via a real
+// end-to-end test call against the live API, not just documentation.
+const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
 const SYSTEM_PROMPT = `
 You are NutriCycle AI, a specialized medical-grade companion for menstrual cycle health and nutrition.

@@ -214,7 +214,11 @@ const translateWithAI = async (text, targetLanguage) => {
     const targetName = normalizedLanguage === 'es' ? 'Spanish' : 'English';
     const prompt = `Translate the following text into ${targetName}. Return only the translated text and nothing else.\nText: ${text}`;
 
-    const modelIds = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+    // All three of the previous fallback IDs (1.5-flash, 1.5-pro, 2.0-flash)
+    // are now retired by Google — every one of them 404s, so this silently
+    // fell through to returning the untranslated original text. Confirmed
+    // via a real end-to-end call that gemini-3.6-flash is the live model.
+    const modelIds = ['gemini-3.6-flash'];
     for (const modelId of modelIds) {
       try {
         const model = genAI.getGenerativeModel({ model: modelId });
