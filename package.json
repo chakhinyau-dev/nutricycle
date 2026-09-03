@@ -75,6 +75,7 @@
     "babel-preset-expo": "~54.0.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~10.0.0",
+    "supabase": "^2.116.0",
     "typescript": "~5.9.2"
   }
 }
