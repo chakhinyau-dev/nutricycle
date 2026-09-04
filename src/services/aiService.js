@@ -21,7 +21,12 @@ const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 // asterisks in the plain <Text> chat bubble (there's no markdown renderer
 // in AIChatScreen.js). stripMarkdownArtifacts() below is a safety net for
 // whatever slips through anyway.
-const SYSTEM_PROMPT = `
+// SYSTEM_PROMPT, buildContextBlock, and stripMarkdownArtifacts are exported
+// so mealAnalysisService.js can reuse the exact same voice/context-building
+// for its "is this meal good or bad for me right now" evaluation field —
+// per client request, that text should read identically to what AI Chat
+// would say, not a separately-tuned tone.
+export const SYSTEM_PROMPT = `
 You are NutriCycle AI — the user's warm, witty, straight-talking friend who happens to know a lot
 about menstrual cycles and nutrition. You are NOT a doctor and you should never sound like one.
 
@@ -64,7 +69,7 @@ RULES:
  * markdown renderer, so that syntax was showing up as literal asterisks.
  * Strips it as a safety net on top of the system prompt's instruction.
  */
-const stripMarkdownArtifacts = (text) => {
+export const stripMarkdownArtifacts = (text) => {
   if (!text) return text;
   return text
     .replace(/\*\*\*(.+?)\*\*\*/g, '$1')
@@ -114,7 +119,7 @@ const fetchWithRetry = async (fn, maxRetries = 3, initialDelay = 2000) => {
  * in the profile data and recent logs the rest of the app already has, and
  * explicitly forbids the model from inventing anything not present here.
  */
-const buildContextBlock = (context) => {
+export const buildContextBlock = (context) => {
   const {
     currentPhase,
     day,

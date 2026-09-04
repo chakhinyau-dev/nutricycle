@@ -9,11 +9,12 @@ import {
   ActivityIndicator,
   ImageBackground,
   Image,
+  Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@clerk/clerk-expo';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History } from 'lucide-react-native';
+import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History, X, Sparkles } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { useAppAlert } from '../components/AppAlertProvider';
 import { prepareImageForUpload } from '../utils/imagePrep';
@@ -27,10 +28,15 @@ import {
   MEAL_PHOTO_MAX_DIMENSION,
 } from '../services/mealAnalysisService';
 
+// How much recent history to fold into the evaluation's context — same
+// counts AIChatScreen.js uses, so the grounding is comparable either way.
+const RECENT_LOGS_COUNT = 5;
+const RECENT_MEALS_COUNT = 5;
+
 // "Analizar plato" — replaces Predictor IA. Reuses the same hero/premium-lock
 // visual pattern AIPredictorScreen.js used, for a consistent look across the
 // AI screens in this app.
-export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavigate }) => {
+export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user, dailyLogs = [], isPremium, onNavigate }) => {
   const { t } = useTranslation();
   const { showAlert } = useAppAlert();
   const { getToken } = useAuth();
@@ -40,10 +46,12 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
   const [analysisError, setAnalysisError] = useState(null);
   const [items, setItems] = useState(null);
   const [phaseNote, setPhaseNote] = useState('');
+  const [evaluation, setEvaluation] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [selectedMeal, setSelectedMeal] = useState(null);
 
   const loadHistory = async () => {
     if (!user?.id) return;
@@ -61,13 +69,41 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
     setPickedImage(null);
     setItems(null);
     setPhaseNote('');
+    setEvaluation('');
     setAnalysisError(null);
   };
+
+  // Mirrors the context object AIChatScreen.js builds for getGeminiChatResponse
+  // — same shape, same recent-logs/meals counts — so the "is this good or bad
+  // for me right now" evaluation is grounded exactly the way a real chat
+  // message would be, not a separately-tuned subset of the same data.
+  const buildAnalysisContext = () => ({
+    currentPhase: cycleInfo?.currentPhaseKey,
+    day: cycleInfo?.cycleDay,
+    userName: user?.firstName || user?.fullName,
+    cycleLength: cycleProfile?.cycleLength ?? cycleProfile?.cycle_length,
+    periodLength: cycleProfile?.periodLength ?? cycleProfile?.period_length,
+    recentLogs: dailyLogs.slice(0, RECENT_LOGS_COUNT).map((l) => ({
+      date: l.log_date || l.logged_at,
+      mood: l.mood,
+      energyLevel: l.energy_level,
+      symptoms: l.symptoms,
+    })),
+    recentMeals: history.slice(0, RECENT_MEALS_COUNT).map((m) => ({
+      date: m.loggedAt,
+      items: (m.items || []).map((i) => i.name),
+      calories: Math.round(m.totalCalories),
+      protein: Math.round(m.totalProtein),
+      carbs: Math.round(m.totalCarbs),
+      fat: Math.round(m.totalFat),
+    })),
+  });
 
   const runAnalysis = async (asset) => {
     setPickedImage(asset);
     setItems(null);
     setPhaseNote('');
+    setEvaluation('');
     setAnalysisError(null);
     setAnalyzing(true);
     try {
@@ -80,12 +116,13 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
         return;
       }
 
-      const analysis = await analyzeMealPhoto(asset, cycleInfo?.currentPhaseKey);
+      const analysis = await analyzeMealPhoto(asset, buildAnalysisContext());
       if (!analysis.items.length) {
         setAnalysisError(t('meal_analyzer.no_food_detected'));
       } else {
         setItems(analysis.items);
         setPhaseNote(analysis.phaseNote);
+        setEvaluation(analysis.evaluation);
       }
     } catch (err) {
       console.error('[MealAnalyzer] Analysis failed:', err);
@@ -176,6 +213,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
         items: normalized,
         phaseKey: cycleInfo?.currentPhaseKey,
         phaseNote,
+        evaluation,
         photoPath,
       });
       if (!saved) {
@@ -296,7 +334,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
                       onChangeText={(v) => handleItemChange(index, 'name', v)}
                     />
                     <Pressable onPress={() => handleRemoveItem(index)} hitSlop={10}>
-                      <Trash2 size={18} color="#EB5757" />
+                      <Trash2 size={18} color={colors.on_surface_variant} />
                     </Pressable>
                   </View>
                   <TextInput
@@ -336,6 +374,16 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
 
               {phaseNote ? <Text style={styles.phaseNoteText}>{phaseNote}</Text> : null}
 
+              {evaluation ? (
+                <View style={styles.evaluationBox}>
+                  <View style={styles.evaluationHeader}>
+                    <Sparkles size={14} color={colors.primary} />
+                    <Text style={styles.evaluationTitle}>{t('meal_analyzer.evaluation_title')}</Text>
+                  </View>
+                  <Text style={styles.evaluationText}>{evaluation}</Text>
+                </View>
+              ) : null}
+
               <Pressable style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
                 {isSaving ? (
                   <ActivityIndicator color="#FFF" />
@@ -370,7 +418,11 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
             <Text style={styles.emptyHistoryText}>{t('meal_analyzer.no_history')}</Text>
           ) : (
             history.map((meal) => (
-              <View key={meal.id} style={styles.historyCard}>
+              <Pressable
+                key={meal.id}
+                style={styles.historyCard}
+                onPress={() => setSelectedMeal(meal)}
+              >
                 {meal.photoUrl ? (
                   <Image source={{ uri: meal.photoUrl }} style={styles.historyThumb} />
                 ) : null}
@@ -387,16 +439,88 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
                     })}
                   </Text>
                 </View>
-                <Pressable onPress={() => handleDeleteHistory(meal.id)} hitSlop={10}>
-                  <Trash2 size={16} color="#EB5757" />
+                <Pressable
+                  onPress={(e) => { e?.stopPropagation?.(); handleDeleteHistory(meal.id); }}
+                  hitSlop={10}
+                >
+                  <Trash2 size={16} color={colors.on_surface_variant} />
                 </Pressable>
-              </View>
+              </Pressable>
             ))
           )}
         </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* History detail modal — tapping a saved entry reviews its full
+          breakdown instead of just the compact list row. */}
+      <Modal
+        visible={!!selectedMeal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setSelectedMeal(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('meal_analyzer.detail_title')}</Text>
+              <Pressable onPress={() => setSelectedMeal(null)} style={styles.closeBtn}>
+                <X size={20} color={colors.on_surface} />
+              </Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalList}>
+              {selectedMeal?.photoUrl ? (
+                <Image source={{ uri: selectedMeal.photoUrl }} style={styles.detailPhoto} />
+              ) : null}
+
+              {(selectedMeal?.items || []).map((item, index) => (
+                <View key={index} style={styles.detailItemRow}>
+                  <View style={styles.detailItemTop}>
+                    <Text style={styles.detailItemName}>{item.name}</Text>
+                    {item.portion ? <Text style={styles.detailItemPortion}>{item.portion}</Text> : null}
+                  </View>
+                  <Text style={styles.detailItemMacros}>
+                    {t('meal_analyzer.totals', {
+                      calories: Math.round(item.calories) || 0,
+                      protein: Math.round(item.protein) || 0,
+                      carbs: Math.round(item.carbs) || 0,
+                      fat: Math.round(item.fat) || 0,
+                    })}
+                  </Text>
+                </View>
+              ))}
+
+              {selectedMeal && (
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsText}>
+                    {t('meal_analyzer.totals', {
+                      calories: Math.round(selectedMeal.totalCalories),
+                      protein: Math.round(selectedMeal.totalProtein),
+                      carbs: Math.round(selectedMeal.totalCarbs),
+                      fat: Math.round(selectedMeal.totalFat),
+                    })}
+                  </Text>
+                </View>
+              )}
+
+              {selectedMeal?.phaseNote ? (
+                <Text style={styles.phaseNoteText}>{selectedMeal.phaseNote}</Text>
+              ) : null}
+
+              {selectedMeal?.evaluation ? (
+                <View style={styles.evaluationBox}>
+                  <View style={styles.evaluationHeader}>
+                    <Sparkles size={14} color={colors.primary} />
+                    <Text style={styles.evaluationTitle}>{t('meal_analyzer.evaluation_title')}</Text>
+                  </View>
+                  <Text style={styles.evaluationText}>{selectedMeal.evaluation}</Text>
+                </View>
+              ) : null}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -476,6 +600,15 @@ const styles = StyleSheet.create({
     marginTop: 14,
     lineHeight: 20,
   },
+  evaluationBox: {
+    backgroundColor: colors.primary_container,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 16,
+  },
+  evaluationHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  evaluationTitle: { fontFamily: 'Outfit_700Bold', fontSize: 12, color: colors.on_primary_container, textTransform: 'uppercase', letterSpacing: 0.5 },
+  evaluationText: { fontFamily: 'Outfit_500Medium', fontSize: 14, color: colors.on_surface, lineHeight: 21 },
   saveBtn: {
     flexDirection: 'row',
     height: 56,
@@ -536,4 +669,43 @@ const styles = StyleSheet.create({
   upgradeBtnText: { fontFamily: 'Outfit_700Bold', fontSize: 14, color: '#FFF', letterSpacing: 1 },
   maybeLater: { marginTop: 24, padding: 12 },
   maybeLaterText: { fontFamily: 'Outfit_700Bold', fontSize: 14, color: colors.on_surface_variant },
+
+  // History detail modal — same bottom-sheet pattern as NutritionScreen.js's
+  // swap modal, for visual consistency across the app's modals.
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(74,68,83,0.4)', justifyContent: 'flex-end' },
+  modalContent: {
+    backgroundColor: '#F9F9F2',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    maxHeight: '85%',
+    paddingBottom: 40,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEDE4',
+  },
+  modalTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 26, color: colors.on_surface },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalList: { paddingHorizontal: 28, paddingTop: 20 },
+  detailPhoto: { width: '100%', height: 200, borderRadius: 16, marginBottom: 16, backgroundColor: '#F4F2EC' },
+  detailItemRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F1E8' },
+  detailItemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  detailItemName: { fontFamily: 'Outfit_700Bold', fontSize: 15, color: colors.on_surface, flex: 1 },
+  detailItemPortion: { fontFamily: 'Outfit_500Medium', fontSize: 12, color: colors.on_surface_variant },
+  detailItemMacros: { fontFamily: 'Outfit_500Medium', fontSize: 13, color: colors.on_surface_variant },
 });

@@ -767,7 +767,7 @@ const AppShell = () => {
         case 'aiChat':
           return <AIChatScreen onBack={goBack} onNavigate={navigateTo} getToken={getToken} isPremium={canAccessPremium} {...sharedScreenProps} />;
         case 'mealAnalyzer':
-          return <MealAnalyzerScreen onBack={goBack} onNavigate={navigateTo} cycleInfo={cycleInfo} user={user} isPremium={canAccessPremium} />;
+          return <MealAnalyzerScreen onBack={goBack} onNavigate={navigateTo} isPremium={canAccessPremium} {...sharedScreenProps} />;
 
         default:
           return (

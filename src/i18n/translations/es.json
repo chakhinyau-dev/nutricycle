@@ -672,7 +672,9 @@
     "choose_source": "¿Cómo quieres agregar la foto?",
     "take_photo": "Tomar foto",
     "choose_library": "Elegir de galería",
-    "daily_cap_reached": "Alcanzaste el límite de {{cap}} análisis por día. Intenta de nuevo mañana."
+    "daily_cap_reached": "Alcanzaste el límite de {{cap}} análisis por día. Intenta de nuevo mañana.",
+    "evaluation_title": "¿Te conviene ahora?",
+    "detail_title": "Detalle de la comida"
   },
   "wellness": {
     "title": "Bienestar\nsincronizado",

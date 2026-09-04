@@ -7,6 +7,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 import { env } from '../lib/env';
 import { createClerkSupabaseClient } from '../lib/supabase';
+import { SYSTEM_PROMPT, buildContextBlock, stripMarkdownArtifacts } from './aiService';
 
 // Cost-protection cap: each analysis is a real Gemini API call regardless of
 // whether the result ever gets saved, so this is tracked separately from
@@ -69,24 +70,49 @@ const fetchWithRetry = async (fn, maxRetries = 3, initialDelay = 2000) => {
   }
 };
 
-const buildPrompt = (phaseKey) => `
-You are a nutrition assistant analyzing a photo of a meal.
+/**
+ * Folds in the exact same voice + profile/logs context aiService.js uses for
+ * AI Chat — per client request, the "is this good or bad for me right now"
+ * evaluation should read identically to what the user would get pasting the
+ * same situation into a chat message, not a separately-tuned tone. Reusing
+ * SYSTEM_PROMPT and buildContextBlock directly (rather than re-describing
+ * the voice here) is what guarantees that, and keeps this to ONE Gemini
+ * call per photo instead of a second chat round-trip after the fact —
+ * relevant given the daily quota/billing conversation already in progress.
+ */
+const buildPrompt = (context = {}) => {
+  const phaseKey = context.currentPhase || context.phaseKey;
+  const contextBlock = buildContextBlock(context);
+
+  return `
+${SYSTEM_PROMPT}
+
+${contextBlock}
+
+You're looking at a photo of a meal the user just photographed.
 
 1. Identify each distinct food item visible in the photo and estimate its portion size.
 2. For each item, estimate calories, protein (g), carbs (g), and fat (g).
-3. The person is currently in the ${phaseKey || 'follicular'} phase of their menstrual cycle. Add one short,
-   general, wellness-framed sentence (not a specific medical claim) noting whether this meal generally
-   supports that phase's typical nutritional focus.
+3. "phase_note": one short, general, wellness-framed sentence (not a specific medical claim) noting
+   whether this meal generally supports the ${phaseKey || 'follicular'} phase's typical nutritional focus.
+4. "evaluation": in your own voice exactly as described above — casual, warm, like you're texting a
+   friend, no asterisks, no markdown — 3 to 5 sentences telling her whether this specific meal is a
+   good or a bad choice for her RIGHT NOW, using everything in the profile above. Be honest about any
+   pros or cons for today specifically given her current phase and logs, and mention if there's a
+   longer-term angle worth knowing (something great long-term but not ideal in this exact moment, or
+   vice versa). End this field with the same short "Sources:"/"Fuentes:" line your voice rules describe.
 
 Respond ONLY with JSON in this exact shape, no other text:
 {
   "items": [
     { "name": "string", "portion": "string, e.g. '1 cup'", "calories": number, "protein": number, "carbs": number, "fat": number }
   ],
-  "phase_note": "string"
+  "phase_note": "string",
+  "evaluation": "string"
 }
-If you cannot identify any food in the image, respond with { "items": [], "phase_note": "" }.
+If you cannot identify any food in the image, respond with { "items": [], "phase_note": "", "evaluation": "" }.
 `;
+};
 
 /**
  * Sends a picked photo to Gemini and returns the parsed analysis. Throws on
@@ -98,8 +124,13 @@ If you cannot identify any food in the image, respond with { "items": [], "phase
  * the caller runs prepareImageForUpload once, right after picking, and
  * reuses that same prepared asset for both this call and uploadMealPhoto,
  * rather than this function resizing its own throwaway copy.
+ *
+ * `context` mirrors what AIChatScreen.js builds for getGeminiChatResponse —
+ * currentPhase/phaseKey, day, userName, cycleLength, periodLength,
+ * recentLogs, recentMeals — so the evaluation field above has the same
+ * grounding a real chat message would.
  */
-export const analyzeMealPhoto = async (imageAsset, phaseKey) => {
+export const analyzeMealPhoto = async (imageAsset, context = {}) => {
   if (!env.geminiApiKey) {
     throw new Error('Gemini API Key is missing');
   }
@@ -110,7 +141,7 @@ export const analyzeMealPhoto = async (imageAsset, phaseKey) => {
 
   return fetchWithRetry(async () => {
     const result = await model.generateContent([
-      { text: buildPrompt(phaseKey) },
+      { text: buildPrompt(context) },
       { inlineData: { mimeType: imageAsset.mimeType || 'image/jpeg', data: imageAsset.base64 } },
     ]);
     const response = result.response;
@@ -134,6 +165,7 @@ export const analyzeMealPhoto = async (imageAsset, phaseKey) => {
         fat: Number(item.fat) || 0,
       })),
       phaseNote: parsed.phase_note || '',
+      evaluation: stripMarkdownArtifacts(parsed.evaluation || ''),
     };
   });
 };
@@ -296,6 +328,7 @@ const normalizeMealLog = (row) => ({
   totalFat: row.total_fat ?? 0,
   phaseKey: row.phase_key || null,
   phaseNote: row.phase_note || '',
+  evaluation: row.ai_evaluation || '',
   photoPath: row.photo_path || null,
   // Resolved separately (signed URLs expire, so this is filled in by
   // loadMealHistory rather than stored) — null until then.
@@ -305,7 +338,7 @@ const normalizeMealLog = (row) => ({
 const sumMacro = (items, key) =>
   items.reduce((sum, item) => sum + (Number(item[key]) || 0), 0);
 
-export const saveMealLog = async (getToken, clerkUserId, { items, phaseKey, phaseNote, photoPath }) => {
+export const saveMealLog = async (getToken, clerkUserId, { items, phaseKey, phaseNote, evaluation, photoPath }) => {
   const supabase = createClerkSupabaseClient(getToken);
   if (!supabase || !clerkUserId) return null;
 
@@ -318,6 +351,7 @@ export const saveMealLog = async (getToken, clerkUserId, { items, phaseKey, phas
     total_fat: sumMacro(items, 'fat'),
     phase_key: phaseKey || null,
     phase_note: phaseNote || '',
+    ai_evaluation: evaluation || '',
     photo_path: photoPath || null,
   };
 

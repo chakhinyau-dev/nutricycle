@@ -660,7 +660,9 @@
     "choose_source": "How do you want to add the photo?",
     "take_photo": "Take Photo",
     "choose_library": "Choose from Library",
-    "daily_cap_reached": "You've reached the {{cap}}-analysis daily limit. Try again tomorrow."
+    "daily_cap_reached": "You've reached the {{cap}}-analysis daily limit. Try again tomorrow.",
+    "evaluation_title": "Is this good for you right now?",
+    "detail_title": "Meal details"
   },
   "wellness": {
     "title": "Synced\nWellness",
