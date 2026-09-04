@@ -10,12 +10,12 @@ import {
   ActivityIndicator,
   Animated,
   TextInput,
-  Alert,
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import { Play, ChevronLeft, CheckCircle, Search, Key } from 'lucide-react-native';
 import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
 import { translateContent } from '../services/translationService';
@@ -62,6 +62,7 @@ const getMealTypes = (t) => [
 
 export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe, initialVideo = null }) => {
   const { t, i18n } = useTranslation();
+  const { showAlert } = useAppAlert();
   // A locked user can reach this screen directly via a deep link (e.g.
   // Dashboard's "Today's Meals" shortcut sets initialVideo), which used to
   // bypass the grid's own tap-gate entirely and open the player anyway.
@@ -78,7 +79,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
 
   const showLockedAlert = () => {
-    Alert.alert(
+    showAlert(
       t('videos.premium_locked_title'),
       t('videos.premium_locked_message'),
       [

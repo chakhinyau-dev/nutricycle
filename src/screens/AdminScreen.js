@@ -7,7 +7,6 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
-  Alert,
   Image,
   Platform,
   Dimensions
@@ -35,6 +34,7 @@ import {
 } from 'lucide-react-native';
 
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import { 
   saveVideo, 
   deleteVideo, 
@@ -94,6 +94,7 @@ export const AdminScreen = ({
   getToken: getTokenProp,
 }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const { getToken: getTokenAuth } = useAuth();
   const getToken = getTokenProp || getTokenAuth;
   // Single shared ref — only one of the three admin lists (Videos/Recipes/
@@ -291,7 +292,7 @@ export const AdminScreen = ({
     if (Platform.OS === 'web') {
       if (window.confirm(t('admin.delete_food_confirm', { defaultValue: '¿Eliminar este alimento?' }))) performDelete();
     } else {
-      Alert.alert(
+      showAlert(
         t('common.delete', { defaultValue: 'Eliminar' }),
         t('admin.delete_food_confirm', { defaultValue: '¿Eliminar este alimento?' }),
         [{ text: t('common.cancel') }, { text: t('common.delete', { defaultValue: 'Eliminar' }), onPress: performDelete }]
@@ -359,7 +360,7 @@ export const AdminScreen = ({
         if (showToast) {
           showToast(tooLargeMessage, 'error');
         } else {
-          Alert.alert(t('admin.video_too_large_title'), t('admin.video_too_large_msg', { limit: MAX_SIZE_MB }));
+          showAlert(t('admin.video_too_large_title'), t('admin.video_too_large_msg', { limit: MAX_SIZE_MB }));
         }
         return;
       }
@@ -529,7 +530,7 @@ export const AdminScreen = ({
       }
     } catch (err) {
       console.error('[Admin Save Video Error]:', err);
-      Alert.alert(t('admin.save_error'), err.message);
+      showAlert(t('admin.save_error'), err.message);
     } finally {
       setIsSaving(false);
       setVideoUploadProgress(0);
@@ -555,7 +556,7 @@ export const AdminScreen = ({
     if (Platform.OS === 'web') {
       if (window.confirm(t('admin.confirm_delete_video'))) performDelete();
     } else {
-      Alert.alert(t('common.delete'), t('admin.confirm_delete_video'), [{ text: t('common.cancel') }, { text: t('common.delete'), onPress: performDelete }]);
+      showAlert(t('common.delete'), t('admin.confirm_delete_video'), [{ text: t('common.cancel') }, { text: t('common.delete'), onPress: performDelete }]);
     }
   };
 
@@ -666,7 +667,7 @@ export const AdminScreen = ({
       }
     } catch (err) {
       console.error('[Admin Save Recipe Error]:', err);
-      Alert.alert(t('admin.save_error'), err.message || t('admin.database_error'));
+      showAlert(t('admin.save_error'), err.message || t('admin.database_error'));
     } finally {
       setIsSaving(false);
     }
@@ -691,7 +692,7 @@ export const AdminScreen = ({
     if (Platform.OS === 'web') {
       if (window.confirm(t('admin.confirm_delete_recipe'))) performDelete();
     } else {
-      Alert.alert(t('common.delete'), t('admin.confirm_delete_recipe'), [{ text: t('common.cancel') }, { text: t('common.delete'), onPress: performDelete }]);
+      showAlert(t('common.delete'), t('admin.confirm_delete_recipe'), [{ text: t('common.cancel') }, { text: t('common.delete'), onPress: performDelete }]);
     }
   };
 

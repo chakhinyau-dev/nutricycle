@@ -20,6 +20,7 @@ import {
 import { Home, CircleDot, User, PlaySquare, Soup } from 'lucide-react-native';
 
 import { configureRevenueCat, logoutRevenueCat } from './src/services/revenuecatService';
+import { AppAlertProvider } from './src/components/AppAlertProvider';
 
 import { colors } from './src/theme/colors';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -938,7 +939,9 @@ export default function App() {
     <ClerkProvider publishableKey={env.clerkPublishableKey} tokenCache={tokenCache}>
       {/* Hidden container for Clerk's CAPTCHA security on Web */}
       <View nativeID="clerk-captcha" style={{ display: 'none' }} />
-      <AppShell key={i18n.language} />
+      <AppAlertProvider>
+        <AppShell key={i18n.language} />
+      </AppAlertProvider>
     </ClerkProvider>
   );
 }

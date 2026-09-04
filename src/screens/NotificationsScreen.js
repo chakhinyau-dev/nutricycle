@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View, Pressable, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView } from 'react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import {
   ChevronLeft,
   Gift,
@@ -26,6 +27,7 @@ const iconMap = {
 
 export const NotificationsScreen = ({ onBack, onNavigate, cycleInfo, recipes }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const { getToken } = useAuth();
   const { user } = useUser();
   const [logs, setLogs] = useState([]);
@@ -109,7 +111,7 @@ export const NotificationsScreen = ({ onBack, onNavigate, cycleInfo, recipes }) 
               style={[styles.notifCard, isUnread && styles.notifCardNew]}
               onPress={() => {
                 setReadIds((current) => [...new Set([...current, notif.id])]);
-                Alert.alert(notif.title, notif.message);
+                showAlert(notif.title, notif.message);
               }}
             >
               <View style={styles.notifLayout}>

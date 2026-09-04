@@ -9,13 +9,13 @@ import {
   ActivityIndicator,
   ImageBackground,
   Image,
-  Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@clerk/clerk-expo';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History } from 'lucide-react-native';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import { prepareImageForUpload } from '../utils/imagePrep';
 import {
   analyzeMealPhoto,
@@ -32,6 +32,7 @@ import {
 // AI screens in this app.
 export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavigate }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const { getToken } = useAuth();
 
   const [pickedImage, setPickedImage] = useState(null);
@@ -103,7 +104,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
   const handlePickFromLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('settings.error'), t('settings.gallery_permission'));
+      showAlert(t('settings.error'), t('settings.gallery_permission'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -120,7 +121,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
   const handleTakePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('settings.error'), t('meal_analyzer.camera_permission'));
+      showAlert(t('settings.error'), t('meal_analyzer.camera_permission'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -135,7 +136,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
   };
 
   const handleChooseSource = () => {
-    Alert.alert(
+    showAlert(
       t('meal_analyzer.analyze_btn'),
       t('meal_analyzer.choose_source'),
       [
@@ -184,7 +185,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
       setHistory((prev) => [saved, ...prev]);
       resetAnalysis();
     } catch (err) {
-      Alert.alert(t('settings.error'), err.message || t('meal_analyzer.save_failed'));
+      showAlert(t('settings.error'), err.message || t('meal_analyzer.save_failed'));
     } finally {
       setIsSaving(false);
     }
@@ -195,7 +196,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, user, isPremium, onNavig
       const ok = await deleteMealLog(getToken, id);
       if (ok) setHistory((prev) => prev.filter((m) => m.id !== id));
     };
-    Alert.alert(
+    showAlert(
       t('common.delete'),
       t('meal_analyzer.delete_confirm'),
       [{ text: t('common.cancel'), style: 'cancel' }, { text: t('common.delete'), style: 'destructive', onPress: performDelete }]

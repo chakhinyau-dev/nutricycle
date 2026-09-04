@@ -6,13 +6,13 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import { ChevronLeft, User, Mail, Calendar, TimerReset, Droplets } from 'lucide-react-native';
 import {
   getCycleInsights,
@@ -23,6 +23,7 @@ import {
 
 export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const defaults = normalizeCycleProfile(cycleProfile);
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState(user?.fullName || user?.firstName || '');
@@ -69,10 +70,10 @@ export const EditProfileScreen = ({ onBack, onSave, cycleProfile, user }) => {
         full_name: name,
       });
 
-      Alert.alert(t('common.success', { defaultValue: '¡Listo!' }), t('edit_profile.updated_success'));
+      showAlert(t('common.success', { defaultValue: '¡Listo!' }), t('edit_profile.updated_success'));
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert(t('settings.error'), t('edit_profile.update_error'));
+      showAlert(t('settings.error'), t('edit_profile.update_error'));
     } finally {
       setIsSaving(false);
     }

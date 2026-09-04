@@ -7,12 +7,12 @@ import {
   Pressable,
   ImageBackground,
   ActivityIndicator,
-  Alert,
   Platform,
   Animated,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import { ChevronLeft, Check, Crown, Zap, Shield, Heart, Star } from 'lucide-react-native';
 import {
   getOfferings,
@@ -24,6 +24,7 @@ import {
 
 export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [monthlyPkg, setMonthlyPkg] = useState(null);
@@ -162,7 +163,7 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
       }
     } catch (e) {
       console.error('[RC Checkout Error]:', e);
-      Alert.alert(
+      showAlert(
         t('settings.error'),
         e?.message || t('subscription.payment_session_error')
       );
@@ -187,10 +188,10 @@ export const SubscriptionScreen = ({ onBack, onUpgrade, isPremium, activePlan })
           rcCustomerInfo: customerInfo,
         });
       } else {
-        Alert.alert('', 'No se encontró ninguna suscripción activa.');
+        showAlert('', 'No se encontró ninguna suscripción activa.');
       }
     } catch (e) {
-      Alert.alert(t('settings.error'), e?.message || 'Error al restaurar compras.');
+      showAlert(t('settings.error'), e?.message || 'Error al restaurar compras.');
     } finally {
       setIsProcessing(false);
     }

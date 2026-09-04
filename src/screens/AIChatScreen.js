@@ -10,12 +10,12 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
-  Alert,
 } from 'react-native';
-import { ChevronLeft, Send, Sparkles, User, Bot, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, Send, Sparkles, User, Bot, MessageSquarePlus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
-import { getGeminiChatResponse } from '../services/aiService';
+import { useAppAlert } from '../components/AppAlertProvider';
+import { streamGeminiChatResponse } from '../services/aiService';
 import { loadMealHistory } from '../services/mealAnalysisService';
 import { loadRecentChatHistory, saveChatMessage } from '../services/chatHistoryService';
 
@@ -28,6 +28,7 @@ const RECENT_MEALS_COUNT = 5;
 
 export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {}, user, dailyLogs = [], getToken, isPremium }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const phaseKey = cycleInfo?.currentPhaseKey || 'follicular';
   const [mealHistory, setMealHistory] = useState([]);
 
@@ -98,32 +99,51 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
         parts: [{ text: m.text }],
       }));
 
-    const responseText = await getGeminiChatResponse(history, sentText, {
-      currentPhase: cycleInfo?.currentPhaseKey,
-      day: cycleInfo?.cycleDay,
-      userName: user?.firstName || user?.fullName,
-      cycleLength: cycleProfile?.cycleLength ?? cycleProfile?.cycle_length,
-      periodLength: cycleProfile?.periodLength ?? cycleProfile?.period_length,
-      recentLogs: dailyLogs.slice(0, RECENT_LOGS_COUNT).map((l) => ({
-        date: l.log_date || l.logged_at,
-        mood: l.mood,
-        energyLevel: l.energy_level,
-        symptoms: l.symptoms,
-      })),
-      recentMeals: mealHistory.map((m) => ({
-        date: m.loggedAt,
-        items: (m.items || []).map((i) => i.name),
-        calories: Math.round(m.totalCalories),
-        protein: Math.round(m.totalProtein),
-        carbs: Math.round(m.totalCarbs),
-        fat: Math.round(m.totalFat),
-      })),
-    });
+    // Streamed in rather than dumped on screen all at once (client feedback:
+    // replies "appear suddenly all at once"). The typing indicator stays up
+    // until the first chunk arrives, then this same bubble grows in place
+    // as the rest streams in.
+    const responseId = `model-${Date.now()}`;
+    let streamStarted = false;
+    const handleChunk = (partialText) => {
+      if (!streamStarted) {
+        streamStarted = true;
+        setIsTyping(false);
+        setMessages((prev) => [...prev, { id: responseId, role: 'model', text: partialText }]);
+      } else {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === responseId ? { ...m, text: partialText } : m))
+        );
+      }
+    };
 
-    setMessages((prev) => [
-      ...prev,
-      { id: (Date.now() + 1).toString(), role: 'model', text: responseText },
-    ]);
+    const responseText = await streamGeminiChatResponse(
+      history,
+      sentText,
+      {
+        currentPhase: cycleInfo?.currentPhaseKey,
+        day: cycleInfo?.cycleDay,
+        userName: user?.firstName || user?.fullName,
+        cycleLength: cycleProfile?.cycleLength ?? cycleProfile?.cycle_length,
+        periodLength: cycleProfile?.periodLength ?? cycleProfile?.period_length,
+        recentLogs: dailyLogs.slice(0, RECENT_LOGS_COUNT).map((l) => ({
+          date: l.log_date || l.logged_at,
+          mood: l.mood,
+          energyLevel: l.energy_level,
+          symptoms: l.symptoms,
+        })),
+        recentMeals: mealHistory.map((m) => ({
+          date: m.loggedAt,
+          items: (m.items || []).map((i) => i.name),
+          calories: Math.round(m.totalCalories),
+          protein: Math.round(m.totalProtein),
+          carbs: Math.round(m.totalCarbs),
+          fat: Math.round(m.totalFat),
+        })),
+      },
+      handleChunk
+    );
+
     if (user?.id) saveChatMessage(getToken, user.id, 'model', responseText);
     setIsTyping(false);
   };
@@ -134,14 +154,13 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
   // loads the real history again from the database, same as always; this
   // just resets the current view back to a fresh greeting.
   const handleClearChat = () => {
-    Alert.alert(
+    showAlert(
       t('chat.clear_chat_title'),
       t('chat.clear_chat_message'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('chat.clear_chat_confirm'),
-          style: 'destructive',
           onPress: () => {
             hasSentRef.current = true;
             setMessages([buildGreeting()]);
@@ -192,7 +211,7 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
           disabled={messages.length <= 1}
           hitSlop={8}
         >
-          <Trash2 size={18} color={messages.length <= 1 ? colors.placeholder : colors.on_surface_variant} />
+          <MessageSquarePlus size={20} color={messages.length <= 1 ? colors.placeholder : colors.on_surface_variant} />
         </Pressable>
       </View>
 

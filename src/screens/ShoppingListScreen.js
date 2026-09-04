@@ -6,12 +6,12 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react-native';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 import {
   loadShoppingListState,
@@ -41,6 +41,7 @@ const PHASE_COLORS = {
 
 export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', user, recipes = [], getToken }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const userId = user?.id || 'guest';
   const phaseKey = currentPhaseKey || 'follicular';
   const phaseFoods = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
@@ -129,7 +130,7 @@ export const ShoppingListScreen = ({ onBack, currentPhaseKey = 'follicular', use
   };
 
   const handleClearList = () => {
-    Alert.alert(
+    showAlert(
       t('shopping.clear_confirm_title'),
       t('shopping.clear_confirm_desc'),
       [

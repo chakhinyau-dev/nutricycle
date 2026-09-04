@@ -8,12 +8,12 @@ import {
   Image,
   Modal,
   Animated,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Play, ShoppingBag, Utensils, RefreshCw, X, Key } from 'lucide-react-native';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 import { getCyclePhaseKey } from '../utils/cycle';
 import { getRecipeMacros } from '../utils/nutrition';
@@ -87,10 +87,11 @@ export const NutritionScreen = ({
   onSubscribe,
 }) => {
   const { t } = useTranslation();
+  const { showAlert } = useAppAlert();
   const userId = user?.id || 'guest';
 
   const showLockedAlert = () => {
-    Alert.alert(
+    showAlert(
       t('nutrition.premium_locked_title'),
       t('nutrition.premium_locked_message'),
       [

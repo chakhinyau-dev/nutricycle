@@ -1,13 +1,14 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, Alert, Animated, Easing } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, Animated, Easing } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Line, Circle, Rect, Text as SvgText, Defs, ClipPath, G } from 'react-native-svg';
+import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 
 const AnimatedRectSvg   = Animated.createAnimatedComponent(Rect);
 const AnimatedPathSvg   = Animated.createAnimatedComponent(Path);
 const AnimatedLineSvg   = Animated.createAnimatedComponent(Line);
 const AnimatedCircleSvg = Animated.createAnimatedComponent(Circle);
-import { colors } from '../theme/colors';
 import {
   addDays,
   format,
@@ -40,6 +41,7 @@ const DOT_COLORS = {
 
 export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [], onDeleteLog }) => {
   const { t, i18n } = useTranslation();
+  const { showAlert } = useAppAlert();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekBaseDate, setWeekBaseDate] = useState(new Date());
 
@@ -581,7 +583,7 @@ export const CalendarScreen = ({ onBack, onNavigate, cycleProfile, dailyLogs = [
                 {t('calendar.mood_label')} <Text style={styles.logMoodVal}>{t(`dailylog.moods.${selectedDayLog.mood}`)}</Text>
               </Text>
               <Pressable
-                onPress={() => Alert.alert(
+                onPress={() => showAlert(
                   t('calendar.delete_log_title'),
                   t('calendar.delete_log_confirm'),
                   [

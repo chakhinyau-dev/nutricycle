@@ -12,9 +12,23 @@ const genAI = new GoogleGenerativeAI(env.geminiApiKey);
 // end-to-end test call against the live API, not just documentation.
 const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
+// Rewritten per client feedback: the previous prompt produced a stiff,
+// "sharing knowledge" lecture tone. This one explicitly asks for a casual,
+// warm, friend-to-friend voice, keeps every answer framed around the fact
+// that this app is exclusively for people who menstruate (not generic
+// wellness advice), and forbids markdown syntax outright — Gemini kept
+// producing **bold** and "* bullet" markdown, which rendered as literal
+// asterisks in the plain <Text> chat bubble (there's no markdown renderer
+// in AIChatScreen.js). stripMarkdownArtifacts() below is a safety net for
+// whatever slips through anyway.
 const SYSTEM_PROMPT = `
-You are NutriCycle AI, a specialized medical-grade companion for menstrual cycle health and nutrition.
-Your goal is to provide evidence-based, compassionate, and personalized advice based on the user's cycle phase.
+You are NutriCycle AI — the user's warm, witty, straight-talking friend who happens to know a lot
+about menstrual cycles and nutrition. You are NOT a doctor and you should never sound like one.
+
+CONTEXT: This app is exclusively for people who menstruate, tracking their own cycle. Every response
+should be framed specifically through that lens — hormones, cycle phase, the specific symptoms that
+come with it — like you actually get this experience, not generic wellness advice that could apply
+to anyone.
 
 PHASES OVERVIEW:
 - Menstrual: Deep rest, iron-rich foods, magnesium.
@@ -22,17 +36,44 @@ PHASES OVERVIEW:
 - Ovulation: Peak vitality, antioxidants, social activities.
 - Luteal: Comfort, complex carbs, B6, avoiding burnout.
 
+VOICE:
+- Talk like you're texting a close friend, not writing a pamphlet: casual, warm, a little playful or
+  funny when it fits naturally (period cravings, cramps, and mood swings are relatable, not clinical
+  case studies). Use contractions and everyday language.
+- Validate how she's feeling before jumping straight to advice.
+- Write in short, flowing sentences and natural paragraphs — never headers, never numbered lists with
+  symbols, and never markdown formatting of any kind. No asterisks (*) anywhere in your response, not
+  for emphasis and not for bullet points. If you want to list a few things, either write them as one
+  natural sentence or start each line with a plain dash "-", never "*".
+
 RULES:
-1. Always be supportive and professional.
-2. If given user data (like cycle day or symptoms), tailor your response.
-3. Keep responses concise and formatted for mobile (bullet points are good).
-4. Do not provide medical prescriptions, but suggest nutritional and lifestyle adjustments.
-5. In predictions, analyze patterns in their daily logs to suggest if their cycle might be shifting.
-6. Whenever you give a health, nutrition, or lifestyle recommendation, end your reply with a short
-   "Sources:" line (use "Fuentes:" if replying in Spanish) naming the type of evidence behind it —
-   e.g. recognized bodies such as ACOG, NIH, WHO, or Mayo Clinic, or "general nutritional science
-   consensus". Never invent a specific study, statistic, or citation you cannot verify.
+1. Be supportive like a friend who's got her back — never cold, clinical, or preachy.
+2. If given user data (cycle day, symptoms, logs), actually use it to make the reply specific to her.
+3. Keep replies short and easy to read on a phone.
+4. Never prescribe medication — suggest food or lifestyle tweaks instead, framed casually.
+5. If her logs show a pattern, mention it in a friendly, non-alarming way.
+6. End with a brief, low-key "Sources:" line (use "Fuentes:" in Spanish) naming the type of evidence —
+   e.g. ACOG, NIH, WHO, Mayo Clinic, or general nutrition science consensus. Never invent a specific
+   study, statistic, or citation you can't verify. Keep this line short so it doesn't feel like a
+   citation in an academic paper.
 `;
+
+/**
+ * Gemini keeps producing markdown (bold **text**, "* " bullets, occasional
+ * headers) even when told not to — this is a plain-text chat bubble with no
+ * markdown renderer, so that syntax was showing up as literal asterisks.
+ * Strips it as a safety net on top of the system prompt's instruction.
+ */
+const stripMarkdownArtifacts = (text) => {
+  if (!text) return text;
+  return text
+    .replace(/\*\*\*(.+?)\*\*\*/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/^[ \t]*\*[ \t]+/gm, '- ')
+    .replace(/^#{1,6}[ \t]*/gm, '')
+    .replace(/\*/g, '');
+};
 
 /** 
  * Senior-level Retry Helper with Exponential Backoff
@@ -145,7 +186,17 @@ const sanitizeHistoryForGemini = (rawHistory) => {
   return cleaned;
 };
 
-export const getGeminiChatResponse = async (history, userMessage, context = {}) => {
+/**
+ * Streams the reply instead of waiting for the whole thing and dumping it
+ * on screen at once — per client feedback that replies "appear suddenly all
+ * at once". Calls onChunk(accumulatedTextSoFar) as each piece of the
+ * response arrives, so the caller can update one message bubble in place;
+ * still returns the final full text (already markdown-stripped) so it can
+ * be persisted once streaming finishes. onChunk is called at least once
+ * even on failure, with the fallback text, so the UI's "wait for first
+ * chunk, then show the bubble" logic works the same on the error path.
+ */
+export const streamGeminiChatResponse = async (history, userMessage, context = {}, onChunk) => {
   try {
     if (!env.geminiApiKey) {
       throw new Error('Gemini API Key is missing');
@@ -164,16 +215,22 @@ export const getGeminiChatResponse = async (history, userMessage, context = {}) 
       });
 
       const fullMessage = `${contextualPrompt}\n\nUser: ${userMessage}`;
-      const result = await chat.sendMessage(fullMessage);
-      const response = await result.response;
-      return response.text();
+      const result = await chat.sendMessageStream(fullMessage);
+
+      let accumulated = '';
+      for await (const chunk of result.stream) {
+        accumulated += chunk.text();
+        onChunk?.(stripMarkdownArtifacts(accumulated));
+      }
+      return stripMarkdownArtifacts(accumulated);
     });
   } catch (error) {
     console.error('[AI Service Error]:', error);
-    if (error.message?.includes('429')) {
-      return "El asistente está muy solicitado en este momento. Por favor, espera unos segundos y vuelve a intentarlo.";
-    }
-    return "Lo siento, tengo problemas para conectarme ahora mismo. ¿Podemos intentarlo en un momento?";
+    const fallback = error.message?.includes('429')
+      ? "El asistente está muy solicitado en este momento. Por favor, espera unos segundos y vuelve a intentarlo."
+      : "Lo siento, tengo problemas para conectarme ahora mismo. ¿Podemos intentarlo en un momento?";
+    onChunk?.(fallback);
+    return fallback;
   }
 };
 

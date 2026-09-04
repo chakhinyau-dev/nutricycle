@@ -9,7 +9,6 @@ import {
   TextInput,
   Image,
   ImageBackground,
-  Alert,
   ActivityIndicator,
   Platform,
 } from 'react-native';
@@ -36,11 +35,13 @@ import {
 } from 'lucide-react-native';
 
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 
 const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200';
 
 export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, isDeletingAccount, user, currentPhaseKey = 'follicular', cycleInfo, isAdmin, isPremium }) => {
   const { t, i18n } = useTranslation();
+  const { showAlert } = useAppAlert();
   const [notifs, setNotifs] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [showPassForm, setShowPassForm] = useState(false);
@@ -66,7 +67,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('settings.error'), t('settings.gallery_permission'));
+        showAlert(t('settings.error'), t('settings.gallery_permission'));
         return;
       }
 
@@ -90,11 +91,11 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
           : `data:image/jpeg;base64,${asset.base64}`;
 
         await user.setProfileImage({ file: base64 });
-        Alert.alert(t('common.success'), t('settings.profile_image_updated'));
+        showAlert(t('common.success'), t('settings.profile_image_updated'));
       }
     } catch (error) {
       console.error('[Settings] Image Upload Error:', error);
-      Alert.alert(
+      showAlert(
         t('settings.error'), 
         `${t('settings.profile_image_error')}\n\nDetail: ${error.message || 'Unknown error'}`
       );
@@ -105,12 +106,12 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
 
   const handleAction = (title) => {
     if (title === t('settings.export')) {
-      Alert.alert(
+      showAlert(
         t('settings.export'),
         t('settings.export_desc')
       );
     } else {
-      Alert.alert(title, t('settings.profile_connected', { title }));
+      showAlert(title, t('settings.profile_connected', { title }));
     }
   };
 
@@ -119,14 +120,14 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
   const handleChangePassword = async () => {
     console.log('[Settings] Change Password clicked');
     if (!user || !user.primaryEmailAddress) {
-      Alert.alert(t('settings.error'), t('settings.no_primary_email'));
+      showAlert(t('settings.error'), t('settings.no_primary_email'));
       return;
     }
     
     // Check if user has a password (not a social login)
     const hasPassword = user.passwordEnabled;
     if (!hasPassword) {
-      Alert.alert(
+      showAlert(
         t('settings.social_login'),
         t('settings.social_login_desc')
       );
@@ -138,7 +139,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
       return;
     }
 
-    Alert.alert(
+    showAlert(
       t('settings.change_password'),
       t('settings.reset_email_confirm'),
       [
@@ -150,24 +151,24 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
 
   const handleUpdatePassword = async () => {
     if (newPassword.length < 8) {
-      Alert.alert(t('settings.error'), t('settings.password_length'));
+      showAlert(t('settings.error'), t('settings.password_length'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert(t('settings.error'), t('settings.password_mismatch'));
+      showAlert(t('settings.error'), t('settings.password_mismatch'));
       return;
     }
 
     setIsPasswordSaving(true);
     try {
       await user.update({ password: newPassword });
-      Alert.alert(t('common.success'), t('settings.password_updated'));
+      showAlert(t('common.success'), t('settings.password_updated'));
       setShowPassForm(false);
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
       console.error("Update error:", err);
-      Alert.alert(t('settings.error'), err.errors?.[0]?.message || t('settings.password_update_failed'));
+      showAlert(t('settings.error'), err.errors?.[0]?.message || t('settings.password_update_failed'));
     } finally {
       setIsPasswordSaving(false);
     }
@@ -176,7 +177,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
   const handleDeleteAccountPress = () => {
     if (isDeletingAccount) return;
 
-    Alert.alert(
+    showAlert(
       t('settings.delete_account_title'),
       t('settings.delete_account_warning'),
       [
@@ -186,7 +187,7 @@ export const SettingsScreen = ({ onBack, onLogout, onNavigate, onDeleteAccount, 
           style: 'destructive',
           onPress: () => {
             // Second, final confirmation — this action can't be undone.
-            Alert.alert(
+            showAlert(
               t('settings.delete_account_title'),
               t('settings.delete_account_final_warning'),
               [

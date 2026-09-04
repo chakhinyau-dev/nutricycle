@@ -8,13 +8,13 @@ import {
   TextInput,
   Dimensions,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
+import { useAppAlert } from '../components/AppAlertProvider';
 import {
   ChevronLeft,
   Check,
@@ -39,6 +39,7 @@ const { width } = Dimensions.get('window');
 
 export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
   const { t, i18n } = useTranslation();
+  const { showAlert } = useAppAlert();
   const locale = i18n.language?.startsWith('es') ? es : enUS;
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -182,7 +183,7 @@ export const DailyLogScreen = ({ onBack, cycleInfo, onRefreshAI }) => {
 
   const handleDeleteLog = (item) => {
     if (!user?.id) return;
-    Alert.alert(
+    showAlert(
       t('dailylog.delete_title'),
       t('dailylog.delete_confirm'),
       [
