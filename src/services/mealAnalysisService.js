@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { Platform } from 'react-native';
 // expo-file-system's main entrypoint (SDK 54 / v19) throws on the classic
 // readAsStringAsync API; the legacy submodule keeps the same signature —
@@ -30,7 +30,44 @@ const genAI = new GoogleGenerativeAI(env.geminiApiKey);
 // gemini-2.0-flash was retired by Google (calls started failing with a 404
 // telling callers to move to gemini-3.6-flash) — same fix as aiService.js,
 // confirmed via a real end-to-end test call against the live API.
-const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
+//
+// responseMimeType/responseSchema below: found via live testing that asking
+// nicely in the prompt for valid JSON isn't reliable once the response
+// includes a long free-form prose field (the "evaluation" text) — Gemini
+// occasionally emits an unescaped quote or similar inside that prose and
+// breaks the surrounding JSON, which then fails to parse. Structured output
+// mode constrains generation at the API level to guarantee syntactically
+// valid JSON matching this exact shape, eliminating that failure mode
+// entirely instead of just asking for it in words.
+const model = genAI.getGenerativeModel({
+  model: 'gemini-3.6-flash',
+  generationConfig: {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: SchemaType.OBJECT,
+      properties: {
+        items: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              name: { type: SchemaType.STRING },
+              portion: { type: SchemaType.STRING },
+              calories: { type: SchemaType.NUMBER },
+              protein: { type: SchemaType.NUMBER },
+              carbs: { type: SchemaType.NUMBER },
+              fat: { type: SchemaType.NUMBER },
+            },
+            required: ['name', 'portion', 'calories', 'protein', 'carbs', 'fat'],
+          },
+        },
+        phase_note: { type: SchemaType.STRING },
+        evaluation: { type: SchemaType.STRING },
+      },
+      required: ['items', 'phase_note', 'evaluation'],
+    },
+  },
+});
 
 // Photos analyzed for food content benefit from more detail than the
 // 800px default used for admin thumbnail uploads (imagePrep.js) — a low-res
@@ -102,15 +139,9 @@ You're looking at a photo of a meal the user just photographed.
    longer-term angle worth knowing (something great long-term but not ideal in this exact moment, or
    vice versa). End this field with the same short "Sources:"/"Fuentes:" line your voice rules describe.
 
-Respond ONLY with JSON in this exact shape, no other text:
-{
-  "items": [
-    { "name": "string", "portion": "string, e.g. '1 cup'", "calories": number, "protein": number, "carbs": number, "fat": number }
-  ],
-  "phase_note": "string",
-  "evaluation": "string"
-}
-If you cannot identify any food in the image, respond with { "items": [], "phase_note": "", "evaluation": "" }.
+The response format itself is enforced separately — just focus on getting the content of each field
+right. If you cannot identify any food in the image, return an empty items array and empty strings
+for phase_note and evaluation.
 `;
 };
 
