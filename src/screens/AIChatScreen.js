@@ -26,6 +26,19 @@ const { width } = Dimensions.get('window');
 const RECENT_LOGS_COUNT = 5;
 const RECENT_MEALS_COUNT = 5;
 
+// Found via a real device report ("chat feels heavy, slow, times out") on
+// mobile data: the conversation history sent to Gemini on every single
+// message was completely unbounded — since chat history auto-loads up to
+// 20 previous turns from the DB on screen open, even the FIRST message of
+// a brand new session could already be sending a large payload, and it
+// only grew from there within the session. A bigger request body takes
+// longer to upload on a constrained connection, and Gemini needs more
+// processing time for a longer context — both compound into exactly the
+// "heavy" feeling reported. Capped to the most recent turns only; older
+// context is dropped from what's SENT to the model (the full history is
+// still loaded and shown on screen, this only bounds what's transmitted).
+const MAX_HISTORY_TURNS_SENT = 12;
+
 export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {}, user, dailyLogs = [], getToken, isPremium }) => {
   const { t } = useTranslation();
   const { showAlert } = useAppAlert();
@@ -92,8 +105,14 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
     // Gemini — aiService already opens the chat with its own user/model turn pair,
     // so including this greeting would put two 'model' turns back to back and Gemini
     // rejects that with a 400 (roles must strictly alternate user/model).
+    //
+    // Capped to the most recent MAX_HISTORY_TURNS_SENT turns — this only bounds
+    // what's transmitted to Gemini, not what's loaded/shown on screen. aiService's
+    // sanitizeHistoryForGemini already cleans up alternation if this slice happens
+    // to start mid-pair, so slicing here is safe regardless of where it lands.
     const history = messages
       .filter((m) => !m.isGreeting)
+      .slice(-MAX_HISTORY_TURNS_SENT)
       .map((m) => ({
         role: m.role,
         parts: [{ text: m.text }],
