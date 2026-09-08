@@ -1,7 +1,10 @@
 name: Build Android APK
+# Was building automatically on every push to main/master, alongside EAS's
+# own separate auto-build-on-push (configured on the Expo dashboard, not in
+# this repo) — two redundant automatic builds firing on every commit.
+# Removed the push trigger per explicit request; still runnable manually via
+# workflow_dispatch (Actions tab -> Run workflow) if ever needed.
 on:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
