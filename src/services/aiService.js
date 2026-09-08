@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { fetch as expoFetch } from 'expo/fetch';
 import { env } from '../lib/env';
 
 /**
@@ -230,14 +231,37 @@ export const streamGeminiChatResponse = async (history, userMessage, context = {
       });
 
       const fullMessage = `${contextualPrompt}\n\nUser: ${userMessage}`;
-      const result = await chat.sendMessageStream(fullMessage);
 
-      let accumulated = '';
-      for await (const chunk of result.stream) {
-        accumulated += chunk.text();
-        onChunk?.(stripMarkdownArtifacts(accumulated));
+      // Found via a real device error ("Cannot read property 'pipeThrough'
+      // of undefined") surfaced by the diagnostic detail added above: the
+      // Gemini SDK's streaming path reads the response body as a Web
+      // Streams API ReadableStream internally (response.body.pipeThrough),
+      // which React Native's JS engine (Hermes) doesn't fully support —
+      // this is why every web-based test here succeeded (a real browser
+      // has full Streams API support) while the actual Android app kept
+      // failing on this exact code path. The SDK always calls the global
+      // `fetch` directly with no way to inject a different one, so this
+      // swaps in Expo's own streaming-capable fetch (built for exactly
+      // this class of problem) only around this call, restoring the
+      // original global.fetch immediately after — scoped narrowly so it
+      // doesn't affect Supabase/Clerk or any other network call in the
+      // app. generateContent (non-streaming, used by Meal Analyzer) reads
+      // its response differently and was never affected by this.
+      const originalFetch = global.fetch;
+      global.fetch = expoFetch;
+      let result;
+      try {
+        result = await chat.sendMessageStream(fullMessage);
+
+        let accumulated = '';
+        for await (const chunk of result.stream) {
+          accumulated += chunk.text();
+          onChunk?.(stripMarkdownArtifacts(accumulated));
+        }
+        return stripMarkdownArtifacts(accumulated);
+      } finally {
+        global.fetch = originalFetch;
       }
-      return stripMarkdownArtifacts(accumulated);
     });
   } catch (error) {
     console.error('[AI Service Error]:', error);
