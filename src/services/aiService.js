@@ -241,11 +241,20 @@ export const streamGeminiChatResponse = async (history, userMessage, context = {
     });
   } catch (error) {
     console.error('[AI Service Error]:', error);
+    // Was previously a hardcoded, generic message with zero information
+    // about what actually failed — every real cause (a dead key, a
+    // timeout, a quota limit, a network error) looked identical on
+    // screen, making this completely undiagnosable from a device
+    // screenshot alone. MealAnalyzerScreen already shows the real
+    // err.message directly (that's exactly how API_KEY_INVALID got
+    // found before); this brings AI Chat's error path in line with it.
     const fallback = error.message?.includes('429')
       ? "El asistente está muy solicitado en este momento. Por favor, espera unos segundos y vuelve a intentarlo."
       : "Lo siento, tengo problemas para conectarme ahora mismo. ¿Podemos intentarlo en un momento?";
-    onChunk?.(fallback);
-    return fallback;
+    const detail = error?.message ? `\n\n(Detalle técnico: ${error.message})` : '';
+    const withDetail = `${fallback}${detail}`;
+    onChunk?.(withDetail);
+    return withDetail;
   }
 };
 
