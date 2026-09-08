@@ -67,6 +67,12 @@ const model = genAI.getGenerativeModel({
       required: ['items', 'phase_note', 'evaluation'],
     },
   },
+}, {
+  // Same reasoning as aiService.js's chat model — bounds a stalled request
+  // to a predictable worst case instead of hanging indefinitely. Slightly
+  // longer than chat's 20s since this call is multimodal (image + a longer
+  // JSON response) and genuinely takes a bit more processing time.
+  timeout: 25000,
 });
 
 // Photos analyzed for food content benefit from more detail than the

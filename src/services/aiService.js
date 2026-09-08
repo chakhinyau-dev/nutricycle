@@ -10,7 +10,17 @@ const genAI = new GoogleGenerativeAI(env.geminiApiKey);
 // gemini-2.0-flash was retired by Google (calls started failing with a 404
 // telling callers to move to gemini-3.6-flash) — confirmed via a real
 // end-to-end test call against the live API, not just documentation.
-const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
+//
+// { timeout: 20000 } — per client feedback that chat "feels heavy" with
+// slow responses and timeouts: without an explicit timeout, a stalled
+// request (weak signal, a proxy, a captive portal) has no bounded limit at
+// all and can hang far longer than feels reasonable before the user sees
+// anything. 20s is generous for a normal reply (first streamed token
+// typically arrives in 1-5s) but caps the worst case to something
+// predictable. Deliberately NOT added to fetchWithRetry's retryable set
+// below — retrying a timeout would compound this exact problem into up to
+// 3x the wait instead of failing fast and clearly.
+const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' }, { timeout: 20000 });
 
 // Rewritten per client feedback: the previous prompt produced a stiff,
 // "sharing knowledge" lecture tone. This one explicitly asks for a casual,
