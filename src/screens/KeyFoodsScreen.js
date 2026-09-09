@@ -4,6 +4,7 @@ import {
   Text,
   View,
   ScrollView,
+  SectionList,
   Pressable,
   Image,
 } from 'react-native';
@@ -61,119 +62,132 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
     } catch (e) {}
   };
 
+  // Was a plain ScrollView + nested categories.map()/items.map(), which
+  // mounted every category's every food card (and its <Image>) at once
+  // regardless of scroll position — the same anti-pattern already fixed in
+  // AdminScreen.js's food list. Went unnoticed here while phases had few
+  // items, but became clearly slow on Menstrual/Follicular specifically
+  // once a lot more foods were added to those phases. SectionList only
+  // renders what's near the viewport, so this scales with however many
+  // items get added going forward instead of degrading further.
+  const sections = categories.map(cat => ({
+    key: cat.categoryKey,
+    title: cat.categoryKey,
+    catColor: CATEGORY_COLORS[cat.categoryKey] || colors.primary,
+    data: cat.items,
+  }));
+
+  const renderFoodCard = ({ item: food, section }) => {
+    const tagColors = HORMONE_TAG_COLORS[food.hormoneTag] || HORMONE_TAG_COLORS.energy;
+    const isAdded = !!addedItems[food.key];
+    // Database foods carry name/benefits directly; static foods use translation keys
+    const nameKey = `key_foods.items.${food.key}.name`;
+    const benefitKey = `key_foods.items.${food.key}.benefit`;
+    const translatedName    = t(nameKey);
+    const translatedBenefit = t(benefitKey);
+    const foodName    = food.name    || (translatedName    !== nameKey    ? translatedName    : '');
+    const foodBenefit = food.benefits || food.benefit || (translatedBenefit !== benefitKey ? translatedBenefit : '');
+    return (
+      <View style={styles.foodCard}>
+        {/* Top row: image + name + add button */}
+        <View style={styles.foodCardTop}>
+          <Image source={{ uri: food.image }} style={styles.foodImage} />
+          <View style={styles.foodCardCenter}>
+            <Text style={styles.foodName}>{foodName}</Text>
+            {/* Hormone tag badge */}
+            <View style={[styles.hormoneTag, { backgroundColor: tagColors.bg }]}>
+              <View style={[styles.hormoneDot, { backgroundColor: tagColors.dot }]} />
+              <Text style={[styles.hormoneTagText, { color: tagColors.text }]}>
+                {t(`key_foods.hormone_tags.${food.hormoneTag}`)}
+              </Text>
+            </View>
+          </View>
+          {/* Add to shopping list button */}
+          <Pressable
+            style={[styles.addBtn, isAdded && styles.addBtnDone]}
+            onPress={() => handleAddToList(food.key, foodName)}
+          >
+            {isAdded
+              ? <Check size={16} color={colors.primary} />
+              : <Plus size={16} color={colors.on_surface_variant} />
+            }
+          </Pressable>
+        </View>
+
+        {/* Hormonal benefit note — always visible */}
+        {foodBenefit ? (
+          <View style={[styles.benefitBox, { borderLeftColor: section.catColor }]}>
+            <Text style={styles.benefitText}>{foodBenefit}</Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
-            <ChevronLeft size={24} color={colors.on_surface} />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{t('key_foods.title')}</Text>
+      <SectionList
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        sections={sections}
+        keyExtractor={(food) => food.key}
+        stickySectionHeadersEnabled={false}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.categoryHeader}>
+            <View style={[styles.categoryDot, { backgroundColor: section.catColor }]} />
+            <Text style={[styles.categoryTitle, { color: section.catColor }]}>
+              {t(`key_foods.categories.${section.title}`).toUpperCase()}
+            </Text>
           </View>
-        </View>
+        )}
+        renderItem={renderFoodCard}
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <Pressable onPress={onBack} style={styles.backButton}>
+                <ChevronLeft size={24} color={colors.on_surface} />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>{t('key_foods.title')}</Text>
+              </View>
+            </View>
 
-        {/* Phase filter pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScroll}
-          style={styles.filterRow}
-        >
-          {phases.map(phase => (
-            <Pressable
-              key={phase.key}
-              style={[styles.filterPill, selectedPhase === phase.key && styles.filterPillActive]}
-              onPress={() => setSelectedPhase(phase.key)}
+            {/* Phase filter pills */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterScroll}
+              style={styles.filterRow}
             >
-              <Text style={[styles.filterText, selectedPhase === phase.key && styles.filterTextActive]}>
-                {phase.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+              {phases.map(phase => (
+                <Pressable
+                  key={phase.key}
+                  style={[styles.filterPill, selectedPhase === phase.key && styles.filterPillActive]}
+                  onPress={() => setSelectedPhase(phase.key)}
+                >
+                  <Text style={[styles.filterText, selectedPhase === phase.key && styles.filterTextActive]}>
+                    {phase.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
 
-        {/* Source / citation note for the hormone-benefit claims below */}
-        <View style={styles.sourceNote}>
-          <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
-          <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
-        </View>
-
-        {/* Food categories */}
-        {categories.length === 0 ? (
+            {/* Source / citation note for the hormone-benefit claims below */}
+            <View style={styles.sourceNote}>
+              <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
+              <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
           <View style={styles.emptyState}>
             <Leaf size={36} color={colors.primary} style={{ opacity: 0.4, marginBottom: 14 }} />
             <Text style={styles.emptyStateText}>{t('key_foods.no_foods')}</Text>
           </View>
-        ) : (
-          categories.map(cat => {
-            const catColor = CATEGORY_COLORS[cat.categoryKey] || colors.primary;
-            return (
-              <View key={cat.categoryKey} style={styles.categorySection}>
-                {/* Category header */}
-                <View style={styles.categoryHeader}>
-                  <View style={[styles.categoryDot, { backgroundColor: catColor }]} />
-                  <Text style={[styles.categoryTitle, { color: catColor }]}>
-                    {t(`key_foods.categories.${cat.categoryKey}`).toUpperCase()}
-                  </Text>
-                </View>
-
-                {/* Ingredient cards */}
-                {cat.items.map(food => {
-                  const tagColors = HORMONE_TAG_COLORS[food.hormoneTag] || HORMONE_TAG_COLORS.energy;
-                  const isAdded = !!addedItems[food.key];
-                  // Database foods carry name/benefits directly; static foods use translation keys
-                  const nameKey = `key_foods.items.${food.key}.name`;
-                  const benefitKey = `key_foods.items.${food.key}.benefit`;
-                  const translatedName    = t(nameKey);
-                  const translatedBenefit = t(benefitKey);
-                  const foodName    = food.name    || (translatedName    !== nameKey    ? translatedName    : '');
-                  const foodBenefit = food.benefits || food.benefit || (translatedBenefit !== benefitKey ? translatedBenefit : '');
-                  return (
-                    <View key={food.key} style={styles.foodCard}>
-                      {/* Top row: image + name + add button */}
-                      <View style={styles.foodCardTop}>
-                        <Image source={{ uri: food.image }} style={styles.foodImage} />
-                        <View style={styles.foodCardCenter}>
-                          <Text style={styles.foodName}>{foodName}</Text>
-                          {/* Hormone tag badge */}
-                          <View style={[styles.hormoneTag, { backgroundColor: tagColors.bg }]}>
-                            <View style={[styles.hormoneDot, { backgroundColor: tagColors.dot }]} />
-                            <Text style={[styles.hormoneTagText, { color: tagColors.text }]}>
-                              {t(`key_foods.hormone_tags.${food.hormoneTag}`)}
-                            </Text>
-                          </View>
-                        </View>
-                        {/* Add to shopping list button */}
-                        <Pressable
-                          style={[styles.addBtn, isAdded && styles.addBtnDone]}
-                          onPress={() => handleAddToList(food.key, foodName)}
-                        >
-                          {isAdded
-                            ? <Check size={16} color={colors.primary} />
-                            : <Plus size={16} color={colors.on_surface_variant} />
-                          }
-                        </Pressable>
-                      </View>
-
-                      {/* Hormonal benefit note — always visible */}
-                      {foodBenefit ? (
-                        <View style={[styles.benefitBox, { borderLeftColor: catColor }]}>
-                          <Text style={styles.benefitText}>{foodBenefit}</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  );
-                })}
-              </View>
-            );
-          })
-        )}
-
-        <View style={{ height: 24 }} />
-      </ScrollView>
+        }
+        ListFooterComponent={<View style={{ height: 24 }} />}
+      />
     </View>
   );
 };
@@ -272,13 +286,11 @@ const styles = StyleSheet.create({
     color: colors.on_surface_variant,
     opacity: 0.75,
   },
-  categorySection: {
-    marginBottom: 28,
-  },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginTop: 14,
     marginBottom: 14,
   },
   categoryDot: {
