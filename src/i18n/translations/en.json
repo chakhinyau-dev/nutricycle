@@ -647,6 +647,7 @@
     "save_failed": "Couldn't save this entry. Check your connection and try again.",
     "save": "Save to my history",
     "portion_placeholder": "Portion, e.g. 1 cup",
+    "quantity": "Quantity",
     "calories": "Calories",
     "protein": "Protein",
     "carbs": "Carbs",

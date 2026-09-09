@@ -14,7 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@clerk/clerk-expo';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History, X, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History, X, Sparkles, Minus, Plus } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { useAppAlert } from '../components/AppAlertProvider';
 import { prepareImageForUpload } from '../utils/imagePrep';
@@ -188,6 +188,28 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 
+  // Scales calories/protein/carbs/fat from the item's own immutable
+  // per-unit baseline (unitCalories etc., set once at analysis time) —
+  // always recomputed from that fixed reference, not from whatever the
+  // fields currently show, so repeated quantity changes never compound
+  // rounding drift or get thrown off by an earlier manual macro edit.
+  const handleQuantityChange = (index, rawQuantity) => {
+    const quantity = Math.max(0, rawQuantity);
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        return {
+          ...item,
+          quantity,
+          calories: Math.round((item.unitCalories ?? item.calories) * quantity),
+          protein: Math.round((item.unitProtein ?? item.protein) * quantity),
+          carbs: Math.round((item.unitCarbs ?? item.carbs) * quantity),
+          fat: Math.round((item.unitFat ?? item.fat) * quantity),
+        };
+      })
+    );
+  };
+
   const handleRemoveItem = (index) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
@@ -343,6 +365,34 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
                     placeholder={t('meal_analyzer.portion_placeholder')}
                     onChangeText={(v) => handleItemChange(index, 'portion', v)}
                   />
+                  <View style={styles.quantityRow}>
+                    <Text style={styles.quantityLabel}>{t('meal_analyzer.quantity')}</Text>
+                    <View style={styles.quantityStepper}>
+                      <Pressable
+                        style={styles.quantityBtn}
+                        onPress={() => handleQuantityChange(index, Math.max(0, (Number(item.quantity) || 1) - 1))}
+                        hitSlop={8}
+                      >
+                        <Minus size={14} color={colors.on_surface} />
+                      </Pressable>
+                      <TextInput
+                        style={styles.quantityInput}
+                        value={String(item.quantity ?? 1)}
+                        keyboardType="numeric"
+                        onChangeText={(v) => {
+                          const cleaned = v.replace(/[^0-9.]/g, '');
+                          handleQuantityChange(index, cleaned === '' ? 0 : Number(cleaned));
+                        }}
+                      />
+                      <Pressable
+                        style={styles.quantityBtn}
+                        onPress={() => handleQuantityChange(index, (Number(item.quantity) || 0) + 1)}
+                        hitSlop={8}
+                      >
+                        <Plus size={14} color={colors.on_surface} />
+                      </Pressable>
+                    </View>
+                  </View>
                   <View style={styles.macroInputRow}>
                     {['calories', 'protein', 'carbs', 'fat'].map((field) => (
                       <View key={field} style={styles.macroInputBox}>
@@ -578,6 +628,18 @@ const styles = StyleSheet.create({
   itemRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   itemNameInput: { flex: 1, fontFamily: 'Outfit_700Bold', fontSize: 15, color: colors.on_surface, paddingVertical: 4 },
   itemPortionInput: { fontFamily: 'Outfit_500Medium', fontSize: 13, color: colors.on_surface_variant, marginBottom: 10, paddingVertical: 2 },
+  quantityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  quantityLabel: { fontFamily: 'Outfit_600SemiBold', fontSize: 12, color: colors.on_surface_variant },
+  quantityStepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFB', borderRadius: 10, overflow: 'hidden' },
+  quantityBtn: { width: 32, height: 32, justifyContent: 'center', alignItems: 'center' },
+  quantityInput: {
+    width: 40,
+    textAlign: 'center',
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 14,
+    color: colors.on_surface,
+    paddingVertical: 4,
+  },
   macroInputRow: { flexDirection: 'row', gap: 8 },
   macroInputBox: { flex: 1 },
   macroInputLabel: { fontFamily: 'Outfit_600SemiBold', fontSize: 9, color: colors.on_surface_variant, textTransform: 'uppercase', marginBottom: 4 },

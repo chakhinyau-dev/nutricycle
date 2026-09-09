@@ -193,14 +193,34 @@ export const analyzeMealPhoto = async (imageAsset, context = {}) => {
     const items = Array.isArray(parsed.items) ? parsed.items : [];
 
     return {
-      items: items.map((item) => ({
-        name: item.name || 'Unknown item',
-        portion: item.portion || '',
-        calories: Number(item.calories) || 0,
-        protein: Number(item.protein) || 0,
-        carbs: Number(item.carbs) || 0,
-        fat: Number(item.fat) || 0,
-      })),
+      items: items.map((item) => {
+        // unitX values are the immutable per-item baseline Gemini estimated
+        // (i.e. macros for quantity=1, as photographed) — kept alongside the
+        // editable calories/protein/carbs/fat so the quantity stepper in
+        // MealAnalyzerScreen.js can always scale from a stable reference
+        // point, no matter how many times quantity is adjusted up or down.
+        // Per client feedback: editing the free-text "portion" (e.g. "1
+        // potato" -> "2 potatoes") never updated the macros, since there's
+        // no reliable way to parse an arbitrary text edit into a scale
+        // factor — a real quantity control replaces that guesswork.
+        const unitCalories = Number(item.calories) || 0;
+        const unitProtein = Number(item.protein) || 0;
+        const unitCarbs = Number(item.carbs) || 0;
+        const unitFat = Number(item.fat) || 0;
+        return {
+          name: item.name || 'Unknown item',
+          portion: item.portion || '',
+          quantity: 1,
+          calories: unitCalories,
+          protein: unitProtein,
+          carbs: unitCarbs,
+          fat: unitFat,
+          unitCalories,
+          unitProtein,
+          unitCarbs,
+          unitFat,
+        };
+      }),
       phaseNote: parsed.phase_note || '',
       evaluation: stripMarkdownArtifacts(parsed.evaluation || ''),
     };

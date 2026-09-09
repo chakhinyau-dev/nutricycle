@@ -659,6 +659,7 @@
     "save_failed": "No se pudo guardar el registro. Verifica tu conexión e inténtalo de nuevo.",
     "save": "Guardar en mi historial",
     "portion_placeholder": "Porción, ej. 1 taza",
+    "quantity": "Cantidad",
     "calories": "Calorías",
     "protein": "Proteína",
     "carbs": "Carbos",
