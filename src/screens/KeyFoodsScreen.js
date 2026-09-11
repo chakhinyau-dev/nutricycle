@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Leaf, Plus, Check, Info, Apple } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
+import { getResizedImageUrl } from '../utils/imageUrl';
 
 const CATEGORY_COLORS = {
   proteins:   '#E8A0A2',
@@ -92,7 +93,7 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
         {/* Top row: image + name + add button */}
         <View style={styles.foodCardTop}>
           {food.image ? (
-            <Image source={{ uri: food.image }} style={styles.foodImage} />
+            <Image source={{ uri: getResizedImageUrl(food.image, { width: 140, height: 140 }) }} style={styles.foodImage} />
           ) : (
             <View style={[styles.foodImage, styles.foodImagePlaceholder]}>
               <Apple size={24} color={section.catColor} style={{ opacity: 0.5 }} />

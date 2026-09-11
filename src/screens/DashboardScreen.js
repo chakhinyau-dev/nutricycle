@@ -10,6 +10,7 @@ const AnimatedCircle  = Animated.createAnimatedComponent(Circle);
 import { Play, Heart, ChevronRight, Crown, CircleDot, Camera, Timer, Apple } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
+import { getResizedImageUrl } from '../utils/imageUrl';
 
 const HORMONE_TAG_COLORS = {
   estrogen:         { bg: '#FAEEF0', text: '#C97577', dot: '#E8A0A2' },
@@ -445,7 +446,11 @@ export const DashboardScreen = ({
                 <View style={[styles.keyFoodAccent, { backgroundColor: catColor }]} />
                 <View style={[styles.keyFoodImageWrap, { backgroundColor: catColor + '18' }]}>
                   {food.image ? (
-                    <Image source={{ uri: food.image }} style={styles.keyFoodImage} resizeMode="cover" />
+                    <Image
+                      source={{ uri: getResizedImageUrl(food.image, { width: 320, height: 190 }) }}
+                      style={styles.keyFoodImage}
+                      resizeMode="cover"
+                    />
                   ) : (
                     <View style={styles.keyFoodImagePlaceholder}>
                       <Apple size={24} color={catColor} style={{ opacity: 0.5 }} />

@@ -46,6 +46,7 @@ import * as VideoThumbnails from 'expo-video-thumbnails';
 import { saveRecipe, deleteRecipe, uploadRecipeImage, getRecipeImageSource } from '../services/recipeService';
 import { saveKeyFood, deleteKeyFood } from '../services/keyFoodsService';
 import { prepareImageForUpload } from '../utils/imagePrep';
+import { getResizedImageUrl } from '../utils/imageUrl';
 import { prepareVideoForUpload } from '../utils/videoPrep';
 
 const { width } = Dimensions.get('window');
@@ -734,7 +735,7 @@ export const AdminScreen = ({
   const renderFoodItem = ({ item: food }) => (
     <View style={styles.itemCard}>
       {food.image ? (
-        <Image source={{ uri: food.image }} style={styles.itemThumb} />
+        <Image source={{ uri: getResizedImageUrl(food.image, { width: 100, height: 100 }) }} style={styles.itemThumb} />
       ) : (
         <View style={[styles.itemThumb, { backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }]}>
           <Apple size={20} color="#CBD5E1" />
