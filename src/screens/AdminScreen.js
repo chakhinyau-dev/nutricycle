@@ -247,7 +247,7 @@ export const AdminScreen = ({
     try {
       let finalImageUrl = newFood.imageUrl || '';
       if (localFoodImage) {
-        const uploaded = await uploadRecipeImage(getToken, localFoodImage, `food_${Date.now()}.jpg`);
+        const uploaded = await uploadRecipeImage(getToken, localFoodImage, `food_${Date.now()}.jpg`, 'foods');
         // Previously silently kept going with no image on a failed upload — the
         // food item would still save successfully with an empty image_url, with
         // no indication anything went wrong. Now matches handleSaveRecipe's

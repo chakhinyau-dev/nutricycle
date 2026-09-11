@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Leaf, Plus, Check, Info } from 'lucide-react-native';
+import { ChevronLeft, Leaf, Plus, Check, Info, Apple } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
@@ -91,7 +91,13 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
       <View style={styles.foodCard}>
         {/* Top row: image + name + add button */}
         <View style={styles.foodCardTop}>
-          <Image source={{ uri: food.image }} style={styles.foodImage} />
+          {food.image ? (
+            <Image source={{ uri: food.image }} style={styles.foodImage} />
+          ) : (
+            <View style={[styles.foodImage, styles.foodImagePlaceholder]}>
+              <Apple size={24} color={section.catColor} style={{ opacity: 0.5 }} />
+            </View>
+          )}
           <View style={styles.foodCardCenter}>
             <Text style={styles.foodName}>{foodName}</Text>
             {/* Hormone tag badge */}
@@ -321,6 +327,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 14,
     marginBottom: 14,
+  },
+  foodImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   foodImage: {
     width: 68,

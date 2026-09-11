@@ -7,7 +7,7 @@ const AnimatedRect    = Animated.createAnimatedComponent(Rect);
 const AnimatedPath    = Animated.createAnimatedComponent(Path);
 const AnimatedLine    = Animated.createAnimatedComponent(Line);
 const AnimatedCircle  = Animated.createAnimatedComponent(Circle);
-import { Play, Heart, ChevronRight, Crown, CircleDot, Camera, Timer } from 'lucide-react-native';
+import { Play, Heart, ChevronRight, Crown, CircleDot, Camera, Timer, Apple } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
@@ -40,6 +40,7 @@ export const DashboardScreen = ({
   cycleProfile,
   videos = [],
   isPremium = false,
+  keyFoods = {},
 }) => {
   const { t } = useTranslation();
   const phaseKey = currentPhaseKey || 'follicular';
@@ -116,10 +117,16 @@ export const DashboardScreen = ({
   }, [cycleLength, cycleDay, chartWidth, baselineY, CHART_TOP_PAD]);
 
 
+  // Was always reading the bundled static FOODS_BY_PHASE directly, so any
+  // image/name/benefit an admin added or edited via the Key Foods manager
+  // never showed up here — only on the full Key Foods screen ("Ver todo"),
+  // which already preferred the live `keyFoods` prop. Same dataSource
+  // fallback pattern as KeyFoodsScreen.js, so both screens agree.
+  const keyFoodsDataSource = Object.keys(keyFoods).length > 0 ? keyFoods : FOODS_BY_PHASE;
   const phaseKeyFoods = useMemo(() => {
-    const cats = FOODS_BY_PHASE[phaseKey] || FOODS_BY_PHASE.follicular;
+    const cats = keyFoodsDataSource[phaseKey] || keyFoodsDataSource.follicular || FOODS_BY_PHASE.follicular;
     return cats.flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey }))).slice(0, 3);
-  }, [phaseKey]);
+  }, [phaseKey, keyFoodsDataSource]);
 
   const foodScrollRef = useRef(null);
   const [foodScrollIndex, setFoodScrollIndex] = useState(0);
@@ -427,15 +434,27 @@ export const DashboardScreen = ({
           {phaseKeyFoods.map(food => {
             const tagColors = HORMONE_TAG_COLORS[food.hormoneTag] || HORMONE_TAG_COLORS.energy;
             const catColor  = CATEGORY_COLORS[food.categoryKey] || colors.primary;
+            // DB-backed foods (keyFoodsService.js) carry a real `name` string;
+            // static fallback items only carry a translation key — same
+            // dual-source resolution KeyFoodsScreen.js already uses.
+            const nameKey = `key_foods.items.${food.key}.name`;
+            const translatedName = t(nameKey);
+            const foodName = food.name || (translatedName !== nameKey ? translatedName : '');
             return (
               <Pressable key={food.key} style={styles.keyFoodCard} onPress={() => onNavigate('keyFoods')}>
                 <View style={[styles.keyFoodAccent, { backgroundColor: catColor }]} />
                 <View style={[styles.keyFoodImageWrap, { backgroundColor: catColor + '18' }]}>
-                  <Image source={{ uri: food.image }} style={styles.keyFoodImage} resizeMode="cover" />
+                  {food.image ? (
+                    <Image source={{ uri: food.image }} style={styles.keyFoodImage} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.keyFoodImagePlaceholder}>
+                      <Apple size={24} color={catColor} style={{ opacity: 0.5 }} />
+                    </View>
+                  )}
                 </View>
                 <View style={styles.keyFoodContent}>
                   <Text style={styles.keyFoodName} numberOfLines={2}>
-                    {t(`key_foods.items.${food.key}.name`)}
+                    {foodName}
                   </Text>
                   <View style={[styles.keyFoodTag, { backgroundColor: tagColors.bg }]}>
                     <View style={[styles.keyFoodTagDot, { backgroundColor: tagColors.dot }]} />
@@ -782,6 +801,11 @@ const styles = StyleSheet.create({
   keyFoodImage: {
     width: '100%',
     height: '100%',
+  },
+  keyFoodImagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   keyFoodContent: {
     padding: 12,

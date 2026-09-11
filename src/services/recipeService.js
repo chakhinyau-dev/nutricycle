@@ -204,7 +204,12 @@ export const deleteRecipe = async (getToken, recipeId) => {
   return true;
 };
 
-export const uploadRecipeImage = async (getToken, fileInput, fileName) => {
+// `folder` defaults to 'recipes' so every existing caller (recipe image
+// uploads) keeps its current path unchanged; AdminScreen.js's key-food image
+// save passes 'foods' so those uploads land in their own folder instead of
+// being mixed into recipes/ under a misleading path (same 'recipe-images'
+// bucket either way — its RLS only checks bucket_id, not the folder).
+export const uploadRecipeImage = async (getToken, fileInput, fileName, folder = 'recipes') => {
   const supabase = createClerkSupabaseClient(getToken);
   if (!supabase) return null;
 
@@ -275,7 +280,7 @@ export const uploadRecipeImage = async (getToken, fileInput, fileName) => {
     }
 
     const fileExt = (fileName && fileName.includes('.') && fileName.split('.').pop()) || 'jpg';
-    const path = `recipes/${Date.now()}.${fileExt}`;
+    const path = `${folder}/${Date.now()}.${fileExt}`;
 
     const { data, error } = await supabase.storage.from('recipe-images').upload(path, uploadBody, {
       contentType: mimeType,
