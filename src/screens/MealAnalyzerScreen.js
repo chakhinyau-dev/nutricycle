@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,6 +10,7 @@ import {
   ImageBackground,
   Image,
   Modal,
+  Animated,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@clerk/clerk-expo';
@@ -35,6 +36,15 @@ import {
 const RECENT_LOGS_COUNT = 5;
 const RECENT_MEALS_COUNT = 5;
 
+// Per client feedback: the full-height hero image was permanently taking up
+// 280px of screen — a fixed header that never moved, even when scrolled.
+// Now it's a normal (unfixed) part of the scrollable content, so scrolling
+// down actually reclaims that space for the analysis UI — but once it's
+// scrolled up by about half its own height, a small pinned header fades in
+// and stays fixed at the top from then on, so back/title access isn't lost.
+const HERO_HEIGHT = 280;
+const HERO_PIN_HEIGHT = HERO_HEIGHT / 2;
+
 // "Analizar plato" — replaces Predictor IA. Reuses the same hero/premium-lock
 // visual pattern AIPredictorScreen.js used, for a consistent look across the
 // AI screens in this app.
@@ -56,6 +66,13 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [selectedMeal, setSelectedMeal] = useState(null);
+
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const pinnedHeroOpacity = scrollY.interpolate({
+    inputRange: [HERO_PIN_HEIGHT - 24, HERO_PIN_HEIGHT],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
   const loadHistory = async () => {
     if (!user?.id) return;
@@ -364,25 +381,53 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
 
   return (
     <View style={styles.container}>
-      <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800' }}
-        style={styles.hero}
-      >
-        <View style={styles.overlay} />
-        <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backBtn}>
-            <ChevronLeft size={24} color="#FFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>{t('meal_analyzer.title')}</Text>
-          <View style={{ width: 44 }} />
-        </View>
-        <View style={styles.heroContent}>
-          <Text style={styles.heroTitle}>{t('meal_analyzer.hero_title')}</Text>
-          <Text style={styles.heroSub}>{t('meal_analyzer.hero_sub')}</Text>
-        </View>
-      </ImageBackground>
+      {/* Pinned mini-hero — invisible (opacity 0) until the in-flow hero
+          below has scrolled up by about half its own height, then fades in
+          and stays fixed at the top for the rest of the scroll. */}
+      <Animated.View pointerEvents="box-none" style={[styles.pinnedHero, { opacity: pinnedHeroOpacity }]}>
+        <ImageBackground
+          source={{ uri: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800' }}
+          style={styles.pinnedHeroImage}
+        >
+          <View style={styles.overlay} />
+          <View style={styles.header}>
+            <Pressable onPress={onBack} style={styles.backBtn}>
+              <ChevronLeft size={24} color="#FFF" />
+            </Pressable>
+            <Text style={styles.headerTitle}>{t('meal_analyzer.title')}</Text>
+            <View style={{ width: 44 }} />
+          </View>
+        </ImageBackground>
+      </Animated.View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
+        <ImageBackground
+          source={{ uri: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800' }}
+          style={styles.hero}
+        >
+          <View style={styles.overlay} />
+          <View style={styles.header}>
+            <Pressable onPress={onBack} style={styles.backBtn}>
+              <ChevronLeft size={24} color="#FFF" />
+            </Pressable>
+            <Text style={styles.headerTitle}>{t('meal_analyzer.title')}</Text>
+            <View style={{ width: 44 }} />
+          </View>
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle} numberOfLines={1}>{t('meal_analyzer.hero_title')}</Text>
+            <Text style={styles.heroSub}>{t('meal_analyzer.hero_sub')}</Text>
+          </View>
+        </ImageBackground>
+
+        <View style={styles.contentInner}>
         <View style={styles.card}>
           {pickedImage ? (
             <Image source={{ uri: pickedImage.uri }} style={styles.pickedImagePreview} />
@@ -580,7 +625,8 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
         </View>
 
         <View style={{ height: 40 }} />
-      </ScrollView>
+        </View>
+      </Animated.ScrollView>
 
       {/* History detail modal — tapping a saved entry reviews its full
           breakdown instead of just the compact list row. */}
@@ -656,7 +702,20 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  hero: { height: 280, width: '100%' },
+  hero: { height: HERO_HEIGHT, width: '100%' },
+  // Absolutely positioned above the ScrollView, hidden (opacity 0) until
+  // scroll passes HERO_PIN_HEIGHT — see the scrollY/pinnedHeroOpacity
+  // interpolation in the component.
+  pinnedHero: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HERO_PIN_HEIGHT,
+    zIndex: 10,
+    overflow: 'hidden',
+  },
+  pinnedHeroImage: { width: '100%', height: HERO_PIN_HEIGHT },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
   header: {
     flexDirection: 'row',
@@ -677,7 +736,11 @@ const styles = StyleSheet.create({
   heroContent: { paddingHorizontal: 28, marginTop: 40 },
   heroTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 32, color: '#FFF', lineHeight: 40, marginBottom: 12 },
   heroSub: { fontFamily: 'Outfit_500Medium', fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 22 },
-  content: { padding: 24, paddingTop: 32 },
+  // Empty on purpose — the hero needs to render edge-to-edge as the
+  // ScrollView's first child; contentInner (below) carries the padding
+  // that used to live here, wrapping everything after the hero instead.
+  scrollContent: {},
+  contentInner: { padding: 24, paddingTop: 32 },
   card: {
     backgroundColor: '#FFF',
     borderRadius: 24,

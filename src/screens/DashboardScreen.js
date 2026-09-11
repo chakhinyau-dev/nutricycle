@@ -126,7 +126,7 @@ export const DashboardScreen = ({
   const keyFoodsDataSource = Object.keys(keyFoods).length > 0 ? keyFoods : FOODS_BY_PHASE;
   const phaseKeyFoods = useMemo(() => {
     const cats = keyFoodsDataSource[phaseKey] || keyFoodsDataSource.follicular || FOODS_BY_PHASE.follicular;
-    return cats.flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey }))).slice(0, 3);
+    return cats.flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey }))).slice(0, 5);
   }, [phaseKey, keyFoodsDataSource]);
 
   const foodScrollRef = useRef(null);
