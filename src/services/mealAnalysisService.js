@@ -75,6 +75,50 @@ const model = genAI.getGenerativeModel({
   timeout: 25000,
 });
 
+// Per client request: when Gemini misidentifies a food in the photo (e.g.
+// calls a pear an apple), the user needs a real way to correct it — not just
+// rename the label while stale macros from the wrong food stay attached.
+// This is a much smaller, text-only call (just the corrected name/portion,
+// no image), so it gets its own lightweight schema/model instead of reusing
+// the full analyzeMealPhoto one.
+const itemCorrectionModel = genAI.getGenerativeModel({
+  model: 'gemini-3.6-flash',
+  generationConfig: {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: SchemaType.OBJECT,
+      properties: {
+        calories: { type: SchemaType.NUMBER },
+        protein: { type: SchemaType.NUMBER },
+        carbs: { type: SchemaType.NUMBER },
+        fat: { type: SchemaType.NUMBER },
+      },
+      required: ['calories', 'protein', 'carbs', 'fat'],
+    },
+  },
+}, { timeout: 15000 });
+
+// Re-runs the phase_note/evaluation fields after an item correction — the
+// client's requirement was explicit that "the Content must also change in
+// accordance with this change", so a corrected item can't just sit there
+// with an evaluation that was written about the AI's original, wrong read
+// of the photo. Same voice/schema shape as analyzeMealPhoto's evaluation,
+// just grounded in the (already corrected) items list instead of an image.
+const reevaluationModel = genAI.getGenerativeModel({
+  model: 'gemini-3.6-flash',
+  generationConfig: {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: SchemaType.OBJECT,
+      properties: {
+        phase_note: { type: SchemaType.STRING },
+        evaluation: { type: SchemaType.STRING },
+      },
+      required: ['phase_note', 'evaluation'],
+    },
+  },
+}, { timeout: 20000 });
+
 // Photos analyzed for food content benefit from more detail than the
 // 800px default used for admin thumbnail uploads (imagePrep.js) — a low-res
 // photo makes portion/ingredient estimation less reliable. Exported so the
@@ -221,6 +265,110 @@ export const analyzeMealPhoto = async (imageAsset, context = {}) => {
           unitFat,
         };
       }),
+      phaseNote: parsed.phase_note || '',
+      evaluation: stripMarkdownArtifacts(parsed.evaluation || ''),
+    };
+  });
+};
+
+const buildCorrectionPrompt = (correctedName, portion) => `
+You are a nutrition estimation assistant. A user is correcting a food item that a photo-analysis AI
+misidentified — you are not analyzing an image, just estimating macros for the food she tells you it
+actually is.
+
+Corrected food: "${correctedName}"
+Portion/quantity as described by the user: "${portion || '1 serving'}"
+
+Estimate realistic calories, protein (g), carbs (g), and fat (g) for exactly this food and portion.
+Respond with only the numeric estimates.
+`;
+
+/**
+ * Re-estimates macros for a single food item the user has told us was
+ * misidentified — a text-only call (no image), used when the user edits an
+ * item's name in MealAnalyzerScreen.js and asks to recalculate. Returns a
+ * fresh per-serving baseline (quantity=1), the same shape as an item's
+ * unitX fields from analyzeMealPhoto.
+ */
+export const correctMealItem = async (correctedName, portion) => {
+  if (!env.geminiApiKey) {
+    throw new Error('Gemini API Key is missing');
+  }
+  if (!correctedName?.trim()) {
+    throw new Error('Enter the correct food name.');
+  }
+
+  return fetchWithRetry(async () => {
+    const result = await itemCorrectionModel.generateContent(buildCorrectionPrompt(correctedName, portion));
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Unable to parse the corrected item.');
+    }
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      calories: Number(parsed.calories) || 0,
+      protein: Number(parsed.protein) || 0,
+      carbs: Number(parsed.carbs) || 0,
+      fat: Number(parsed.fat) || 0,
+    };
+  });
+};
+
+const buildReevaluationPrompt = (items, context = {}) => {
+  const phaseKey = context.currentPhase || context.phaseKey;
+  const contextBlock = buildContextBlock(context);
+  const itemsText = items
+    .map((item) => {
+      const qty = item.quantity || 1;
+      return `- ${item.name} (${item.portion || 'porción'}, x${qty}): ${Math.round(item.calories)} kcal, ${Math.round(item.protein)}g protein, ${Math.round(item.carbs)}g carbs, ${Math.round(item.fat)}g fat`;
+    })
+    .join('\n');
+
+  return `
+${SYSTEM_PROMPT}
+
+${contextBlock}
+
+The user already analyzed a meal photo and just corrected how one or more foods in it were identified.
+Here is the final, corrected list of items in this meal:
+${itemsText}
+
+1. "phase_note": one short, general, wellness-framed sentence noting whether this meal generally
+   supports the ${phaseKey || 'follicular'} phase's typical nutritional focus.
+2. "evaluation": in your own voice exactly as described above — casual, warm, like you're texting a
+   friend, no asterisks, no markdown — 3 to 5 sentences telling her whether this specific (corrected)
+   meal is a good or a bad choice for her RIGHT NOW, using everything in the profile above. End this
+   field with the same short "Sources:"/"Fuentes:" line your voice rules describe.
+
+Respond with only phase_note and evaluation, reflecting this corrected item list — not whatever the
+foods were originally misidentified as.
+`;
+};
+
+/**
+ * Regenerates phase_note/evaluation after one or more items were corrected —
+ * per client request, "the Content must also change in accordance with this
+ * change", not just the macros. Text-only (no image), same SYSTEM_PROMPT
+ * voice as analyzeMealPhoto/AI Chat.
+ */
+export const reevaluateMeal = async (items, context = {}) => {
+  if (!env.geminiApiKey) {
+    throw new Error('Gemini API Key is missing');
+  }
+  if (!items?.length) {
+    return { phaseNote: '', evaluation: '' };
+  }
+
+  return fetchWithRetry(async () => {
+    const result = await reevaluationModel.generateContent(buildReevaluationPrompt(items, context));
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Unable to parse the updated evaluation.');
+    }
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
       phaseNote: parsed.phase_note || '',
       evaluation: stripMarkdownArtifacts(parsed.evaluation || ''),
     };

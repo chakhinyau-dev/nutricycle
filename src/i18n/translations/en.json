@@ -694,7 +694,13 @@
     "choose_library": "Choose from Library",
     "daily_cap_reached": "You've reached the {{cap}}-analysis daily limit. Try again tomorrow.",
     "evaluation_title": "Is this good for you right now?",
-    "detail_title": "Meal details"
+    "detail_title": "Meal details",
+    "correction_hint": "Did the AI get a food wrong? Edit the name and tap ↻ to recalculate it.",
+    "correction_name_required": "Enter the correct food name before recalculating.",
+    "correction_failed": "Couldn't recalculate this item. Please try again.",
+    "reevaluating": "Updating the evaluation...",
+    "correction_hint_label": "Recalculate item",
+    "remove_item_label": "Remove item"
   },
   "wellness": {
     "title": "Synced\nWellness",

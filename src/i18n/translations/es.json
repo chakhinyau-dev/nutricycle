@@ -706,7 +706,13 @@
     "choose_library": "Elegir de galería",
     "daily_cap_reached": "Alcanzaste el límite de {{cap}} análisis por día. Intenta de nuevo mañana.",
     "evaluation_title": "¿Te conviene ahora?",
-    "detail_title": "Detalle de la comida"
+    "detail_title": "Detalle de la comida",
+    "correction_hint": "¿La IA no reconoció bien un alimento? Edita el nombre y toca ↻ para recalcularlo.",
+    "correction_name_required": "Escribe el nombre correcto del alimento antes de recalcular.",
+    "correction_failed": "No se pudo recalcular este alimento. Intenta de nuevo.",
+    "reevaluating": "Actualizando la evaluación...",
+    "correction_hint_label": "Recalcular alimento",
+    "remove_item_label": "Eliminar alimento"
   },
   "wellness": {
     "title": "Bienestar\nsincronizado",

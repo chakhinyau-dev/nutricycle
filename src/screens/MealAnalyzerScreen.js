@@ -14,7 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@clerk/clerk-expo';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History, X, Sparkles, Minus, Plus } from 'lucide-react-native';
+import { ChevronLeft, Camera, Trash2, Lock, Crown, Save, History, X, Sparkles, Minus, Plus, RefreshCw, Info } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { useAppAlert } from '../components/AppAlertProvider';
 import { prepareImageForUpload } from '../utils/imagePrep';
@@ -25,6 +25,8 @@ import {
   deleteMealLog,
   checkAndIncrementUsage,
   uploadMealPhoto,
+  correctMealItem,
+  reevaluateMeal,
   MEAL_PHOTO_MAX_DIMENSION,
 } from '../services/mealAnalysisService';
 
@@ -48,6 +50,8 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
   const [phaseNote, setPhaseNote] = useState('');
   const [evaluation, setEvaluation] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [correctingIndex, setCorrectingIndex] = useState(null);
+  const [reevaluating, setReevaluating] = useState(false);
 
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -210,6 +214,54 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
     );
   };
 
+  // Lets the user correct a food the AI misidentified: she edits the name
+  // (and optionally the portion text) in place, then taps the refresh icon
+  // to re-estimate macros for what the food ACTUALLY is — not just rename
+  // the label while the wrong food's stale macros stay attached. Per client
+  // request, the meal-level phase note + evaluation are regenerated right
+  // after too, so that content reflects the corrected item, not the
+  // AI's original misread of the photo.
+  const handleCorrectItem = async (index) => {
+    const target = items[index];
+    if (!target?.name?.trim()) {
+      showAlert(t('settings.error'), t('meal_analyzer.correction_name_required'));
+      return;
+    }
+
+    setCorrectingIndex(index);
+    try {
+      const corrected = await correctMealItem(target.name, target.portion);
+      const updatedItems = items.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              quantity: 1,
+              calories: corrected.calories,
+              protein: corrected.protein,
+              carbs: corrected.carbs,
+              fat: corrected.fat,
+              unitCalories: corrected.calories,
+              unitProtein: corrected.protein,
+              unitCarbs: corrected.carbs,
+              unitFat: corrected.fat,
+            }
+          : item
+      );
+      setItems(updatedItems);
+      setCorrectingIndex(null);
+
+      setReevaluating(true);
+      const updatedEval = await reevaluateMeal(updatedItems, buildAnalysisContext());
+      setPhaseNote(updatedEval.phaseNote);
+      setEvaluation(updatedEval.evaluation);
+    } catch (err) {
+      showAlert(t('settings.error'), err.message || t('meal_analyzer.correction_failed'));
+    } finally {
+      setCorrectingIndex(null);
+      setReevaluating(false);
+    }
+  };
+
   const handleRemoveItem = (index) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
@@ -347,6 +399,11 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
             </View>
           ) : items ? (
             <View>
+              <View style={styles.correctionHint}>
+                <Info size={13} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
+                <Text style={styles.correctionHintText}>{t('meal_analyzer.correction_hint')}</Text>
+              </View>
+
               {items.map((item, index) => (
                 <View key={index} style={styles.itemRow}>
                   <View style={styles.itemRowTop}>
@@ -355,7 +412,24 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
                       value={item.name}
                       onChangeText={(v) => handleItemChange(index, 'name', v)}
                     />
-                    <Pressable onPress={() => handleRemoveItem(index)} hitSlop={10}>
+                    <Pressable
+                      onPress={() => handleCorrectItem(index)}
+                      disabled={correctingIndex === index}
+                      hitSlop={8}
+                      style={{ marginRight: 20 }}
+                      accessibilityLabel={t('meal_analyzer.correction_hint_label', { defaultValue: 'Recalcular alimento' })}
+                    >
+                      {correctingIndex === index ? (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      ) : (
+                        <RefreshCw size={16} color={colors.primary} />
+                      )}
+                    </Pressable>
+                    <Pressable
+                      onPress={() => handleRemoveItem(index)}
+                      hitSlop={8}
+                      accessibilityLabel={t('meal_analyzer.remove_item_label', { defaultValue: 'Eliminar alimento' })}
+                    >
                       <Trash2 size={18} color={colors.on_surface_variant} />
                     </Pressable>
                   </View>
@@ -424,7 +498,12 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
 
               {phaseNote ? <Text style={styles.phaseNoteText}>{phaseNote}</Text> : null}
 
-              {evaluation ? (
+              {reevaluating ? (
+                <View style={styles.reevaluatingBox}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={styles.reevaluatingText}>{t('meal_analyzer.reevaluating')}</Text>
+                </View>
+              ) : evaluation ? (
                 <View style={styles.evaluationBox}>
                   <View style={styles.evaluationHeader}>
                     <Sparkles size={14} color={colors.primary} />
@@ -434,7 +513,7 @@ export const MealAnalyzerScreen = ({ onBack, cycleInfo, cycleProfile = {}, user,
                 </View>
               ) : null}
 
-              <Pressable style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
+              <Pressable style={styles.saveBtn} onPress={handleSave} disabled={isSaving || reevaluating}>
                 {isSaving ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
@@ -624,6 +703,16 @@ const styles = StyleSheet.create({
   loaderText: { marginTop: 12, fontFamily: 'Outfit_600SemiBold', color: colors.on_surface_variant },
   errorBox: { padding: 16, backgroundColor: '#FFF1F2', borderRadius: 12, borderWidth: 1, borderColor: '#FDA4AF' },
   errorText: { fontFamily: 'Outfit_600SemiBold', color: '#BE123B', fontSize: 13, textAlign: 'center' },
+  correctionHint: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  correctionHintText: { flex: 1, fontFamily: 'Outfit_500Medium', fontSize: 11, color: colors.on_surface_variant, opacity: 0.8, lineHeight: 16 },
+  reevaluatingBox: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16, padding: 14 },
+  reevaluatingText: { fontFamily: 'Outfit_500Medium', fontSize: 13, color: colors.on_surface_variant },
   itemRow: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F1E8' },
   itemRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   itemNameInput: { flex: 1, fontFamily: 'Outfit_700Bold', fontSize: 15, color: colors.on_surface, paddingVertical: 4 },
