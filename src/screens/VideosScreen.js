@@ -284,6 +284,108 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
     Animated.spring(mealPressScales[index], { toValue: 1,    friction: 6, tension: 100, useNativeDriver: true }).start();
   };
 
+  // ── Scroll-linked pinned filter bar ─────────────────────────────────
+  // Per client feedback: pinning the whole header block (title + search +
+  // both filter rows) permanently, as done before, pushed the video grid
+  // down too far and made it feel cramped. Now only the header+search
+  // scroll away normally; once that block (measured via onLayout, not a
+  // guessed constant) has scrolled fully out of view, a transparent
+  // overlay containing JUST the filter pills fades in and stays pinned —
+  // same technique as MealAnalyzerScreen.js's pinned mini-hero, reused
+  // here per explicit request.
+  const [headerBlockHeight, setHeaderBlockHeight] = useState(300);
+  const [isPinned, setIsPinned] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const pinnedFiltersOpacity = scrollY.interpolate({
+    inputRange: [Math.max(headerBlockHeight - 20, 0), headerBlockHeight],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  // Derives isPinned (which flips pointerEvents so the pinned pills are
+  // actually tappable once visible) straight off the Animated.Value via
+  // addListener — the `listener` option on the onScroll Animated.event
+  // wasn't firing reliably in testing, this is the standard, dependable
+  // way to sync plain JS state off animated scroll position.
+  useEffect(() => {
+    const id = scrollY.addListener(({ value }) => {
+      setIsPinned(value >= headerBlockHeight);
+    });
+    return () => scrollY.removeListener(id);
+  }, [headerBlockHeight]);
+
+  const renderPhaseFilters = () => (
+    <View style={styles.filterWrapper}>
+      <Animated.Text style={[styles.filterTitle, { opacity: phaseLabel }]}>
+        {t('recipes.filter_phase')}
+      </Animated.Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+        {filters.map((filter, index) => {
+          const pc = PHASE_TAB_COLORS[filter.id];
+          const isActive = activeFilterId === filter.id;
+          const pa = phasePillAnims[index];
+          return (
+            <Animated.View
+              key={filter.id}
+              style={{
+                opacity:   pa.opacity,
+                transform: [{ scale: Animated.multiply(pa.scale, phaseSelectScales[index]) }],
+              }}
+            >
+              <Pressable
+                style={[
+                  styles.filterPill,
+                  pc && !isActive && { backgroundColor: pc.tint, borderColor: pc.border },
+                  pc && isActive  && { backgroundColor: pc.solid, borderColor: pc.solid },
+                  !pc && isActive && styles.filterPillActive,
+                ]}
+                onPress={() => handlePhaseSelect(filter.id, index)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  pc && !isActive && { color: pc.solid },
+                  isActive && styles.filterTextActive,
+                ]}>
+                  {filter.label}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
+  const renderMealFilters = () => (
+    <View style={{ marginBottom: 16 }}>
+      <Animated.Text style={[styles.filterTitle, { opacity: mealLabel }]}>
+        {t('recipes.filter_meal')}
+      </Animated.Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+        {mealTypes.map((type, index) => (
+          <Animated.View
+            key={type.id}
+            style={{
+              opacity:   mealPillAnims[index].opacity,
+              transform: [{ scale: Animated.multiply(mealPillAnims[index].scale, mealPressScales[index]) }],
+            }}
+          >
+            <Pressable
+              style={[styles.mealPill, activeMealType === type.id && styles.mealPillActive]}
+              onPress={() => handleMealSelect(type.id, index)}
+              onPressIn={() => handleMealPressIn(index)}
+              onPressOut={() => handleMealPressOut(index)}
+            >
+              <Text style={[styles.mealText, activeMealType === type.id && styles.mealTextActive]}>
+                {type.name}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
   // ── Video player view (no animations needed) ───────────────────────
   if (selectedVideo) {
     const videoIngredients = activeVideo?.ingredients?.length ? activeVideo.ingredients : null;
@@ -428,105 +530,54 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   // ── Main list view ─────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Fixed top bar — header, search, and both filter pill rows all sit
-          outside the ScrollView (a normal flex sibling, not absolutely
-          positioned) so the category buttons stay reachable no matter how
-          far down the video grid she's scrolled — same fix applied to
-          KeyFoodsScreen.js's phase pills, per client request to extend it
-          here too. These are all mount-triggered animations (not
-          scroll-triggered), so moving them outside the ScrollView doesn't
-          affect how they animate in. */}
-      <View style={styles.fixedTop}>
-        <Animated.View style={[styles.header, { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] }]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
-            <ChevronLeft size={24} color={colors.on_surface} />
-          </Pressable>
-          <Text style={styles.title}>{t('videos.title')}</Text>
-        </Animated.View>
+      {/* Pinned filter bar — transparent background, hidden until the
+          header+search block below has scrolled fully out of view, then
+          fades in and stays fixed at the top. Video thumbnails scrolling
+          underneath stay visible through it since there's no background
+          fill here — only the pills themselves are opaque. */}
+      <Animated.View
+        pointerEvents={isPinned ? 'box-none' : 'none'}
+        style={[styles.pinnedFilterBar, { opacity: pinnedFiltersOpacity }]}
+      >
+        {renderPhaseFilters()}
+        {renderMealFilters()}
+      </Animated.View>
 
-        <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Search size={20} color={colors.on_surface_variant} opacity={0.5} />
-            <TextInput
-              placeholder={t('videos.search_placeholder')}
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor={colors.placeholder}
-            />
+      <Animated.ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollBody}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
+        <View onLayout={(e) => setHeaderBlockHeight(e.nativeEvent.layout.height)}>
+          <Animated.View style={[styles.header, { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] }]}>
+            <Pressable onPress={onBack} style={styles.backButton}>
+              <ChevronLeft size={24} color={colors.on_surface} />
+            </Pressable>
+            <Text style={styles.title}>{t('videos.title')}</Text>
+          </Animated.View>
+
+          <View style={styles.searchSection}>
+            <View style={styles.searchBar}>
+              <Search size={20} color={colors.on_surface_variant} opacity={0.5} />
+              <TextInput
+                placeholder={t('videos.search_placeholder')}
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor={colors.placeholder}
+              />
+            </View>
           </View>
+
+          {renderPhaseFilters()}
+          {renderMealFilters()}
         </View>
 
-        <View style={styles.filterWrapper}>
-          <Animated.Text style={[styles.filterTitle, { opacity: phaseLabel }]}>
-            {t('recipes.filter_phase')}
-          </Animated.Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-            {filters.map((filter, index) => {
-              const pc = PHASE_TAB_COLORS[filter.id];
-              const isActive = activeFilterId === filter.id;
-              const pa = phasePillAnims[index];
-              return (
-                <Animated.View
-                  key={filter.id}
-                  style={{
-                    opacity:   pa.opacity,
-                    transform: [{ scale: Animated.multiply(pa.scale, phaseSelectScales[index]) }],
-                  }}
-                >
-                  <Pressable
-                    style={[
-                      styles.filterPill,
-                      pc && !isActive && { backgroundColor: pc.tint, borderColor: pc.border },
-                      pc && isActive  && { backgroundColor: pc.solid, borderColor: pc.solid },
-                      !pc && isActive && styles.filterPillActive,
-                    ]}
-                    onPress={() => handlePhaseSelect(filter.id, index)}
-                  >
-                    <Text style={[
-                      styles.filterText,
-                      pc && !isActive && { color: pc.solid },
-                      isActive && styles.filterTextActive,
-                    ]}>
-                      {filter.label}
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        <View style={{ marginBottom: 16 }}>
-          <Animated.Text style={[styles.filterTitle, { opacity: mealLabel }]}>
-            {t('recipes.filter_meal')}
-          </Animated.Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-            {mealTypes.map((type, index) => (
-              <Animated.View
-                key={type.id}
-                style={{
-                  opacity:   mealPillAnims[index].opacity,
-                  transform: [{ scale: Animated.multiply(mealPillAnims[index].scale, mealPressScales[index]) }],
-                }}
-              >
-                <Pressable
-                  style={[styles.mealPill, activeMealType === type.id && styles.mealPillActive]}
-                  onPress={() => handleMealSelect(type.id, index)}
-                  onPressIn={() => handleMealPressIn(index)}
-                  onPressOut={() => handleMealPressOut(index)}
-                >
-                  <Text style={[styles.mealText, activeMealType === type.id && styles.mealTextActive]}>
-                    {type.name}
-                  </Text>
-                </Pressable>
-              </Animated.View>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
-
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
         {/* Video cards — stagger in, re-stagger on filter change */}
         <View style={styles.videoGrid}>
           {visibleVideos.map((video, i) => {
@@ -571,21 +622,27 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
         </View>
 
         <View style={{ height: 24 }} />
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scrollBody: { paddingTop: 16 },
-  // Sits above the video-grid ScrollView as a normal (non-scrolling) flex
-  // sibling — everything a viewer needs constant access to (back button,
-  // search, phase/meal filters) lives here now instead of scrolling away.
-  fixedTop: {
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F1E8',
+  scrollBody: {},
+  // Absolutely positioned over the ScrollView, transparent so video
+  // thumbnails scrolling underneath stay visible through it — only the
+  // pills themselves (and their own backgrounds) are opaque. Hidden
+  // (opacity 0, pointerEvents 'none') until the header+search block has
+  // scrolled fully out of view — see pinnedFiltersOpacity/isPinned.
+  pinnedFilterBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    paddingTop: 60,
+    backgroundColor: 'transparent',
   },
   header: { paddingHorizontal: 28, paddingTop: 60, marginBottom: 24 },
   backButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginBottom: 24, borderWidth: 1, borderColor: '#F1F1E8' },
