@@ -428,9 +428,15 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   // ── Main list view ─────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-
-        {/* Header slides down from above */}
+      {/* Fixed top bar — header, search, and both filter pill rows all sit
+          outside the ScrollView (a normal flex sibling, not absolutely
+          positioned) so the category buttons stay reachable no matter how
+          far down the video grid she's scrolled — same fix applied to
+          KeyFoodsScreen.js's phase pills, per client request to extend it
+          here too. These are all mount-triggered animations (not
+          scroll-triggered), so moving them outside the ScrollView doesn't
+          affect how they animate in. */}
+      <View style={styles.fixedTop}>
         <Animated.View style={[styles.header, { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] }]}>
           <Pressable onPress={onBack} style={styles.backButton}>
             <ChevronLeft size={24} color={colors.on_surface} />
@@ -438,7 +444,6 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
           <Text style={styles.title}>{t('videos.title')}</Text>
         </Animated.View>
 
-        {/* Search bar */}
         <View style={styles.searchSection}>
           <View style={styles.searchBar}>
             <Search size={20} color={colors.on_surface_variant} opacity={0.5} />
@@ -452,7 +457,6 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
           </View>
         </View>
 
-        {/* Phase filter pills */}
         <View style={styles.filterWrapper}>
           <Animated.Text style={[styles.filterTitle, { opacity: phaseLabel }]}>
             {t('recipes.filter_phase')}
@@ -493,8 +497,7 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
           </ScrollView>
         </View>
 
-        {/* Meal type filter pills */}
-        <View style={{ marginBottom: 32 }}>
+        <View style={{ marginBottom: 16 }}>
           <Animated.Text style={[styles.filterTitle, { opacity: mealLabel }]}>
             {t('recipes.filter_meal')}
           </Animated.Text>
@@ -521,7 +524,9 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
             ))}
           </ScrollView>
         </View>
+      </View>
 
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
         {/* Video cards — stagger in, re-stagger on filter change */}
         <View style={styles.videoGrid}>
           {visibleVideos.map((video, i) => {
@@ -573,10 +578,19 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: 28, paddingTop: 60, marginBottom: 32 },
+  scrollBody: { paddingTop: 16 },
+  // Sits above the video-grid ScrollView as a normal (non-scrolling) flex
+  // sibling — everything a viewer needs constant access to (back button,
+  // search, phase/meal filters) lives here now instead of scrolling away.
+  fixedTop: {
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F1E8',
+  },
+  header: { paddingHorizontal: 28, paddingTop: 60, marginBottom: 24 },
   backButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginBottom: 24, borderWidth: 1, borderColor: '#F1F1E8' },
   title: { fontSize: 32, fontFamily: 'InstrumentSerif_400Regular', color: colors.on_surface },
-  searchSection: { marginBottom: 32, paddingHorizontal: 28 },
+  searchSection: { marginBottom: 24, paddingHorizontal: 28 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 24, borderWidth: 1, borderColor: '#F1F1E8' },
   searchInput: { flex: 1, marginLeft: 12, fontFamily: 'Outfit_500Medium', fontSize: 16, color: colors.on_surface },
   filterWrapper: { marginBottom: 24 },

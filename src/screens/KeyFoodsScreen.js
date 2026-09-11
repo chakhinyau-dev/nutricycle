@@ -133,6 +133,41 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
 
   return (
     <View style={styles.container}>
+      {/* Fixed top bar — back button/title + the 4 phase pills — sits outside
+          the SectionList entirely (a normal flex sibling, not absolutely
+          positioned) so it never scrolls away, per client request that the
+          phase buttons stay reachable no matter how far down the list she's
+          scrolled. Only the source note below it scrolls with the list now. */}
+      <View style={styles.fixedHeader}>
+        <View style={styles.header}>
+          <Pressable onPress={onBack} style={styles.backButton}>
+            <ChevronLeft size={24} color={colors.on_surface} />
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t('key_foods.title')}</Text>
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+          style={styles.filterRow}
+        >
+          {phases.map(phase => (
+            <Pressable
+              key={phase.key}
+              style={[styles.filterPill, selectedPhase === phase.key && styles.filterPillActive]}
+              onPress={() => setSelectedPhase(phase.key)}
+            >
+              <Text style={[styles.filterText, selectedPhase === phase.key && styles.filterTextActive]}>
+                {phase.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
       <SectionList
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -149,43 +184,10 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
         )}
         renderItem={renderFoodCard}
         ListHeaderComponent={
-          <>
-            {/* Header */}
-            <View style={styles.header}>
-              <Pressable onPress={onBack} style={styles.backButton}>
-                <ChevronLeft size={24} color={colors.on_surface} />
-              </Pressable>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.title}>{t('key_foods.title')}</Text>
-              </View>
-            </View>
-
-            {/* Phase filter pills */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterScroll}
-              style={styles.filterRow}
-            >
-              {phases.map(phase => (
-                <Pressable
-                  key={phase.key}
-                  style={[styles.filterPill, selectedPhase === phase.key && styles.filterPillActive]}
-                  onPress={() => setSelectedPhase(phase.key)}
-                >
-                  <Text style={[styles.filterText, selectedPhase === phase.key && styles.filterTextActive]}>
-                    {phase.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            {/* Source / citation note for the hormone-benefit claims below */}
-            <View style={styles.sourceNote}>
-              <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
-              <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
-            </View>
-          </>
+          <View style={styles.sourceNote}>
+            <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
+            <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
+          </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -206,7 +208,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  // Sits above the SectionList as a normal (non-scrolling) flex sibling —
+  // the status-bar clearance that used to live on scrollContent's paddingTop
+  // moved here, since this is now what's actually at the top of the screen.
+  fixedHeader: {
     paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 4,
+    backgroundColor: '#F9F9F2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEDE4',
   },
   header: {
     flexDirection: 'row',
@@ -247,7 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   filterRow: {
-    marginBottom: 28,
+    marginBottom: 16,
   },
   filterScroll: {
     gap: 10,

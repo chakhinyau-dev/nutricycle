@@ -222,13 +222,15 @@ export const RecipesScreen = ({
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
-        scrollEnabled={!isLocked}
-      >
-        {/* Header slides down */}
+      {/* Fixed top bar — header, search, and both filter pill rows sit
+          outside the ScrollView (a normal flex sibling, not absolutely
+          positioned) so the category buttons stay reachable no matter how
+          far down the recipe list she's scrolled — same fix applied to
+          KeyFoodsScreen.js's phase pills and VideosScreen.js, per client
+          request to extend it here too. These are mount-triggered
+          animations (not scroll-triggered), so relocating them outside the
+          ScrollView doesn't change how they animate in. */}
+      <View style={styles.fixedTop}>
         <Animated.View style={[styles.header, { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] }]}>
           <View style={styles.headerLeft}>
             <Pressable onPress={onBack} style={styles.backButton}>
@@ -241,7 +243,6 @@ export const RecipesScreen = ({
           <View style={{ width: 44 }} />
         </Animated.View>
 
-        {/* Search bar — always visible, TextInput conflicts with Animated.View opacity */}
         <View style={styles.searchSection}>
           <View style={styles.searchBar}>
             <Search size={20} color={colors.on_surface_variant} opacity={0.5} />
@@ -255,8 +256,7 @@ export const RecipesScreen = ({
           </View>
         </View>
 
-        {/* Phase filter pills */}
-        <View style={{ marginBottom: 24 }}>
+        <View style={{ marginBottom: 16 }}>
           <Animated.Text style={[styles.filterTitle, { opacity: phaseLabel }]}>
             {t('recipes.filter_phase')}
           </Animated.Text>
@@ -296,8 +296,7 @@ export const RecipesScreen = ({
           </ScrollView>
         </View>
 
-        {/* Meal type filter pills */}
-        <View style={{ marginBottom: 32 }}>
+        <View style={{ marginBottom: 16 }}>
           <Animated.Text style={[styles.filterTitle, { opacity: mealLabel }]}>
             {t('recipes.filter_meal')}
           </Animated.Text>
@@ -324,7 +323,14 @@ export const RecipesScreen = ({
             ))}
           </ScrollView>
         </View>
+      </View>
 
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+        scrollEnabled={!isLocked}
+      >
         {/* Recipe cards — stagger in, re-stagger on filter change */}
         <View style={styles.recipesList}>
           {filteredRecipes.length ? (
@@ -374,14 +380,27 @@ export const RecipesScreen = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  contentContainer: { paddingHorizontal: 28, paddingTop: 60 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+  contentContainer: { paddingHorizontal: 28, paddingTop: 16 },
+  // Sits above the recipe-list ScrollView as a normal (non-scrolling) flex
+  // sibling — everything a viewer needs constant access to (back button,
+  // search, phase/meal filters) lives here now instead of scrolling away.
+  // Carries the paddingHorizontal/paddingTop that used to live on
+  // contentContainer, since header/searchSection/filters relied on
+  // inheriting it from there rather than padding themselves.
+  fixedTop: {
+    backgroundColor: colors.background,
+    paddingHorizontal: 28,
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F1E8',
+  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   backButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginRight: 16, borderWidth: 1, borderColor: '#F1F1E8' },
   headerTextGroup: { justifyContent: 'center' },
   title: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 32, color: colors.on_surface },
   headerAction: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#F1F1E8' },
-  searchSection: { marginBottom: 32 },
+  searchSection: { marginBottom: 24 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 24, borderWidth: 1, borderColor: '#F1F1E8' },
   searchInput: { flex: 1, marginLeft: 12, fontFamily: 'Outfit_500Medium', fontSize: 16, color: colors.on_surface },
   filterScroll: { gap: 12 },
