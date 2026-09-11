@@ -47,6 +47,7 @@ import { ShoppingListScreen } from './src/screens/ShoppingListScreen';
 import { NutritionScreen } from './src/screens/NutritionScreen';
 import { AIChatScreen } from './src/screens/AIChatScreen';
 import { MealAnalyzerScreen } from './src/screens/MealAnalyzerScreen';
+import { FastingScreen } from './src/screens/FastingScreen';
 import { MOCK_RECIPES } from './src/utils/mockData';
 import { ARTICLE_LIBRARY } from './src/utils/articleData';
 import { VIDEO_LIBRARY } from './src/utils/videoData';
@@ -768,6 +769,8 @@ const AppShell = () => {
           return <AIChatScreen onBack={goBack} onNavigate={navigateTo} getToken={getToken} isPremium={canAccessPremium} {...sharedScreenProps} />;
         case 'mealAnalyzer':
           return <MealAnalyzerScreen onBack={goBack} onNavigate={navigateTo} isPremium={canAccessPremium} {...sharedScreenProps} />;
+        case 'fasting':
+          return <FastingScreen onBack={goBack} {...sharedScreenProps} />;
 
         default:
           return (

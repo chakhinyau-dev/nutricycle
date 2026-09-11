@@ -6,6 +6,8 @@ const ONBOARDING_KEY = 'nutricycle_onboarding_complete';
 const profileKey = (userId) => `nutricycle_profile_${userId}`;
 const dailyLogsKey = (userId) => `nutricycle_daily_logs_${userId}`;
 const cycleWizardKey = (userId) => `nutricycle_cycle_wizard_seen_${userId}`;
+const activeFastKey = (userId) => `nutricycle_active_fast_${userId}`;
+const fastingHistoryKey = (userId) => `nutricycle_fasting_history_${userId}`;
 
 const isWeb = Platform.OS === 'web';
 
@@ -115,6 +117,47 @@ export const setLocalDailyLogs = async (userId, logs) => {
   await setItem(dailyLogsKey(userId), JSON.stringify(logs));
 };
 
+// Caches the currently-running fast (or null) so the clock screen can show
+// the correct elapsed time the instant it mounts — before the Supabase
+// round trip resolves, and even offline — rather than flashing "no active
+// fast" every time the app is reopened mid-fast.
+export const getLocalActiveFast = async (userId) => {
+  if (!userId) return null;
+  const rawValue = await getItem(activeFastKey(userId));
+  if (!rawValue) return null;
+  try {
+    return JSON.parse(rawValue);
+  } catch (error) {
+    return null;
+  }
+};
+
+export const setLocalActiveFast = async (userId, fast) => {
+  if (!userId) return;
+  if (!fast) {
+    await removeItem(activeFastKey(userId));
+    return;
+  }
+  await setItem(activeFastKey(userId), JSON.stringify(fast));
+};
+
+export const getLocalFastingHistory = async (userId) => {
+  if (!userId) return [];
+  const rawValue = await getItem(fastingHistoryKey(userId));
+  if (!rawValue) return [];
+  try {
+    const parsed = JSON.parse(rawValue);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+export const setLocalFastingHistory = async (userId, history) => {
+  if (!userId) return;
+  await setItem(fastingHistoryKey(userId), JSON.stringify(history));
+};
+
 const aiPredictionKey = (userId) => `nutricycle_ai_pred_${userId}`;
 
 export const getAIPrediction = async (userId) => {
@@ -155,5 +198,7 @@ export const clearLocalUserData = async (userId) => {
     removeItem(dailyLogsKey(userId)),
     removeItem(cycleWizardKey(userId)),
     removeItem(aiPredictionKey(userId)),
+    removeItem(activeFastKey(userId)),
+    removeItem(fastingHistoryKey(userId)),
   ]);
 };

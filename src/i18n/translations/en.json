@@ -195,7 +195,8 @@
     "meals_premium_cta": "GET PREMIUM",
     "ai_chat_shortcut": "NutriCycle AI",
     "ai_predictor_shortcut": "AI Predictor",
-    "meal_analyzer_shortcut": "Analyze Plate"
+    "meal_analyzer_shortcut": "Analyze Plate",
+    "fasting_shortcut": "Fasting"
   },
   "phase_menstrual_msg": "Your body is resting.\nToday focus on iron-rich foods and quiet moments.",
     "phase_follicular_msg": "Your energy is gently rising.\nThis is a good time for fresh ideas and light movement.",
@@ -251,6 +252,36 @@
       "media": "Medium",
       "alta": "High"
     }
+  },
+  "fasting": {
+    "title": "Fasting",
+    "recommendation_title_good": "Good time to fast",
+    "recommendation_title_ok": "Fasting is possible today",
+    "recommendation_title_avoid": "Not recommended today",
+    "recommendation": {
+      "menstrual": "Your body needs energy and nutritional support during your period. Better to skip fasting today.",
+      "follicular": "Your hormones tolerate a light fast well (12–14 h). A good time to start.",
+      "ovulation": "A short fast (12 h) is possible. You're in your peak-energy phase.",
+      "luteal": "Caloric demand is higher in this phase, and fasting can increase anxiety and cravings."
+    },
+    "goal_label": "Goal duration",
+    "custom_option": "Custom",
+    "custom_placeholder": "Hours (e.g. 24)",
+    "start_btn": "Start Fast",
+    "end_btn": "End Fast",
+    "invalid_duration": "Enter a valid duration in hours.",
+    "start_failed": "Couldn't start the fast. Please try again.",
+    "end_failed": "Couldn't end the fast. Please try again.",
+    "elapsed_label": "ELAPSED TIME",
+    "goal_progress": "{{percent}}% of your {{goal}}h goal",
+    "started_at": "Started at {{time}}",
+    "history_title": "Fasting History",
+    "no_history": "You haven't completed any fasts yet.",
+    "summary_week": "Week",
+    "summary_month": "Month",
+    "summary_total": "{{hours}}h total",
+    "delete_confirm": "Delete this fasting log? This action cannot be undone.",
+    "history_row_hours": "{{hours}}h fasted"
   },
   "hydration": {
     "title": "Hydration\nTracker",

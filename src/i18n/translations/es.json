@@ -200,7 +200,8 @@
     "meals_premium_cta": "HAZTE PREMIUM",
     "ai_chat_shortcut": "NutriCycle AI",
     "ai_predictor_shortcut": "Predictor IA",
-    "meal_analyzer_shortcut": "Analizar Plato"
+    "meal_analyzer_shortcut": "Analizar Plato",
+    "fasting_shortcut": "Ayuno"
   },
   "phase_menstrual_msg": "Tu cuerpo está descansando.\nHoy prioriza alimentos ricos en hierro y momentos de calma",
   "phase_follicular_msg": "Tu energía está subiendo.\nEs un buen momento para nuevos proyectos y movimiento suave.",
@@ -256,6 +257,36 @@
       "media": "Media",
       "alta": "Alta"
     }
+  },
+  "fasting": {
+    "title": "Ayuno",
+    "recommendation_title_good": "Buen momento para ayunar",
+    "recommendation_title_ok": "Ayuno posible hoy",
+    "recommendation_title_avoid": "No recomendado hoy",
+    "recommendation": {
+      "menstrual": "Tu cuerpo necesita energía y soporte nutricional durante la menstruación. Mejor evita el ayuno hoy.",
+      "follicular": "Tus hormonas toleran bien un ayuno ligero (12–14 h). Buen momento para empezar.",
+      "ovulation": "Es posible un ayuno corto (12 h). Estás en tu fase de mayor energía.",
+      "luteal": "La demanda calórica es mayor en esta fase y ayunar puede aumentar la ansiedad y los antojos."
+    },
+    "goal_label": "Duración de la meta",
+    "custom_option": "Personalizado",
+    "custom_placeholder": "Horas (ej. 24)",
+    "start_btn": "Iniciar Ayuno",
+    "end_btn": "Finalizar Ayuno",
+    "invalid_duration": "Ingresa una duración válida en horas.",
+    "start_failed": "No se pudo iniciar el ayuno. Intenta de nuevo.",
+    "end_failed": "No se pudo finalizar el ayuno. Intenta de nuevo.",
+    "elapsed_label": "TIEMPO TRANSCURRIDO",
+    "goal_progress": "{{percent}}% de tu meta de {{goal}}h",
+    "started_at": "Iniciado a las {{time}}",
+    "history_title": "Historial de Ayunos",
+    "no_history": "Aún no has completado ningún ayuno.",
+    "summary_week": "Semana",
+    "summary_month": "Mes",
+    "summary_total": "{{hours}}h en total",
+    "delete_confirm": "¿Eliminar este registro de ayuno? Esta acción no se puede deshacer.",
+    "history_row_hours": "{{hours}}h de ayuno"
   },
   "hydration": {
     "title": "Control de\nHidratación",

@@ -7,7 +7,7 @@ const AnimatedRect    = Animated.createAnimatedComponent(Rect);
 const AnimatedPath    = Animated.createAnimatedComponent(Path);
 const AnimatedLine    = Animated.createAnimatedComponent(Line);
 const AnimatedCircle  = Animated.createAnimatedComponent(Circle);
-import { Play, Heart, ChevronRight, Crown, CircleDot, Camera } from 'lucide-react-native';
+import { Play, Heart, ChevronRight, Crown, CircleDot, Camera, Timer } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 
@@ -384,6 +384,18 @@ export const DashboardScreen = ({
             <Camera size={20} color="#4B8C52" />
           </View>
           <Text style={styles.aiShortcutLabel}>{t('dashboard.meal_analyzer_shortcut', { defaultValue: 'Analizar Plato' })}</Text>
+          <ChevronRight size={14} color={colors.on_surface_variant} style={{ opacity: 0.4 }} />
+        </Pressable>
+      </View>
+
+      <View style={{ marginBottom: 12 }} />
+
+      <View style={styles.aiShortcutRow}>
+        <Pressable style={styles.aiShortcutCard} onPress={() => onNavigate('fasting')}>
+          <View style={[styles.aiShortcutIcon, { backgroundColor: '#FFF1E0' }]}>
+            <Timer size={20} color="#B8882A" />
+          </View>
+          <Text style={styles.aiShortcutLabel}>{t('dashboard.fasting_shortcut', { defaultValue: 'Ayuno' })}</Text>
           <ChevronRight size={14} color={colors.on_surface_variant} style={{ opacity: 0.4 }} />
         </Pressable>
       </View>

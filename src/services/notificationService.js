@@ -55,6 +55,37 @@ export const sendAIReportNotification = async (reportText) => {
   });
 };
 
+// Fasting Module: fires once, when the user's selected fast goal is reached.
+// Scheduled relative to "now" (goalHours from the moment the fast starts),
+// not tied to cycleReminder's cancelAllScheduledNotificationsAsync — starting
+// or ending a fast must not wipe out an unrelated cycle-phase reminder.
+export const scheduleFastingGoalNotification = async (goalHours) => {
+  if (Platform.OS === 'web' || !goalHours) return null;
+
+  try {
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Meta de ayuno alcanzada ⏱️',
+        body: `Completaste tus ${goalHours} horas de ayuno. ¡Buen trabajo!`,
+        data: { screen: 'fasting' },
+      },
+      trigger: { seconds: Math.max(1, Math.round(goalHours * 3600)) },
+    });
+  } catch (error) {
+    console.error('[Notifications] Error scheduling fasting goal notification:', error);
+    return null;
+  }
+};
+
+export const cancelFastingGoalNotification = async (notificationId) => {
+  if (!notificationId || Platform.OS === 'web') return;
+  try {
+    await Notifications.cancelScheduledNotificationAsync(notificationId);
+  } catch (error) {
+    // Already fired or never scheduled — nothing to clean up.
+  }
+};
+
 export const scheduleDailyHydrationReminder = async () => {
   await Notifications.scheduleNotificationAsync({
     content: {
