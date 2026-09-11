@@ -126,7 +126,17 @@ export const DashboardScreen = ({
   const keyFoodsDataSource = Object.keys(keyFoods).length > 0 ? keyFoods : FOODS_BY_PHASE;
   const phaseKeyFoods = useMemo(() => {
     const cats = keyFoodsDataSource[phaseKey] || keyFoodsDataSource.follicular || FOODS_BY_PHASE.follicular;
-    return cats.flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey }))).slice(0, 5);
+    const allItems = cats.flatMap(cat => cat.items.map(item => ({ ...item, categoryKey: cat.categoryKey })));
+    // Client request: 5 random foods, not always the same first 5 — a
+    // Fisher-Yates shuffle before slicing gives an unbiased random sample
+    // with no duplicates. Re-shuffles whenever the phase or underlying
+    // food data changes (this useMemo's deps), not on every render.
+    const shuffled = [...allItems];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 5);
   }, [phaseKey, keyFoodsDataSource]);
 
   const foodScrollRef = useRef(null);
