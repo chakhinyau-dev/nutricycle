@@ -10,8 +10,9 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
+  Image,
 } from 'react-native';
-import { ChevronLeft, Send, Sparkles, User, Bot, MessageSquarePlus } from 'lucide-react-native';
+import { ChevronLeft, Send, Sparkles, User, MessageSquarePlus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme/colors';
 import { useAppAlert } from '../components/AppAlertProvider';
@@ -252,7 +253,7 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
               {m.role === 'user' ? (
                 <User size={16} color="#FFF" />
               ) : (
-                <Bot size={16} color={colors.primary} />
+                <Image source={require('../../assets/ai-avatar-alicia.png')} style={styles.botAvatarImage} />
               )}
             </View>
             <View
@@ -270,7 +271,7 @@ export const AIChatScreen = ({ onBack, onNavigate, cycleInfo, cycleProfile = {},
         {isTyping && (
           <View style={[styles.messageWrapper, styles.botWrapper]}>
             <View style={[styles.avatar, styles.botAvatar]}>
-              <Bot size={16} color={colors.primary} />
+              <Image source={require('../../assets/ai-avatar-alicia.png')} style={styles.botAvatarImage} />
             </View>
             <View style={[styles.bubble, styles.botBubble, { paddingVertical: 12 }]}>
               <ActivityIndicator size="small" color={colors.primary} />
@@ -398,6 +399,12 @@ const styles = StyleSheet.create({
     marginRight: 10,
     borderWidth: 1,
     borderColor: '#E0F2FE',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  botAvatarImage: {
+    width: '100%',
+    height: '100%',
   },
   bubble: {
     paddingHorizontal: 16,
