@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,10 +7,12 @@ import {
   SectionList,
   Pressable,
   Image,
+  TextInput,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Leaf, Plus, Check, Info, Apple } from 'lucide-react-native';
+import { ChevronLeft, Leaf, Plus, Check, Info, Apple, Search } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { FOODS_BY_PHASE } from '../utils/foodsData';
 import { getResizedImageUrl } from '../utils/imageUrl';
@@ -38,6 +40,7 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
   const normalizedPhaseKey = currentPhaseKey || 'follicular';
   const [selectedPhase, setSelectedPhase] = useState(normalizedPhaseKey);
   const [addedItems, setAddedItems] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   const phases = [
     { key: 'menstrual',  label: t('phases.menstrual') },
@@ -48,6 +51,57 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
 
   const dataSource = Object.keys(keyFoods).length > 0 ? keyFoods : FOODS_BY_PHASE;
   const categories = dataSource[selectedPhase] || dataSource.follicular || [];
+
+  // Database foods carry name/benefits directly; static foods only carry a
+  // translation key — shared by both the search filter below and the card
+  // renderer, so the two never drift apart on how a name is resolved.
+  const getFoodName = (food) => {
+    const nameKey = `key_foods.items.${food.key}.name`;
+    const translatedName = t(nameKey);
+    return food.name || (translatedName !== nameKey ? translatedName : '');
+  };
+
+  // ── Scroll-linked pinned filter bar (same technique as VideosScreen.js,
+  // reused here per client request) ───────────────────────────────────
+  // Header/search scroll away normally; once that block (measured via
+  // onLayout) has scrolled fully out of view, a transparent overlay with
+  // just the phase pills fades in and stays pinned at the top.
+  const [headerBlockHeight, setHeaderBlockHeight] = useState(260);
+  const [isPinned, setIsPinned] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const pinnedFiltersOpacity = scrollY.interpolate({
+    inputRange: [Math.max(headerBlockHeight - 20, 0), headerBlockHeight],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  useEffect(() => {
+    const id = scrollY.addListener(({ value }) => {
+      setIsPinned(value >= headerBlockHeight);
+    });
+    return () => scrollY.removeListener(id);
+  }, [headerBlockHeight]);
+
+  const renderPhasePills = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.filterScroll}
+      style={styles.filterRow}
+    >
+      {phases.map(phase => (
+        <Pressable
+          key={phase.key}
+          style={[styles.filterPill, selectedPhase === phase.key && styles.filterPillActive]}
+          onPress={() => setSelectedPhase(phase.key)}
+        >
+          <Text style={[styles.filterText, selectedPhase === phase.key && styles.filterTextActive]}>
+            {phase.label}
+          </Text>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
 
   const handleAddToList = async (foodKey, foodName) => {
     const storageKey = `@nutricycle_custom_items_${userId}`;
@@ -71,22 +125,24 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
   // once a lot more foods were added to those phases. SectionList only
   // renders what's near the viewport, so this scales with however many
   // items get added going forward instead of degrading further.
-  const sections = categories.map(cat => ({
-    key: cat.categoryKey,
-    title: cat.categoryKey,
-    catColor: CATEGORY_COLORS[cat.categoryKey] || colors.primary,
-    data: cat.items,
-  }));
+  const searchNorm = searchQuery.trim().toLowerCase();
+  const sections = categories
+    .map(cat => ({
+      key: cat.categoryKey,
+      title: cat.categoryKey,
+      catColor: CATEGORY_COLORS[cat.categoryKey] || colors.primary,
+      data: searchNorm
+        ? cat.items.filter(item => getFoodName(item).toLowerCase().includes(searchNorm))
+        : cat.items,
+    }))
+    .filter(cat => cat.data.length > 0);
 
   const renderFoodCard = ({ item: food, section }) => {
     const tagColors = HORMONE_TAG_COLORS[food.hormoneTag] || HORMONE_TAG_COLORS.energy;
     const isAdded = !!addedItems[food.key];
-    // Database foods carry name/benefits directly; static foods use translation keys
-    const nameKey = `key_foods.items.${food.key}.name`;
     const benefitKey = `key_foods.items.${food.key}.benefit`;
-    const translatedName    = t(nameKey);
     const translatedBenefit = t(benefitKey);
-    const foodName    = food.name    || (translatedName    !== nameKey    ? translatedName    : '');
+    const foodName    = getFoodName(food);
     const foodBenefit = food.benefits || food.benefit || (translatedBenefit !== benefitKey ? translatedBenefit : '');
     return (
       <View style={styles.foodCard}>
@@ -133,40 +189,18 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
 
   return (
     <View style={styles.container}>
-      {/* Fixed top bar — back button/title + the 4 phase pills — sits outside
-          the SectionList entirely (a normal flex sibling, not absolutely
-          positioned) so it never scrolls away, per client request that the
-          phase buttons stay reachable no matter how far down the list she's
-          scrolled. Only the source note below it scrolls with the list now. */}
-      <View style={styles.fixedHeader}>
-        <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
-            <ChevronLeft size={24} color={colors.on_surface} />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{t('key_foods.title')}</Text>
-          </View>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScroll}
-          style={styles.filterRow}
-        >
-          {phases.map(phase => (
-            <Pressable
-              key={phase.key}
-              style={[styles.filterPill, selectedPhase === phase.key && styles.filterPillActive]}
-              onPress={() => setSelectedPhase(phase.key)}
-            >
-              <Text style={[styles.filterText, selectedPhase === phase.key && styles.filterTextActive]}>
-                {phase.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+      {/* Pinned filter bar — transparent background, hidden until the
+          header+search block below has scrolled fully out of view, then
+          fades in and stays fixed at the top. Food cards scrolling
+          underneath stay visible through it since there's no background
+          fill here — only the pills themselves are opaque. Same technique
+          as VideosScreen.js, reused here per client request. */}
+      <Animated.View
+        pointerEvents={isPinned ? 'box-none' : 'none'}
+        style={[styles.pinnedFilterBar, { opacity: pinnedFiltersOpacity }]}
+      >
+        {renderPhasePills()}
+      </Animated.View>
 
       <SectionList
         showsVerticalScrollIndicator={false}
@@ -174,6 +208,11 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
         sections={sections}
         keyExtractor={(food) => food.key}
         stickySectionHeadersEnabled={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         renderSectionHeader={({ section }) => (
           <View style={styles.categoryHeader}>
             <View style={[styles.categoryDot, { backgroundColor: section.catColor }]} />
@@ -184,15 +223,41 @@ export const KeyFoodsScreen = ({ onBack, currentPhaseKey = 'follicular', user, k
         )}
         renderItem={renderFoodCard}
         ListHeaderComponent={
-          <View style={styles.sourceNote}>
-            <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
-            <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
+          <View onLayout={(e) => setHeaderBlockHeight(e.nativeEvent.layout.height)}>
+            <View style={styles.header}>
+              <Pressable onPress={onBack} style={styles.backButton}>
+                <ChevronLeft size={24} color={colors.on_surface} />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>{t('key_foods.title')}</Text>
+              </View>
+            </View>
+
+            <View style={styles.searchBar}>
+              <Search size={20} color={colors.on_surface_variant} opacity={0.5} />
+              <TextInput
+                placeholder={t('key_foods.search_placeholder')}
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor={colors.placeholder}
+              />
+            </View>
+
+            {renderPhasePills()}
+
+            <View style={styles.sourceNote}>
+              <Info size={14} color={colors.on_surface_variant} style={{ opacity: 0.6 }} />
+              <Text style={styles.sourceNoteText}>{t('common.nutrition_source_note')}</Text>
+            </View>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Leaf size={36} color={colors.primary} style={{ opacity: 0.4, marginBottom: 14 }} />
-            <Text style={styles.emptyStateText}>{t('key_foods.no_foods')}</Text>
+            <Text style={styles.emptyStateText}>
+              {searchNorm ? t('key_foods.no_search_results') : t('key_foods.no_foods')}
+            </Text>
           </View>
         }
         ListFooterComponent={<View style={{ height: 24 }} />}
@@ -208,18 +273,40 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 60,
   },
-  // Sits above the SectionList as a normal (non-scrolling) flex sibling —
-  // the status-bar clearance that used to live on scrollContent's paddingTop
-  // moved here, since this is now what's actually at the top of the screen.
-  fixedHeader: {
+  // Absolutely positioned over the SectionList, transparent so food cards
+  // scrolling underneath stay visible through it — only the pills
+  // themselves (and their own backgrounds) are opaque. Hidden (opacity 0,
+  // pointerEvents 'none') until the header+search block has scrolled fully
+  // out of view — see pinnedFiltersOpacity/isPinned.
+  pinnedFilterBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
     paddingTop: 60,
     paddingHorizontal: 24,
-    paddingBottom: 4,
-    backgroundColor: '#F9F9F2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EFEDE4',
+    backgroundColor: 'transparent',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#EFEDE4',
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontFamily: 'Outfit_500Medium',
+    fontSize: 16,
+    color: colors.on_surface,
   },
   header: {
     flexDirection: 'row',

@@ -854,6 +854,8 @@
     "title": "Alimentos Clave",
     "select_phase": "Seleccionar Fase del Ciclo",
     "no_foods": "No hay alimentos disponibles para esta fase.",
+    "no_search_results": "No encontramos alimentos que coincidan con tu búsqueda.",
+    "search_placeholder": "Buscar alimentos...",
     "add_to_list": "Añadido a la lista",
     "phase_desc": {
       "menstrual": "Descanso y reposo — alimentos ricos en hierro y antiinflamatorios para aliviar esta fase.",

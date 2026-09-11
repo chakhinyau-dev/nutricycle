@@ -859,6 +859,8 @@
     "title": "Key Foods",
     "select_phase": "Select Cycle Phase",
     "no_foods": "No foods available for this phase.",
+    "no_search_results": "We couldn't find any foods matching your search.",
+    "search_placeholder": "Search foods...",
     "add_to_list": "Added to list",
     "phase_desc": {
       "menstrual": "Rest & replenish — focus on iron-rich and anti-inflammatory foods to ease this phase.",
