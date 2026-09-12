@@ -8,6 +8,7 @@ const dailyLogsKey = (userId) => `nutricycle_daily_logs_${userId}`;
 const cycleWizardKey = (userId) => `nutricycle_cycle_wizard_seen_${userId}`;
 const activeFastKey = (userId) => `nutricycle_active_fast_${userId}`;
 const fastingHistoryKey = (userId) => `nutricycle_fasting_history_${userId}`;
+const recommendedVideosKey = (userId) => `nutricycle_recommended_videos_${userId}`;
 
 const isWeb = Platform.OS === 'web';
 
@@ -158,6 +159,23 @@ export const setLocalFastingHistory = async (userId, history) => {
   await setItem(fastingHistoryKey(userId), JSON.stringify(history));
 };
 
+export const getLocalRecommendedVideos = async (userId) => {
+  if (!userId) return [];
+  const rawValue = await getItem(recommendedVideosKey(userId));
+  if (!rawValue) return [];
+  try {
+    const parsed = JSON.parse(rawValue);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+export const setLocalRecommendedVideos = async (userId, videoIds) => {
+  if (!userId) return;
+  await setItem(recommendedVideosKey(userId), JSON.stringify(videoIds));
+};
+
 const aiPredictionKey = (userId) => `nutricycle_ai_pred_${userId}`;
 
 export const getAIPrediction = async (userId) => {
@@ -200,5 +218,6 @@ export const clearLocalUserData = async (userId) => {
     removeItem(aiPredictionKey(userId)),
     removeItem(activeFastKey(userId)),
     removeItem(fastingHistoryKey(userId)),
+    removeItem(recommendedVideosKey(userId)),
   ]);
 };

@@ -14,12 +14,17 @@ import {
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTranslation } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@clerk/clerk-expo';
 import { colors } from '../theme/colors';
 import { useAppAlert } from '../components/AppAlertProvider';
 import { Play, ChevronLeft, CheckCircle, Search, Key, ThumbsUp } from 'lucide-react-native';
 import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
 import { translateContent } from '../services/translationService';
+import {
+  loadRecommendedVideoIds,
+  addRecommendedVideo,
+  removeRecommendedVideo,
+} from '../services/recommendedVideosService';
 
 const { width } = Dimensions.get('window');
 const YOUTUBE_HEIGHT = Math.round(width * (9 / 16));
@@ -64,6 +69,7 @@ const getMealTypes = (t) => [
 export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe, initialVideo = null, user = null }) => {
   const { t, i18n } = useTranslation();
   const { showAlert } = useAppAlert();
+  const { getToken } = useAuth();
   const userId = user?.id || 'guest';
   // A locked user can reach this screen directly via a deep link (e.g.
   // Dashboard's "Today's Meals" shortcut sets initialVideo), which used to
@@ -83,29 +89,27 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
 
   // Per-user "recommended by you" list — client request for a dedicated
   // section of videos the user has personally flagged, plus a toggle
-  // button on every card. Local-only (AsyncStorage), same pattern already
-  // used for shopping-list custom items and Key Foods' "add to list" —
-  // no backend table needed for a personal, device-scoped marker like this.
-  const recommendedStorageKey = `@nutricycle_recommended_videos_${userId}`;
-
+  // button on every card. Backed by the recommended_videos table so it
+  // syncs across the user's devices; recommendedVideosService.js keeps a
+  // local cache as an offline/demo-mode fallback, same principle as
+  // fastingService.js.
   useEffect(() => {
-    AsyncStorage.getItem(recommendedStorageKey)
-      .then((raw) => {
-        if (!raw) return;
-        try {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) setRecommendedIds(parsed);
-        } catch (e) {
-          // Corrupt/old value — ignore, starts empty.
-        }
-      })
-      .catch(() => {});
-  }, [recommendedStorageKey]);
+    let isMounted = true;
+    loadRecommendedVideoIds(getToken, userId).then((ids) => {
+      if (isMounted) setRecommendedIds(ids);
+    });
+    return () => { isMounted = false; };
+  }, [userId]);
 
   const handleToggleRecommend = (videoId) => {
     setRecommendedIds((prev) => {
-      const next = prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId];
-      AsyncStorage.setItem(recommendedStorageKey, JSON.stringify(next)).catch(() => {});
+      const isRecommended = prev.includes(videoId);
+      const next = isRecommended ? prev.filter((id) => id !== videoId) : [...prev, videoId];
+      if (isRecommended) {
+        removeRecommendedVideo(getToken, userId, videoId);
+      } else {
+        addRecommendedVideo(getToken, userId, videoId);
+      }
       return next;
     });
   };
