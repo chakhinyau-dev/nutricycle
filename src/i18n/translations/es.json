@@ -384,7 +384,8 @@
     "category": "Categoría",
     "duration": "Duración (ej: 5:00)",
     "submit": "Enviar Video",
-    "search_placeholder": "Buscar recetas"
+    "search_placeholder": "Buscar recetas",
+    "recommended_by_you": "Recomendados por ti"
   },
   "recipes": {
     "overline": "RECETAS POR FASE",

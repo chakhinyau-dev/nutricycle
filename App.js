@@ -717,6 +717,7 @@ const AppShell = () => {
               recipes={recipes}
               isLocked={!canAccessPremium}
               onSubscribe={() => navigateTo('subscription')}
+              user={user}
             />
           );
         case 'videoDetail':
@@ -729,6 +730,7 @@ const AppShell = () => {
               isLocked={!canAccessPremium}
               onSubscribe={() => navigateTo('subscription')}
               initialVideo={navigationParams.videoDetail}
+              user={user}
             />
           );
         case 'admin':
@@ -816,6 +818,7 @@ const AppShell = () => {
             recipes={recipes}
             isLocked={!canAccessPremium}
             onSubscribe={() => navigateTo('subscription')}
+            user={user}
           />
         );
       case 'profile':

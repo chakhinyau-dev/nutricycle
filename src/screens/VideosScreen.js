@@ -14,9 +14,10 @@ import {
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
 import { useAppAlert } from '../components/AppAlertProvider';
-import { Play, ChevronLeft, CheckCircle, Search, Key } from 'lucide-react-native';
+import { Play, ChevronLeft, CheckCircle, Search, Key, ThumbsUp } from 'lucide-react-native';
 import { VIDEO_LIBRARY, extractYouTubeId } from '../utils/videoData';
 import { translateContent } from '../services/translationService';
 
@@ -60,9 +61,10 @@ const getMealTypes = (t) => [
 ];
 
 
-export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe, initialVideo = null }) => {
+export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = VIDEO_LIBRARY, recipes = [], isLocked = false, onSubscribe, initialVideo = null, user = null }) => {
   const { t, i18n } = useTranslation();
   const { showAlert } = useAppAlert();
+  const userId = user?.id || 'guest';
   // A locked user can reach this screen directly via a deep link (e.g.
   // Dashboard's "Today's Meals" shortcut sets initialVideo), which used to
   // bypass the grid's own tap-gate entirely and open the player anyway.
@@ -75,8 +77,38 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
   const [displayLibrary, setDisplayLibrary] = useState(videos);
   const [filterVersion, setFilterVersion] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [recommendedIds, setRecommendedIds] = useState([]);
   const translationRunId = useRef(0);
   const currentLanguage = i18n.resolvedLanguage || i18n.language;
+
+  // Per-user "recommended by you" list — client request for a dedicated
+  // section of videos the user has personally flagged, plus a toggle
+  // button on every card. Local-only (AsyncStorage), same pattern already
+  // used for shopping-list custom items and Key Foods' "add to list" —
+  // no backend table needed for a personal, device-scoped marker like this.
+  const recommendedStorageKey = `@nutricycle_recommended_videos_${userId}`;
+
+  useEffect(() => {
+    AsyncStorage.getItem(recommendedStorageKey)
+      .then((raw) => {
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setRecommendedIds(parsed);
+        } catch (e) {
+          // Corrupt/old value — ignore, starts empty.
+        }
+      })
+      .catch(() => {});
+  }, [recommendedStorageKey]);
+
+  const handleToggleRecommend = (videoId) => {
+    setRecommendedIds((prev) => {
+      const next = prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId];
+      AsyncStorage.setItem(recommendedStorageKey, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  };
 
   const showLockedAlert = () => {
     showAlert(
@@ -198,6 +230,13 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
       return matchesSearch && matchesPhase && matchesMealType;
     });
   }, [activeFilterId, activeMealType, displayLibrary, searchQuery]);
+
+  // Independent of the phase/meal/search filters above — this is a fixed
+  // personal list, not a filtered view of the catalog.
+  const recommendedVideos = useMemo(
+    () => displayLibrary.filter((video) => recommendedIds.includes(video.id)),
+    [displayLibrary, recommendedIds]
+  );
 
   // Mount entrance
   useEffect(() => {
@@ -578,10 +617,55 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
           {renderMealFilters()}
         </View>
 
+        {/* "Recomendados por ti" — client request: a dedicated section near
+            the top of the page for videos the user has personally flagged
+            via the recommend button on each card, shown as a horizontal
+            row of compact image+category+title cards so they're
+            recognizable at a glance. Hidden entirely until the user has
+            recommended at least one video. */}
+        {recommendedVideos.length > 0 && (
+          <View style={styles.recommendedSection}>
+            <View style={styles.recommendedSectionHeader}>
+              <Text style={styles.recommendedSectionTitle}>{t('videos.recommended_by_you')}</Text>
+              <ThumbsUp size={16} color={colors.primary} />
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recommendedScroll}>
+              {recommendedVideos.map((video) => (
+                <Pressable
+                  key={video.id}
+                  style={styles.recommendedCard}
+                  onPress={() => {
+                    if (isLocked) { showLockedAlert(); return; }
+                    setSelectedVideo(video);
+                  }}
+                >
+                  <View style={styles.recommendedThumbWrap}>
+                    <Image
+                      source={{ uri: video.thumbnail || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400' }}
+                      style={styles.recommendedThumb}
+                      resizeMode="cover"
+                    />
+                    <Pressable
+                      onPress={(e) => { e?.stopPropagation?.(); handleToggleRecommend(video.id); }}
+                      style={[styles.recommendBadge, styles.recommendBadgeActive]}
+                      hitSlop={8}
+                    >
+                      <ThumbsUp size={13} color="#FFF" fill="#FFF" />
+                    </Pressable>
+                  </View>
+                  <Text style={styles.recommendedCategory} numberOfLines={1}>{video.category}</Text>
+                  <Text style={styles.recommendedTitle} numberOfLines={2}>{video.title}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Video cards — stagger in, re-stagger on filter change */}
         <View style={styles.videoGrid}>
           {visibleVideos.map((video, i) => {
             const ca = i < MAX_CARDS ? cardAnims[i] : null;
+            const isRecommended = recommendedIds.includes(video.id);
             return (
               <Animated.View
                 key={video.id}
@@ -611,6 +695,13 @@ export const VideosScreen = ({ onBack, currentPhaseKey = 'follicular', videos = 
                     <View style={styles.playIconOverlay}>
                       <Play size={20} color="#FFF" fill="#FFF" />
                     </View>
+                    <Pressable
+                      onPress={(e) => { e?.stopPropagation?.(); handleToggleRecommend(video.id); }}
+                      style={[styles.recommendBadge, isRecommended && styles.recommendBadgeActive]}
+                      hitSlop={8}
+                    >
+                      <ThumbsUp size={13} color="#FFF" fill={isRecommended ? '#FFF' : 'transparent'} />
+                    </Pressable>
                   </View>
                   <View style={styles.videoInfo}>
                     <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
@@ -670,6 +761,27 @@ const styles = StyleSheet.create({
   mealPillActive: { backgroundColor: '#A3B3A5', borderColor: '#A3B3A5' },
   mealText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: colors.on_surface_variant },
   mealTextActive: { color: '#FFF' },
+  recommendedSection: { marginBottom: 28, paddingHorizontal: 28 },
+  recommendedSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  recommendedSectionTitle: { fontFamily: 'Outfit_700Bold', fontSize: 14, color: colors.on_surface },
+  recommendedScroll: { gap: 12, paddingRight: 8 },
+  recommendedCard: { width: 150 },
+  recommendedThumbWrap: { width: 150, height: 88, borderRadius: 14, overflow: 'hidden', backgroundColor: colors.background, marginBottom: 8 },
+  recommendedThumb: { width: '100%', height: '100%' },
+  recommendedCategory: { fontFamily: 'Outfit_700Bold', fontSize: 10, color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  recommendedTitle: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: colors.on_surface, lineHeight: 18 },
+  recommendBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recommendBadgeActive: { backgroundColor: colors.primary },
   videoGrid: { paddingHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   videoCard: { width: '100%' },
   thumbnailWrapper: { width: '100%', height: 110, borderRadius: 12, overflow: 'hidden', backgroundColor: colors.background },

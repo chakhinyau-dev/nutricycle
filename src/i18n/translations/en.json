@@ -381,7 +381,8 @@
     "phase": "Phase",
     "category": "Category",
     "duration": "Duration (e.g. 5:00)",
-    "submit": "Submit Video"
+    "submit": "Submit Video",
+    "recommended_by_you": "Recommended by you"
   },
   "recipes": {
     "overline": "RECIPES BY PHASE",
